@@ -203,7 +203,7 @@ async function fetchSpyDailyData() {
 
   const resp = await fetch(url);
   const data = await resp.json();
-
+  console.log("Alpha Vantage raw:", data); // <--- add this	
   const seriesRaw = data["Time Series (Daily)"];
   if (!seriesRaw) return [];
 
@@ -256,6 +256,7 @@ async function initSpyChart() {
     const data = await fetchSpyDailyData();
     if (data.length > 0) {
       series.setData(data);
+		chart.timeScale().fitContent(); // ensure all bars are visible [web:229]
     }
   } catch (e) {
     console.error("SPY data error", e);
@@ -461,6 +462,5 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
-
 
 
