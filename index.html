@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <title>Wall Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+	
   <style>
     html, body {
       margin: 0;
@@ -178,41 +179,63 @@
         <div id="weather-forecast"></div>
       </div>
 
-      <div class="panel" id="stock-panel">
-        <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
-          Stock
-        </div>
-        <div id="tradingview-widget"></div>
-      </div>
+<div class="panel" id="stock-panel">
+  <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
+    SPY
+  </div>
+  <div id="spy-chart" style="width:100%;height:220px;"></div>
+</div>
     </div>
   </div>
 
   <!-- Google API script (for Calendar later) -->
   <script src="https://apis.google.com/js/api.js"></script>
 
-  <!-- TradingView widget: SPY -->
-  <script type="text/javascript">
-    (function() {
-      const container = document.getElementById("tradingview-widget");
-      if (!container) return;
-      const script = document.createElement("script");
-      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
-      script.async = true;
-      script.innerHTML = JSON.stringify({
-        "symbols": [
-          [ "SPY", "AMEX:SPY|1M" ]
-        ],
-        "chartOnly": false,
-        "width": "100%",
-        "height": 220,
-        "locale": "en",
-        "colorTheme": "dark",
-        "autosize": true,
-        "showVolume": true
-      });
-      container.appendChild(script);
-    })();
-  </script>
+function initSpyChart() {
+  const container = document.getElementById("spy-chart");
+  if (!container || typeof LightweightCharts === "undefined") return;
+
+  const chart = LightweightCharts.createChart(container, {
+    layout: {
+      background: { color: "rgba(0,0,0,0)" },
+      textColor: "#ffffff",
+    },
+    grid: {
+      vertLines: { color: "rgba(255,255,255,0.1)" },
+      horzLines: { color: "rgba(255,255,255,0.1)" },
+    },
+    rightPriceScale: {
+      borderColor: "rgba(255,255,255,0.2)",
+    },
+    timeScale: {
+      borderColor: "rgba(255,255,255,0.2)",
+    },
+  });
+
+  const series = chart.addAreaSeries({
+    lineColor: "#4caf50",
+    topColor: "rgba(76,175,80,0.4)",
+    bottomColor: "rgba(76,175,80,0.0)",
+  });
+
+  // TODO: replace with real SPY data
+  series.setData([
+    { time: "2025-12-08", value: 520 },
+    { time: "2025-12-09", value: 523 },
+    { time: "2025-12-10", value: 518 },
+  ]);
+
+  window.addEventListener("resize", () => {
+    const { width, height } = container.getBoundingClientRect();
+    chart.applyOptions({ width, height });
+  });
+
+  const { width, height } = container.getBoundingClientRect();
+  chart.applyOptions({ width, height });
+}
+
+document.addEventListener("DOMContentLoaded", initSpyChart);
+
 
   <script>
     // ===== CLOCK =====
@@ -412,4 +435,5 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
