@@ -190,8 +190,35 @@
 
   <!-- Google API script (for Calendar later) -->
   <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+	  // ===== SPY CHART (Alpha Vantage + Lightweight Charts) =====
+	  const ALPHA_VANTAGE_KEY = "KQJ0GOU919M9TMLU";
 
-function initSpyChart() {
+async function fetchSpyDailyData() {
+  const url =
+    "https://www.alphavantage.co/query" +
+    "?function=TIME_SERIES_DAILY_ADJUSTED" +
+    "&symbol=SPY" +
+    "&apikey=" + ALPHA_VANTAGE_KEY;
+
+  const resp = await fetch(url);
+  const data = await resp.json();
+
+  const seriesRaw = data["Time Series (Daily)"];
+  if (!seriesRaw) return [];
+
+  const points = Object.keys(seriesRaw)
+    .sort() // oldest → newest
+    .slice(-60) // last 60 days
+    .map(dateStr => {
+      const close = parseFloat(seriesRaw[dateStr]["4. close"]);
+      return { time: dateStr, value: close };
+    });
+
+  return points;
+}
+
+async function initSpyChart() {
   const container = document.getElementById("spy-chart");
   if (!container || typeof LightweightCharts === "undefined") return;
 
@@ -218,26 +245,25 @@ function initSpyChart() {
     bottomColor: "rgba(76,175,80,0.0)",
   });
 
-  // TODO: replace with real SPY data
-  series.setData([
-    { time: "2025-12-08", value: 520 },
-    { time: "2025-12-09", value: 523 },
-    { time: "2025-12-10", value: 518 },
-  ]);
-
-  window.addEventListener("resize", () => {
+  const resizeChart = () => {
     const { width, height } = container.getBoundingClientRect();
     chart.applyOptions({ width, height });
-  });
+  };
+  resizeChart();
+  window.addEventListener("resize", resizeChart);
 
-  const { width, height } = container.getBoundingClientRect();
-  chart.applyOptions({ width, height });
+  try {
+    const data = await fetchSpyDailyData();
+    if (data.length > 0) {
+      series.setData(data);
+    }
+  } catch (e) {
+    console.error("SPY data error", e);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initSpyChart);
 
-
-  <script>
     // ===== CLOCK =====
     function updateClock() {
       const now = new Date();
@@ -435,5 +461,6 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
