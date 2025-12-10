@@ -2,31 +2,32 @@ name: Update SPY data daily
 
 on:
   schedule:
-    - cron: "0 23 * * *"   # once per day at 23:00 UTC
-  workflow_dispatch:        # allow manual run
+    - cron: "0 23 * * *"
+  workflow_dispatch:
 
 jobs:
   update-spy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # allow pushes with GITHUB_TOKEN
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          ref: main        # if your default branch is main
-          persist-credentials: false
+
       - name: Fetch SPY daily from Alpha Vantage
         run: |
           curl "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=SPY&apikey=${{ secrets.ALPHA_VANTAGE_KEY }}" \
             -o spy.json
 
       - name: Commit and push updated spy.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add spy.json
-          # Skip commit if nothing changed
+
+          # If nothing changed, skip commit/push
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
@@ -34,6 +35,3 @@ jobs:
 
           git commit -m "Update SPY data"
           git push
-          git commit -m "Update SPY data" || exit 0
-          git push
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/duke-haderach/smartcalendar.git"
