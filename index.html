@@ -200,7 +200,7 @@
       script.async = true;
       script.innerHTML = JSON.stringify({
         "symbols": [
-          [ "SPY", "AMEX:SPY|1D" ]
+          [ "SPY", "AMEX:SPY|1M" ]
         ],
         "chartOnly": false,
         "width": "100%",
@@ -300,7 +300,7 @@
         "latitude=" + LAT +
         "&longitude=" + LON +
         "&daily=temperature_2m_max,temperature_2m_min,weathercode" +
-	"&temperature_unit=fahrenheit" +
+		"&temperature_unit=fahrenheit" +
         "&current_weather=true&timezone=auto";
 
       fetch(url)
@@ -412,3 +412,4 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
