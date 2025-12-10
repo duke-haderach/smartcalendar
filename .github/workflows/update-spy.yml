@@ -11,7 +11,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
+        with:
+          ref: main        # if your default branch is main
+          persist-credentials: false
       - name: Fetch SPY daily from Alpha Vantage
         run: |
           curl "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=SPY&apikey=${{ secrets.ALPHA_VANTAGE_KEY }}" \
@@ -34,3 +36,4 @@ jobs:
           git push
           git commit -m "Update SPY data" || exit 0
           git push
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/duke-haderach/smartcalendar.git"
