@@ -17,7 +17,7 @@ jobs:
 
       - name: Fetch SPY daily from Alpha Vantage
         run: |
-          curl "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=SPY&apikey=GM253QVG6IA4ITPQ" \
+          curl "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=SPY&apikey=GM253QVG6IA4ITPQ" \
             -o spy.json
 
       - name: Commit and push updated spy.json
