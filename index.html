@@ -71,7 +71,11 @@
       font-size: 18px;
       opacity: 0.8;
     }
-
+	
+	#events-container {
+    max-height: 300px;    /* adjust to taste */
+    overflow-y: auto;     /* vertical scrollbar when needed */
+    }
     #events {
       flex: 1;
       overflow-y: auto;
@@ -161,7 +165,6 @@
       flex: 1;
       min-height: 220px;
     }
-
   </style>
 </head>
 <body>
@@ -173,6 +176,9 @@
         <div id="date">Loading date…</div>
       </div>
 
+		<div id="events-container">
+  		<div id="events"></div>
+		</div>
       <div class="panel" id="events-panel">
         <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
           Upcoming Events
@@ -304,23 +310,6 @@ async function initializeGapiClient() {
     apiKey: API_KEY,
     discoveryDocs: [DISCOVERY_DOC],
   });
-	  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (tokenResponse) => {
-      // token ready, now load events
-      loadCalendarEvents();
-    },
-  });
-const token = gapi.client.getToken();
-	 if (token === null) {
-    // First time: show account chooser + consent
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  } else {
-    // Subsequent loads in same browser session: no popup
-    tokenClient.requestAccessToken({ prompt: '' });
-  }
-}
   gapiInited = true;
   maybeInitAuth();
 }
@@ -452,8 +441,8 @@ function renderEvents(events) {
         "&longitude=" + LON +
         "&daily=temperature_2m_max,temperature_2m_min,weathercode" +
 		"&temperature_unit=fahrenheit" +
-        "&forecast_days=7 +
-		"&current_weather=true&timezone=auto";
+		"&forecast_days=7" +
+        "&current_weather=true&timezone=auto";
 
       fetch(url)
         .then(r => r.json())
@@ -564,10 +553,6 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
-
-
-
-
 
 
 
