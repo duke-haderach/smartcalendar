@@ -358,18 +358,61 @@ async function loadCalendarEvents() {
   renderEvents(events);  // uses your existing renderEvents(
 }
 
-	  function renderEvents(events) {
-      const container = document.getElementById("events");
-      container.innerHTML = "";
-      const byDate = {};
+function renderEvents(events) {
+  const container = document.getElementById("events");
+  container.innerHTML = "";
+  const byDate = {};
 
-      events.forEach(ev => {
-        const start = ev.start.dateTime || ev.start.date;
-        const d = new Date(start);
-        const key = d.toDateString();
-        if (!byDate[key]) byDate[key] = [];
-        byDate[key].push({ raw: ev, date: d });
-      });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // midnight today
+
+  events.forEach(ev => {
+    const start = ev.start.dateTime || ev.start.date;
+    const d = new Date(start);
+
+    // Skip events before today
+    if (d < today) return;
+
+    const key = d.toDateString();
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push({ raw: ev, date: d });
+  });
+
+  const days = Object.keys(byDate);
+  if (!days.length) {
+    container.textContent = "No upcoming events.";
+    return;
+  }
+
+  days
+    .sort((a, b) => new Date(a) - new Date(b))
+    .forEach(key => {
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "event-day";
+      dayHeader.textContent = key;
+      container.appendChild(dayHeader);
+
+      byDate[key]
+        .sort((a, b) => a.date - b.date)
+        .forEach(e => {
+          const item = document.createElement("div");
+          item.className = "event-item";
+
+          const timeSpan = document.createElement("span");
+          timeSpan.className = "event-time";
+          timeSpan.textContent = e.raw.start.dateTime
+            ? e.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "All day";
+
+          const titleSpan = document.createElement("span");
+          titleSpan.textContent = e.raw.summary || "(No title)";
+
+          item.appendChild(timeSpan);
+          item.appendChild(titleSpan);
+          container.appendChild(item);
+        });
+    });
+}
 
       Object.keys(byDate)
         .sort((a, b) => new Date(a) - new Date(b))
@@ -526,6 +569,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
