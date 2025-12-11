@@ -286,10 +286,12 @@ let gapiInited = false;
 let gisInited = false;
 
 function gapiLoaded() {
+  console.log("gapiLoaded called");	
   gapi.load("client", initializeGapiClient);
 }
 
 async function initializeGapiClient() {
+  console.log("initializeGapiClient called");	
   await gapi.client.init({
     apiKey: API_KEY,
     discoveryDocs: [DISCOVERY_DOC],
@@ -299,6 +301,7 @@ async function initializeGapiClient() {
 }
 
 function gisLoaded() {
+  console.log("gisLoaded called");	
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -523,6 +526,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
