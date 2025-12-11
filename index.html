@@ -328,7 +328,7 @@ function maybeInitAuth() {
 
 async function loadCalendarEvents() {
   const now = new Date();
-  const timeMin = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const timeMin = now.toISOString();
   const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   let resp;
@@ -526,6 +526,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
