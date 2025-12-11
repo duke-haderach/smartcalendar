@@ -17,7 +17,7 @@
       color: #ffffff;
       overflow: hidden;
     }
-
+ 
     body {
       /* TODO: point this to your image file */
       background-image: url("background.jpg");
@@ -95,14 +95,15 @@
     }
 
     .event-time {
-      font-weight: 600;
+      min-width: 70px;
+	  font-weight: 600;
       margin-right: 6px;
     }
 
 	  .event-location {
   display: block;       /* forces a new line under the row */
   font-size: 0.85rem;
-  color: #666;
+  color: #888;
   margin-left: 60px;       /* match width of your time column */
 }
 
@@ -427,14 +428,21 @@ function renderEvents(events) {
           titleSpan.textContent = e.raw.summary || "(No title)";
           item.appendChild(timeSpan);
 
-			//item.appendChild(titleSpan);
-			    // Location as second line inside the same item
+const textDiv = document.createElement("div");
+textDiv.className = "event-text";
+
+const titleSpan = document.createElement("div");
+titleSpan.className = "event-title";
+titleSpan.textContent = e.raw.summary || "(No title)";
+textDiv.appendChild(titleSpan);
+			
     if (e.raw.location) {
       const locDiv = document.createElement("div");
       locDiv.className = "event-location";
       locDiv.textContent = e.raw.location;  // plain text from Calendar
       item.appendChild(locDiv);
     }
+		  item.appendChild(textDiv);	
           container.appendChild(item);
         });
     });
@@ -562,6 +570,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
