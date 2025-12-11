@@ -72,7 +72,7 @@
       opacity: 0.8;
     }
 
-    #events {
+#events {
       flex: 1;
       overflow-y: auto;
       font-size: 16px;
@@ -86,25 +86,24 @@
       opacity: 0.9;
     }
 
-.event-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;              /* space between time and text */
-}
+    .event-item {
+      margin-top: 4px;
+      padding: 4px 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 4px;
+      font-size: 14px;
+    }
 
     .event-time {
       font-weight: 600;
       margin-right: 6px;
     }
 
-	  .event-content {
-  display: flex;
-  flex-direction: column;
-}
-.event-location {
+	  .event-location {
+  display: block;       /* forces a new line under the row */
   font-size: 0.85rem;
-  color: #666;
-}
+  color: #666;	  
+
 
     /* WEATHER: portrait list */
     #weather-panel {
@@ -562,6 +561,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
