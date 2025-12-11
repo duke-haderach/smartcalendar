@@ -99,15 +99,12 @@
       margin-right: 6px;
     }
 
-	  .event-title {
-  margin-left: 0; /* adjust if you align with time separately */
-}
-
-.event-location {
+	  .event-location {
+  display: block;       /* forces a new line under the row */
   font-size: 0.85rem;
   color: #666;
-  margin-left: 0; /* or align as needed */
 }
+
     /* WEATHER: portrait list */
     #weather-panel {
       flex: 1;
@@ -395,37 +392,34 @@ function renderEvents(events) {
           item.className = "event-item";
 
           const timeSpan = document.createElement("span");
-		  const isAllDay = !!e.raw.start.date;
-          const timeText = isAllDay	
-			  ? "All day"
-  : e.date.toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
           timeSpan.className = "event-time";
-          timeSpan.textContent = timeText;
+
+			    const isAllDay = !!e.raw.start.date;
+    timeSpan.textContent = isAllDay
+      ? "All day"
+      : e.date.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,  // <-- gives 9:30 AM style
+        });
+          timeSpan.textContent = e.raw.start.dateTime
             ? e.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : "All day";
 
           const titleSpan = document.createElement("span");
+			titleSpan.className = "event-title";
           titleSpan.textContent = e.raw.summary || "(No title)";
 
           item.appendChild(timeSpan);
           item.appendChild(titleSpan);
+			    // Location as second line inside the same item
+    if (e.raw.location) {
+      const locDiv = document.createElement("div");
+      locDiv.className = "event-location";
+      locDiv.textContent = e.raw.location;  // plain text from Calendar
+      item.appendChild(locDiv);
+    }
           container.appendChild(item);
-		const titleSpan = document.createElement("span");
-titleSpan.className = "event-title";
-titleSpan.textContent = e.raw.summary || "(No title)";
-item.appendChild(titleSpan);
-
-// Location on second line, if present
-if (e.raw.location) {
-  const locDiv = document.createElement("div");
-  locDiv.className = "event-location";
-  locDiv.textContent = e.raw.location; // free-form text from Calendar
-  item.appendChild(locDiv);
-}
         });
     });
 }
@@ -554,8 +548,6 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
-
-
 
 
 
