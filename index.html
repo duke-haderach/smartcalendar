@@ -95,6 +95,7 @@
       padding: 4px 6px;
       background: rgba(0, 255, 0, 0.05);
       border-radius: 4px;
+	  color: #f7f5f5;	
       font-size: 14px;
     }
 
@@ -103,17 +104,19 @@
       margin-right: 6px;
     }
 
-	  .event-location {
-  		display: block;       /* forces a new line under the row */
-  		font-size: 0.85rem;
-  		color: ##828181;
-  		margin-left: 60px;       /* match width of your time column */
+	.event-location {
+  	  display: block;       /* forces a new line under the row */
+  	  font-size: 0.85rem;
+  	  color: #e3dede;
+  	  margin-left: 60px;       /* match width of your time column */
 	}
 
     /* WEATHER: portrait list */
     #weather-panel {
       flex: 1;
       min-height: 180px;
+	  max-height: 260px;
+      overflow-y: auto;
     }
 
     #weather-current {
@@ -165,6 +168,30 @@
       flex: 1;
       min-height: 220px;
     }
+
+	.overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top,
+              rgba(0,0,0,0.35), rgba(0,0,0,0.85));
+  display: flex;
+  flex-direction: row;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Tablet / small screens: stack left and right vertically */
+@media (max-width: 900px) {
+  .overlay {
+    flex-direction: column;
+  }
+
+  .right-panel {
+    margin-left: 0;
+    margin-top: 16px;
+  }
+}
+  
   </style>
 </head>
 <body>
@@ -176,15 +203,14 @@
         <div id="date">Loading date…</div>
       </div>
 
-		<div id="events-container">
-  		<div id="events"></div>
-		</div>
       <div class="panel" id="events-panel">
         <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
           Upcoming Events
         </div>
+  		<div id="events-container">
         <div id="events">Loading events…</div>
       </div>
+	</div>
     </div>
 
     <!-- RIGHT column: weather + stock -->
@@ -552,6 +578,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
