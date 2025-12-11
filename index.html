@@ -54,7 +54,17 @@
       gap: 16px;
       margin-left: 16px;
     }
+	/* 3/4 height for weather, 1/4 for stock */
+	#weather-panel {
+  	flex: 3 1 0;
+  	min-height: 0;
+  	overflow-y: auto;        /* keeps it scrollable */
+	}
 
+	#stock-panel {
+  	flex: 1 1 0;
+  	min-height: 0;
+	}
     .panel {
       background: rgba(0, 0, 0, 0.45);
       border-radius: 8px;
@@ -107,9 +117,9 @@
 
 	.event-location {
   	  display: block;       /* forces a new line under the row */
-  	  font-size: 0.85rem;
+  	  font-size: 14px;
   	  color: #e3dede;
-  	  margin-left: 60px;       /* match width of your time column */
+  	  margin-left: 62px;       /* match width of your time column */
 	}
 
     /* WEATHER: portrait list */
@@ -579,6 +589,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
