@@ -328,8 +328,8 @@ function maybeInitAuth() {
 
 async function loadCalendarEvents() {
   const now = new Date();
-  const timeMin = now.toISOString();
-  const timeMax = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString();
+  const timeMin = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   let resp;
   try {
@@ -340,7 +340,7 @@ async function loadCalendarEvents() {
       showDeleted: false,
       singleEvents: true,
       orderBy: "startTime",
-      maxResults: 50,
+      maxResults: 100,
     });
   } catch (err) {
     document.getElementById("events").textContent = "Calendar error";
@@ -526,6 +526,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
