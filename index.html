@@ -89,7 +89,7 @@
     .event-item {
       margin-top: 4px;
       padding: 4px 6px;
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(0, 255, 0, 0.15);
       border-radius: 4px;
       font-size: 14px;
     }
@@ -103,6 +103,7 @@
   display: block;       /* forces a new line under the row */
   font-size: 0.85rem;
   color: #666;
+  margin-left: 70px;       /* match width of your time column */
 }
 
     /* WEATHER: portrait list */
@@ -402,10 +403,6 @@ function renderEvents(events) {
           minute: "2-digit",
           hour12: true,  // <-- gives 9:30 AM style
         });
-          timeSpan.textContent = e.raw.start.dateTime
-            ? e.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            : "All day";
-
           const titleSpan = document.createElement("span");
 			titleSpan.className = "event-title";
           titleSpan.textContent = e.raw.summary || "(No title)";
@@ -423,8 +420,6 @@ function renderEvents(events) {
         });
     });
 }
-
-
     // ===== OPEN-METEO WEATHER =====  [web:60][web:62]
     // Set to your location (example near Dardenne Prairie, MO)
     const LAT = 38.81;
@@ -548,6 +543,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
