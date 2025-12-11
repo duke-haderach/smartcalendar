@@ -441,7 +441,6 @@ function renderEvents(events) {
         "&longitude=" + LON +
         "&daily=temperature_2m_max,temperature_2m_min,weathercode" +
 		"&temperature_unit=fahrenheit" +
-		"&forecast_days=7" +
         "&current_weather=true&timezone=auto";
 
       fetch(url)
@@ -465,7 +464,7 @@ function renderWeather(data) {
   forecastEl.innerHTML = "";
 
   const days = daily.time.length;
-  for (let i = 0; i < Math.min(days, 5); i++) {
+  for (let i = 0; i < Math.min(days, 7); i++) {
     const d = new Date(daily.time[i]);
 
     const row = document.createElement("div");
@@ -553,6 +552,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
