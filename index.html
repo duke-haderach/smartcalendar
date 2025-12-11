@@ -89,7 +89,7 @@
     .event-item {
       margin-top: 4px;
       padding: 4px 6px;
-      background: rgba(0, 255, 0, 0.15);
+      background: rgba(0, 255, 0, 0.05);
       border-radius: 4px;
       font-size: 14px;
     }
@@ -103,7 +103,7 @@
   display: block;       /* forces a new line under the row */
   font-size: 0.85rem;
   color: #666;
-  margin-left: 70px;       /* match width of your time column */
+  margin-left: 60px;       /* match width of your time column */
 }
 
     /* WEATHER: portrait list */
@@ -393,6 +393,7 @@ function renderEvents(events) {
           item.className = "event-item";
 
           const timeSpan = document.createElement("span");
+		  const timeDiv = document.createElement("div");
           timeSpan.className = "event-time";
 
 			    const isAllDay = !!e.raw.start.date;
@@ -403,12 +404,30 @@ function renderEvents(events) {
           minute: "2-digit",
           hour12: true,  // <-- gives 9:30 AM style
         });
+			if (isAllDay) {
+  timeDiv.textContent = "All day";
+} else {
+  const startDate = new Date(e.raw.start.dateTime);
+  const endDate   = new Date(e.raw.end.dateTime);   // uses event.end.* from API [web:299]
+
+  const opts = { hour: "numeric", minute: "2-digit", hour12: true }; // 9:05 AM format [web:369][web:372]
+
+  const startSpan = document.createElement("div");
+  startSpan.textContent = startDate.toLocaleTimeString([], opts);
+
+  const endSpan = document.createElement("div");
+  endSpan.textContent = endDate.toLocaleTimeString([], opts);
+
+  timeDiv.appendChild(startSpan);
+  timeDiv.appendChild(endSpan);
+}
+			item.appendChild(timeDiv);
           const titleSpan = document.createElement("span");
 			titleSpan.className = "event-title";
           titleSpan.textContent = e.raw.summary || "(No title)";
-
           item.appendChild(timeSpan);
-          item.appendChild(titleSpan);
+
+			//item.appendChild(titleSpan);
 			    // Location as second line inside the same item
     if (e.raw.location) {
       const locDiv = document.createElement("div");
@@ -543,6 +562,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
