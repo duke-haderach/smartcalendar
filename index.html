@@ -17,7 +17,7 @@
       color: #ffffff;
       overflow: hidden;
     }
- 
+
     body {
       /* TODO: point this to your image file */
       background-image: url("background.jpg");
@@ -95,17 +95,16 @@
     }
 
     .event-time {
-      min-width: 70px;
-	  font-weight: 600;
+      font-weight: 600;
       margin-right: 6px;
     }
 
 	  .event-location {
-  display: block;       /* forces a new line under the row */
-  font-size: 0.85rem;
-  color: #888;
-  margin-left: 60px;       /* match width of your time column */
-}
+  		display: block;       /* forces a new line under the row */
+  		font-size: 0.85rem;
+  		color: #666;
+  		margin-left: 70px;       /* match width of your time column */
+	}
 
     /* WEATHER: portrait list */
     #weather-panel {
@@ -396,53 +395,29 @@ function renderEvents(events) {
           const timeSpan = document.createElement("span");
 		  const timeDiv = document.createElement("div");
           timeSpan.className = "event-time";
+          const isAllDay = !!e.raw.start.date;
+    	  timeSpan.textContent = isAllDay
+      		? "All day"
+      		: e.date.toLocaleTimeString([], {
+          	hour: "numeric",
+          	minute: "2-digit",
+          	hour12: true,  // <-- gives 9:30 AM style
+        	});
 
-			    const isAllDay = !!e.raw.start.date;
-    timeSpan.textContent = isAllDay
-      ? "All day"
-      : e.date.toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,  // <-- gives 9:30 AM style
-        });
-			if (isAllDay) {
-  timeDiv.textContent = "All day";
-} else {
-  const startDate = new Date(e.raw.start.dateTime);
-  const endDate   = new Date(e.raw.end.dateTime);   // uses event.end.* from API [web:299]
-
-  const opts = { hour: "numeric", minute: "2-digit", hour12: true }; // 9:05 AM format [web:369][web:372]
-
-  const startSpan = document.createElement("div");
-  startSpan.textContent = startDate.toLocaleTimeString([], opts);
-
-  const endSpan = document.createElement("div");
-  endSpan.textContent = endDate.toLocaleTimeString([], opts);
-
-  timeDiv.appendChild(startSpan);
-  timeDiv.appendChild(endSpan);
-}
-			item.appendChild(timeDiv);
-          const titleSpan = document.createElement("span");
+			const titleSpan = document.createElement("span");
 			titleSpan.className = "event-title";
-          titleSpan.textContent = e.raw.summary || "(No title)";
-          item.appendChild(timeSpan);
+			titleSpan.textContent = e.raw.summary || "(No title)";
 
-const textDiv = document.createElement("div");
-textDiv.className = "event-text";
+			item.appendChild(timeSpan);
+			item.appendChild(titleSpan);
 
-const titleSpan = document.createElement("div");
-titleSpan.className = "event-title";
-titleSpan.textContent = e.raw.summary || "(No title)";
-textDiv.appendChild(titleSpan);
-			
-    if (e.raw.location) {
-      const locDiv = document.createElement("div");
-      locDiv.className = "event-location";
-      locDiv.textContent = e.raw.location;  // plain text from Calendar
-      item.appendChild(locDiv);
-    }
-		  item.appendChild(textDiv);	
+			// Location as second line inside the same item
+    		if (e.raw.location) {
+      		const locDiv = document.createElement("div");
+      		locDiv.className = "event-location";
+      		locDiv.textContent = e.raw.location;  // plain text from Calendar
+      		item.appendChild(locDiv);
+    		}
           container.appendChild(item);
         });
     });
@@ -570,8 +545,6 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
-
-
 
 
 
