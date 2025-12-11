@@ -310,6 +310,23 @@ async function initializeGapiClient() {
     apiKey: API_KEY,
     discoveryDocs: [DISCOVERY_DOC],
   });
+	  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      // token ready, now load events
+      loadCalendarEvents();
+    },
+  });
+const token = gapi.client.getToken();
+	 if (token === null) {
+    // First time: show account chooser + consent
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  } else {
+    // Subsequent loads in same browser session: no popup
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+}
   gapiInited = true;
   maybeInitAuth();
 }
@@ -553,6 +570,7 @@ function getWeatherIcon(code) {
   </script>
 </body>
 </html>
+
 
 
 
