@@ -338,7 +338,6 @@ async function loadCalendarEvents() {
   renderEvents(events);  // uses your existing renderEvents(
   scheduleVoiceReminders(events);   // add this line
 }
-}
 
 function renderEvents(events) {
   const container = document.getElementById("events");
@@ -510,7 +509,8 @@ function getWeatherIcon(code) {
 
     // ===== VOICE REMINDERS =====  [web:58]
     function scheduleVoiceReminders(events) {
-      if (!("speechSynthesis" in window)) console.log("No speechSynthesis support"); 
+      if (!("speechSynthesis" in window)) 
+		  console.log("No speechSynthesis support");
 		return;
 	  console.log("Scheduling voice reminders for", events.length, "events");	
       const now = Date.now();
@@ -541,7 +541,7 @@ function getWeatherIcon(code) {
     script.async = true;
     script.innerHTML = JSON.stringify({
       symbols: [
-        ["SPY", "AMEX:SPY|1D"]
+        ["SPY", "AMEX:SPY|1M"]
       ],
       chartOnly: false,
       width: "100%",
@@ -558,5 +558,3 @@ function getWeatherIcon(code) {
 </script>
 </body>
 </html>
-
-
