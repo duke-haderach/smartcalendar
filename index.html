@@ -190,6 +190,22 @@
   box-sizing: border-box;
 }
 
+#enable-voice {
+  display: inline-block;
+  padding: 6px 10px;
+  margin-top: 4px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ffffff;
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 10;
+}
+
+#enable-voice:hover {
+  background: rgba(255,255,255,0.25);
+}
 /* Tablet / small screens: stack left and right vertically */
 /* @media (max-width: 900px) {
   .overlay {
@@ -205,7 +221,6 @@
   </style>
 </head>
 <body>
-  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
   <div class="overlay">
     <!-- LEFT column: clock + events -->
     <div class="left-panel">
@@ -218,6 +233,8 @@
         <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
           Upcoming Events
         </div>
+		<div style="margin-bottom:8px;">
+  		<button id="enable-voice">Enable voice alerts
   		<div id="events-container">
         <div id="events">Loading events…</div>
       </div>
@@ -237,6 +254,7 @@
     </div>
   </div>
 
+  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
   <!-- Google API script (for Calendar later) -->
   <script src="https://apis.google.com/js/api.js"></script>
   <script>
@@ -573,5 +591,6 @@ function getWeatherIcon(code) {
 </script>
 </body>
 </html>
+
 
 
