@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Wall Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
   <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
   <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>	
   <style>
@@ -124,9 +123,9 @@
 
     /* WEATHER: portrait list */
     #weather-panel {
-      flex: 1;
+      flex: 3 1 0;
       min-height: 180px;
-	  max-height: 460px;
+	  max-height: 1060px;
       overflow-y: auto;
     }
 
@@ -176,7 +175,7 @@
 
     /* STOCK */
     #stock-panel {
-      flex: 1;
+      flex: 2 1 0;
       min-height: 30px;
     }
 
@@ -235,7 +234,7 @@
   <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
     SPY
   </div>
-  <div id="spy-chart" style="width:100%;height:220px;"></div>
+  <div id="tradingview-widget" style="width:100%;height:100%;"></div>
 </div>
     </div>
   </div>
@@ -243,73 +242,6 @@
   <!-- Google API script (for Calendar later) -->
   <script src="https://apis.google.com/js/api.js"></script>
   <script>
-	  // ===== SPY CHART (Alpha Vantage + Lightweight Charts) =====
-	  const ALPHA_VANTAGE_KEY = "KQJ0GOU919M9TMLU";
-
-async function fetchSpyDailyData() {
-  const resp = await fetch("spy.json");  // same repo, served as static file
-  const data = await resp.json();
-  console.log("Alpha Vantage raw:", data); // <--- add this	
-  const seriesRaw = data["Time Series (Daily)"];
-  if (!seriesRaw) return [];
-
-  const points = Object.keys(seriesRaw)
-    .sort() // oldest → newest
-    .slice(-60) // last 60 days
-    .map(dateStr => {
-      const close = parseFloat(seriesRaw[dateStr]["4. close"]);
-      return { time: dateStr, value: close };
-    });
-  return points;
-}
-
-async function initSpyChart() {
-  const container = document.getElementById("spy-chart");
-  if (!container || typeof LightweightCharts === "undefined") return;
-
-  const chart = LightweightCharts.createChart(container, {
-    layout: {
-      background: { color: "rgba(0,0,0,0)" },
-      textColor: "#ffffff",
-    },
-    grid: {
-      vertLines: { color: "rgba(255,255,255,0.1)" },
-      horzLines: { color: "rgba(255,255,255,0.1)" },
-    },
-    rightPriceScale: {
-      borderColor: "rgba(255,255,255,0.2)",
-    },
-    timeScale: {
-      borderColor: "rgba(255,255,255,0.2)",
-    },
-  });
-
-  const series = chart.addAreaSeries({
-    lineColor: "#4caf50",
-    topColor: "rgba(76,175,80,0.4)",
-    bottomColor: "rgba(76,175,80,0.0)",
-  });
-
-  const resizeChart = () => {
-    const { width, height } = container.getBoundingClientRect();
-    chart.applyOptions({ width, height });
-  };
-  resizeChart();
-  window.addEventListener("resize", resizeChart);
-
-  try {
-    const data = await fetchSpyDailyData();
-    if (data.length > 0) {
-      series.setData(data);
-		chart.timeScale().fitContent(); // ensure all bars are visible [web:229]
-    }
-  } catch (e) {
-    console.error("SPY data error", e);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", initSpyChart);
-
     // ===== CLOCK =====
     function updateClock() {
       const now = new Date();
@@ -500,10 +432,20 @@ function renderWeather(data) {
   const forecastEl = document.getElementById("weather-forecast");
   forecastEl.innerHTML = "";
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+	
   const days = daily.time.length;
-  for (let i = 0; i < Math.min(days, 7); i++) {
+  let shown = 0;
+	
+  for (let i = 0; i < days && shown < 7; i++) {
     const d = new Date(daily.time[i]);
+	const localDay = new Date(d);
+    localDay.setHours(0, 0, 0, 0);
 
+    // Skip any entry before "today" in local time
+    if (localDay < today) continue;
+	  
     const row = document.createElement("div");
     row.className = "weather-day";
 
@@ -536,6 +478,7 @@ function renderWeather(data) {
     row.appendChild(descEl);
 
     forecastEl.appendChild(row);
+	shown++;
   }
 }
 
@@ -586,27 +529,32 @@ function getWeatherIcon(code) {
         }, delay);
       });
     }
-  </script>
+	  </script>
+<!-- TradingView stock widget -->
+<script type="text/javascript">
+  (function () {
+    const container = document.getElementById("tradingview-widget");
+    if (!container) return;
+
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      symbols: [
+        ["SPY", "AMEX:SPY|1D"]
+      ],
+      chartOnly: false,
+      width: "100%",
+      height: "100%",
+      locale: "en",
+      colorTheme: "dark",
+      autosize: true,
+      showVolume: true
+    });
+
+    container.style.height = "100%";
+    container.appendChild(script);
+  })();
+</script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
