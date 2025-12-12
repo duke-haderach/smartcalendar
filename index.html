@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <title>Wall Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google APIs (Calendar) -->
   <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>	
+  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
   <style>
     html, body {
       margin: 0;
@@ -18,7 +21,6 @@
     }
 
     body {
-      /* TODO: point this to your image file */
       background-image: url("background.jpg");
       background-size: cover;
       background-position: center;
@@ -32,7 +34,7 @@
       background: radial-gradient(circle at top,
                   rgba(0,0,0,0.35), rgba(0,0,0,0.85));
       display: flex;
-      flex-direction: row;   /* left + right columns */
+      flex-direction: row;
       padding: 16px;
       box-sizing: border-box;
     }
@@ -52,7 +54,22 @@
       flex-direction: column;  /* weather above, stock below */
       gap: 16px;
       margin-left: 16px;
+      min-height: 0;
     }
+
+    /* Weather ~60%, stock ~40% of right column */
+    #weather-panel {
+      flex: 3 1 0;
+      min-height: 180px;
+      max-height: 1060px;
+      overflow-y: auto;
+    }
+
+    #stock-panel {
+      flex: 2 1 0;
+      min-height: 140px;
+    }
+
     .panel {
       background: rgba(0, 0, 0, 0.45);
       border-radius: 8px;
@@ -69,11 +86,12 @@
       font-size: 18px;
       opacity: 0.8;
     }
-	
-	#events-container {
-    max-height: 800px;    /* adjust to taste */
-    overflow-y: auto;     /* vertical scrollbar when needed */
+
+    #events-container {
+      max-height: 800px;
+      overflow-y: auto;
     }
+
     #events {
       flex: 1;
       overflow-y: auto;
@@ -93,9 +111,9 @@
       padding: 4px 6px;
       background: rgba(0, 255, 0, 0.05);
       border-radius: 4px;
-	  color: #f7f5f5;	
+      color: #f7f5f5;
       font-size: 15px;
-	  font-weight: bold;
+      font-weight: bold;
     }
 
     .event-time {
@@ -103,21 +121,14 @@
       margin-right: 6px;
     }
 
-	.event-location {
-  	  display: block;       /* forces a new line under the row */
-  	  font-size: 12px;
-  	  color: #e3dede;
-  	  margin-left: 65px;       /* match width of your time column */
-	}
-
-    /* WEATHER: portrait list */
-    #weather-panel {
-      flex: 3 1 0;
-      min-height: 180px;
-	  max-height: 1060px;
-      overflow-y: auto;
+    .event-location {
+      display: block;
+      font-size: 12px;
+      color: #e3dede;
+      margin-left: 65px;
     }
 
+    /* WEATHER: portrait list */
     #weather-current {
       font-size: 22px;
       font-weight: 600;
@@ -126,7 +137,7 @@
     #weather-forecast {
       margin-top: 8px;
       display: flex;
-      flex-direction: column;   /* stack days vertically */
+      flex-direction: column;
       gap: 6px;
       font-size: 14px;
     }
@@ -140,11 +151,11 @@
       border-radius: 4px;
     }
 
-.weather-icon {
-  width: 38px;
-  height: 38px;
-  margin-right: 8px;
-}	
+    .weather-icon {
+      width: 38px;
+      height: 38px;
+      margin-right: 8px;
+    }
 
     .weather-name {
       width: 80px;
@@ -162,24 +173,23 @@
       text-align: right;
     }
 
-    /* STOCK */
-    #stock-panel {
-      flex: 2 1 0;
-      min-height: 30px;
+    /* Enable‑voice button */
+    #enable-voice {
+      display: none;
+      padding: 6px 10px;
+      margin-top: 6px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ffffff;
+      background: rgba(255,255,255,0.1);
+      color: #ffffff;
+      cursor: pointer;
     }
 
-  .overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top,
-              rgba(0,0,0,0.35), rgba(0,0,0,0.85));
-  display: flex;
-  flex-direction: row;
-  padding: 16px;
-  box-sizing: border-box;
-}
-  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
-</style>
+    #enable-voice:hover {
+      background: rgba(255,255,255,0.25);
+    }
+  </style>
 </head>
 <body>
   <div class="overlay">
@@ -194,10 +204,11 @@
         <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
           Upcoming Events
         </div>
-  		<div id="events-container">
-        <div id="events">Loading events…</div>
+        <button id="enable-voice">Enable voice alerts</button>
+        <div id="events-container">
+          <div id="events">Loading events…</div>
+        </div>
       </div>
-	</div>
     </div>
 
     <!-- RIGHT column: weather + stock -->
@@ -207,14 +218,12 @@
         <div id="weather-forecast"></div>
       </div>
 
-<div class="panel" id="stock-panel">
-  <div id="tradingview-widget" style="width:100%;height:100%;"></div>
-</div>
+      <div class="panel" id="stock-panel">
+        <div id="tradingview-widget" style="width:100%;height:100%;"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Google API script (for Calendar later) -->
-  <script src="https://apis.google.com/js/api.js"></script>
   <script>
     // ===== CLOCK =====
     function updateClock() {
@@ -231,154 +240,154 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-// ===== GOOGLE CALENDAR AUTH + LOAD =====
-const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
-const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+    // ===== GOOGLE CALENDAR AUTH + LOAD =====
+    const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
+    const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
+    const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+    const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 
-let tokenClient;
-let gapiInited = false;
-let gisInited = false;
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
 
-function gapiLoaded() {
-  console.log("gapiLoaded called");	
-  gapi.load("client", initializeGapiClient);
-}
+    function gapiLoaded() {
+      console.log("gapiLoaded called");
+      gapi.load("client", initializeGapiClient);
+    }
 
-async function initializeGapiClient() {
-  console.log("initializeGapiClient called");	
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: [DISCOVERY_DOC],
-  });
-  gapiInited = true;
-  maybeInitAuth();
-}
+    async function initializeGapiClient() {
+      console.log("initializeGapiClient called");
+      await gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY_DOC],
+      });
+      gapiInited = true;
+      maybeInitAuth();
+    }
 
-function gisLoaded() {
-  console.log("gisLoaded called");	
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: "", // set later
-  });
-  gisInited = true;
-  maybeInitAuth();
-}
+    function gisLoaded() {
+      console.log("gisLoaded called");
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: "", // set later
+      });
+      gisInited = true;
+      maybeInitAuth();
+    }
 
-function maybeInitAuth() {
-  if (!(gapiInited && gisInited)) return;
+    function maybeInitAuth() {
+      if (!(gapiInited && gisInited)) return;
 
-  tokenClient.callback = async (resp) => {
-    if (resp.error) throw resp;
-    await loadCalendarEvents();
-  };
+      tokenClient.callback = async (resp) => {
+        if (resp.error) throw resp;
+        await loadCalendarEvents();
+      };
 
-  if (gapi.client.getToken() === null) {
-    tokenClient.requestAccessToken({ prompt: "consent" }); // shows Google consent first time
-  } else {
-    tokenClient.requestAccessToken({ prompt: "" });
-  }
-}
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({ prompt: "consent" });
+      } else {
+        tokenClient.requestAccessToken({ prompt: "" });
+      }
+    }
 
-async function loadCalendarEvents() {
-  const now = new Date();
-  const timeMin = now.toISOString();
-  const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    async function loadCalendarEvents() {
+      const now = new Date();
+      const timeMin = now.toISOString();
+      const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  let resp;
-  try {
-    resp = await gapi.client.calendar.events.list({
-      calendarId: "family03331431524389313579@group.calendar.google.com",
-      timeMin,
-      timeMax,
-      showDeleted: false,
-      singleEvents: true,
-      orderBy: "startTime",
-      maxResults: 100,
-    });
-  } catch (err) {
-    document.getElementById("events").textContent = "Calendar error";
-    console.error(err);
-    return;
-  }
-  console.log("Calendar raw:", resp);               // <--- new	
-  const events = resp.result.items || [];
-  console.log("Calendar events length:", events.length);  // <--- new	
-
-  if (!events.length) {
-   document.getElementById("events").textContent = "No events found.";
-  return;
-  }
-  renderEvents(events);  // uses your existing renderEvents(
-  const btn = document.getElementById("enable-voice");
-  btn.style.display = "inline-block";
-  btn.onclick = () => {
-    scheduleVoiceReminders(events);     // now runs after user gesture
-    btn.style.display = "none";
-  };
-}
-
-function renderEvents(events) {
-  const container = document.getElementById("events");
-  container.innerHTML = "";
-  const byDate = {};
-
-  events.forEach(ev => {
-    const start = ev.start.dateTime || ev.start.date;
-    const d = new Date(start);
-    const key = d.toDateString();
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push({ raw: ev, date: d });
-  });
-
-  Object.keys(byDate)
-    .sort((a, b) => new Date(a) - new Date(b))
-    .forEach(key => {
-      const dayHeader = document.createElement("div");
-      dayHeader.className = "event-day";
-      dayHeader.textContent = key;
-      container.appendChild(dayHeader);
-
-      byDate[key]
-        .sort((a, b) => a.date - b.date)
-        .forEach(e => {
-          const item = document.createElement("div");
-          item.className = "event-item";
-
-          const timeSpan = document.createElement("span");
-		  const timeDiv = document.createElement("div");
-          timeSpan.className = "event-time";
-          const isAllDay = !!e.raw.start.date;
-    	  timeSpan.textContent = isAllDay
-      		? "All day"
-      		: e.date.toLocaleTimeString([], {
-          	hour: "numeric",
-          	minute: "2-digit",
-          	hour12: true,  // <-- gives 9:30 AM style
-        	});
-
-			const titleSpan = document.createElement("span");
-			titleSpan.className = "event-title";
-			titleSpan.textContent = e.raw.summary || "(No title)";
-
-			item.appendChild(timeSpan);
-			item.appendChild(titleSpan);
-
-			// Location as second line inside the same item
-    		if (e.raw.location) {
-      		const locDiv = document.createElement("div");
-      		locDiv.className = "event-location";
-      		locDiv.textContent = e.raw.location;  // plain text from Calendar
-      		item.appendChild(locDiv);
-    		}
-          container.appendChild(item);
+      let resp;
+      try {
+        resp = await gapi.client.calendar.events.list({
+          calendarId: "family03331431524389313579@group.calendar.google.com",
+          timeMin,
+          timeMax,
+          showDeleted: false,
+          singleEvents: true,
+          orderBy: "startTime",
+          maxResults: 100,
         });
-    });
-}
+      } catch (err) {
+        document.getElementById("events").textContent = "Calendar error";
+        console.error(err);
+        return;
+      }
+
+      const events = resp.result.items || [];
+      if (!events.length) {
+        document.getElementById("events").textContent = "No events found.";
+        return;
+      }
+
+      renderEvents(events);
+
+      // show enable‑voice button and schedule on click
+      const btn = document.getElementById("enable-voice");
+      btn.style.display = "inline-block";
+      btn.onclick = () => {
+        scheduleVoiceReminders(events);
+        btn.style.display = "none";
+      };
+    }
+
+    function renderEvents(events) {
+      const container = document.getElementById("events");
+      container.innerHTML = "";
+      const byDate = {};
+
+      events.forEach(ev => {
+        const start = ev.start.dateTime || ev.start.date;
+        const d = new Date(start);
+        const key = d.toDateString();
+        if (!byDate[key]) byDate[key] = [];
+        byDate[key].push({ raw: ev, date: d });
+      });
+
+      Object.keys(byDate)
+        .sort((a, b) => new Date(a) - new Date(b))
+        .forEach(key => {
+          const dayHeader = document.createElement("div");
+          dayHeader.className = "event-day";
+          dayHeader.textContent = key;
+          container.appendChild(dayHeader);
+
+          byDate[key]
+            .sort((a, b) => a.date - b.date)
+            .forEach(e => {
+              const item = document.createElement("div");
+              item.className = "event-item";
+
+              const timeSpan = document.createElement("span");
+              timeSpan.className = "event-time";
+              const isAllDay = !!e.raw.start.date;
+              timeSpan.textContent = isAllDay
+                ? "All day"
+                : e.date.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  });
+
+              const titleSpan = document.createElement("span");
+              titleSpan.className = "event-title";
+              titleSpan.textContent = e.raw.summary || "(No title)";
+
+              item.appendChild(timeSpan);
+              item.appendChild(titleSpan);
+
+              if (e.raw.location) {
+                const locDiv = document.createElement("div");
+                locDiv.className = "event-location";
+                locDiv.textContent = e.raw.location;
+                item.appendChild(locDiv);
+              }
+
+              container.appendChild(item);
+            });
+        });
+    }
+
     // ===== OPEN-METEO WEATHER =====  [web:60][web:62]
-    // Set to your location (example near Dardenne Prairie, MO)
     const LAT = 38.81;
     const LON = -90.72;
 
@@ -388,7 +397,7 @@ function renderEvents(events) {
         "latitude=" + LAT +
         "&longitude=" + LON +
         "&daily=temperature_2m_max,temperature_2m_min,weathercode" +
-		"&temperature_unit=fahrenheit" +
+        "&temperature_unit=fahrenheit" +
         "&current_weather=true&timezone=auto";
 
       fetch(url)
@@ -400,81 +409,77 @@ function renderEvents(events) {
         });
     }
 
-function renderWeather(data) {
-  const current = data.current_weather;
-  const daily = data.daily;
+    function renderWeather(data) {
+      const current = data.current_weather;
+      const daily = data.daily;
 
-  const currentEl = document.getElementById("weather-current");
-  currentEl.textContent =
-    Math.round(current.temperature) + "°  " + mapWeatherCode(current.weathercode);
+      const currentEl = document.getElementById("weather-current");
+      currentEl.textContent =
+        Math.round(current.temperature) + "°  " + mapWeatherCode(current.weathercode);
 
-  const forecastEl = document.getElementById("weather-forecast");
-  forecastEl.innerHTML = "";
+      const forecastEl = document.getElementById("weather-forecast");
+      forecastEl.innerHTML = "";
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-	
-  const days = daily.time.length;
-  let shown = 0;
-	
-  for (let i = 0; i < days && shown < 7; i++) {
-    const d = new Date(daily.time[i]);
-	const localDay = new Date(d);
-    localDay.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    // Skip any entry before "today" in local time
-    if (localDay < today) continue;
-	  
-    const row = document.createElement("div");
-    row.className = "weather-day";
+      const days = daily.time.length;
+      let shown = 0;
 
-    const iconEl = document.createElement("img");
-    iconEl.className = "weather-icon";
-    iconEl.src = getWeatherIcon(daily.weathercode[i]);
-    iconEl.alt = mapWeatherCode(daily.weathercode[i]);
+      for (let i = 0; i < days && shown < 7; i++) {
+        const d = new Date(daily.time[i]);
+        const localDay = new Date(d);
+        localDay.setHours(0, 0, 0, 0);
+        if (localDay < today) continue;
 
-    const nameEl = document.createElement("div");
-    nameEl.className = "weather-name";
-      nameEl.textContent = d.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  }); // e.g. "Wed Dec 10" [web:146]
+        const row = document.createElement("div");
+        row.className = "weather-day";
 
-    const tempEl = document.createElement("div");
-    tempEl.className = "weather-temp";
-    const hi = Math.round(daily.temperature_2m_max[i]);
-    const lo = Math.round(daily.temperature_2m_min[i]);
-    tempEl.textContent = hi + "° / " + lo + "°";
+        const iconEl = document.createElement("img");
+        iconEl.className = "weather-icon";
+        iconEl.src = getWeatherIcon(daily.weathercode[i]);
+        iconEl.alt = mapWeatherCode(daily.weathercode[i]);
 
-    const descEl = document.createElement("div");
-    descEl.className = "weather-desc";
-    descEl.textContent = mapWeatherCode(daily.weathercode[i]);
+        const nameEl = document.createElement("div");
+        nameEl.className = "weather-name";
+        nameEl.textContent = d.toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric"
+        });
 
-    row.appendChild(iconEl);
-    row.appendChild(nameEl);
-    row.appendChild(tempEl);
-    row.appendChild(descEl);
+        const tempEl = document.createElement("div");
+        tempEl.className = "weather-temp";
+        const hi = Math.round(daily.temperature_2m_max[i]);
+        const lo = Math.round(daily.temperature_2m_min[i]);
+        tempEl.textContent = hi + "° / " + lo + "°";
 
-    forecastEl.appendChild(row);
-	shown++;
-  }
-}
+        const descEl = document.createElement("div");
+        descEl.className = "weather-desc";
+        descEl.textContent = mapWeatherCode(daily.weathercode[i]);
 
-function getWeatherIcon(code) {
-  // Put PNG/SVGs with these names in the same folder as index.html
-  if (code === 0) return "icons/clear.png";                     // Clear
-  if ([1, 2, 3].includes(code)) return "icons/partly-cloudy.png"; // Mainly/cloudy
-  if ([45, 48].includes(code)) return "icons/fog.png";
-  if ([51, 53, 55, 56, 57].includes(code)) return "icons/drizzle.png";
-  if ([61, 63, 65, 80, 81, 82].includes(code)) return "icons/rain.png";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "icons/snow.png";
-  if ([95, 96, 99].includes(code)) return "icons/storm.png";
-  return "icons/unknown.png";
-}
+        row.appendChild(iconEl);
+        row.appendChild(nameEl);
+        row.appendChild(tempEl);
+        row.appendChild(descEl);
+
+        forecastEl.appendChild(row);
+        shown++;
+      }
+    }
+
+    function getWeatherIcon(code) {
+      if (code === 0) return "icons/clear.png";
+      if ([1, 2, 3].includes(code)) return "icons/partly-cloudy.png";
+      if ([45, 48].includes(code)) return "icons/fog.png";
+      if ([51, 53, 55, 56, 57].includes(code)) return "icons/drizzle.png";
+      if ([61, 63, 65, 80, 81, 82].includes(code)) return "icons/rain.png";
+      if ([71, 73, 75, 77, 85, 86].includes(code)) return "icons/snow.png";
+      if ([95, 96, 99].includes(code)) return "icons/storm.png";
+      return "icons/unknown.png";
+    }
 
     function mapWeatherCode(code) {
-      // Simple mapping; expand as needed. [web:62]
       if (code === 0) return "Clear";
       if ([1,2,3].includes(code)) return "Cloudy";
       if ([45,48].includes(code)) return "Fog";
@@ -486,80 +491,79 @@ function getWeatherIcon(code) {
     }
 
     loadWeather();
-    setInterval(loadWeather, 60 * 60 * 1000); // hourly refresh
+    setInterval(loadWeather, 60 * 60 * 1000);
 
-    // ===== VOICE REMINDERS =====  [web:58]
-function scheduleVoiceReminders(events) {
-  if (!("speechSynthesis" in window)) {
-    console.log("No speechSynthesis support");
-    return;
-  }
+    // ===== VOICE REMINDERS =====
+    function scheduleVoiceReminders(events) {
+      if (!("speechSynthesis" in window)) {
+        console.log("No speechSynthesis support");
+        return;
+      }
 
-  console.log("Scheduling voice reminders for", events.length, "events");
-  const now = Date.now();
+      console.log("Scheduling voice reminders for", events.length, "events");
+      const now = Date.now();
 
-  events.forEach(ev => {
-    if (!ev.start || !ev.start.dateTime) return; // skip all‑day for now
+      events.forEach(ev => {
+        if (!ev.start || !ev.start.dateTime) return; // skip all‑day for now
 
-    const start = new Date(ev.start.dateTime).getTime();
+        const start = new Date(ev.start.dateTime).getTime();
 
-    // 30‑minute reminder
-    const remind30 = start - 30 * 60 * 1000;
-    const delay30 = remind30 - now;
-    if (delay30 > 0) {
-      console.log("30‑min reminder in", Math.round(delay30 / 1000), "sec for", ev.summary);
-      setTimeout(() => {
-        const msg =
-          "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
-        const utter = new SpeechSynthesisUtterance(msg);
-        utter.onerror = (e) => console.log("speech error 30:", e.error);
-        window.speechSynthesis.speak(utter);
-      }, delay30);
+        // 30‑minute reminder
+        const remind30 = start - 30 * 60 * 1000;
+        const delay30 = remind30 - now;
+        if (delay30 > 0) {
+          console.log("30‑min reminder in", Math.round(delay30 / 1000), "sec for", ev.summary);
+          setTimeout(() => {
+            const msg =
+              "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
+            const utter = new SpeechSynthesisUtterance(msg);
+            utter.onerror = (e) => console.log("speech error 30:", e.error);
+            window.speechSynthesis.speak(utter);
+          }, delay30);
+        }
+
+        // 15‑minute reminder
+        const remind15 = start - 15 * 60 * 1000;
+        const delay15 = remind15 - now;
+        if (delay15 > 0) {
+          console.log("15‑min reminder in", Math.round(delay15 / 1000), "sec for", ev.summary);
+          setTimeout(() => {
+            const msg =
+              "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
+            const utter = new SpeechSynthesisUtterance(msg);
+            utter.onerror = (e) => console.log("speech error 15:", e.error);
+            window.speechSynthesis.speak(utter);
+          }, delay15);
+        }
+      });
     }
+  </script>
 
-    // 15‑minute reminder
-    const remind15 = start - 15 * 60 * 1000;
-    const delay15 = remind15 - now;
-    if (delay15 > 0) {
-      console.log("15‑min reminder in", Math.round(delay15 / 1000), "sec for", ev.summary);
-      setTimeout(() => {
-        const msg =
-          "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
-        const utter = new SpeechSynthesisUtterance(msg);
-        utter.onerror = (e) => console.log("speech error 15:", e.error);
-        window.speechSynthesis.speak(utter);
-      }, delay15);
-    }
-  });
-}
+  <!-- TradingView stock widget -->
+  <script type="text/javascript">
+    (function () {
+      const container = document.getElementById("tradingview-widget");
+      if (!container) return;
 
-	  </script>
-<!-- TradingView stock widget -->
-<script type="text/javascript">
-  (function () {
-    const container = document.getElementById("tradingview-widget");
-    if (!container) return;
+      const script = document.createElement("script");
+      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
+      script.async = true;
+      script.innerHTML = JSON.stringify({
+        symbols: [
+          ["SPY", "AMEX:SPY|1M"]
+        ],
+        chartOnly: false,
+        width: "100%",
+        height: "100%",
+        locale: "en",
+        colorTheme: "dark",
+        autosize: true,
+        showVolume: true
+      });
 
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      symbols: [
-        ["SPY", "AMEX:SPY|1M"]
-      ],
-      chartOnly: false,
-      width: "100%",
-      height: "100%",
-      locale: "en",
-      colorTheme: "dark",
-      autosize: true,
-      showVolume: true
-    });
-
-    container.style.height = "100%";
-    container.appendChild(script);
-  })();
-</script>
+      container.style.height = "100%";
+      container.appendChild(script);
+    })();
+  </script>
 </body>
 </html>
-
