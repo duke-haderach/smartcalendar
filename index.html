@@ -205,6 +205,7 @@
   </style>
 </head>
 <body>
+  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
   <div class="overlay">
     <!-- LEFT column: clock + events -->
     <div class="left-panel">
@@ -336,7 +337,12 @@ async function loadCalendarEvents() {
   return;
   }
   renderEvents(events);  // uses your existing renderEvents(
-  scheduleVoiceReminders(events);   // add this line
+  const btn = document.getElementById("enable-voice");
+  btn.style.display = "inline-block";
+  btn.onclick = () => {
+    scheduleVoiceReminders(events);     // now runs after user gesture
+    btn.style.display = "none";
+  };
 }
 
 function renderEvents(events) {
@@ -509,6 +515,11 @@ function getWeatherIcon(code) {
 
     // ===== VOICE REMINDERS =====  [web:58]
     function scheduleVoiceReminders(events) {
+	  setTimeout(() => {
+      const utter = new SpeechSynthesisUtterance(msg);
+      utter.onerror = (e) => console.log("speech error", e.error);
+  	  window.speechSynthesis.speak(utter);
+      }, delay);	
       if (!("speechSynthesis" in window)) 
 		  console.log("No speechSynthesis support");
 		return;
@@ -558,3 +569,4 @@ function getWeatherIcon(code) {
 </script>
 </body>
 </html>
+
