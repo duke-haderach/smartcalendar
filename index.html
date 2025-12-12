@@ -495,6 +495,7 @@
 
     // ===== VOICE REMINDERS =====
     function scheduleVoiceReminders(events) {
+      console.log("RUNNING DELAYED REMINDER VERSION")
       if (!("speechSynthesis" in window)) {
         console.log("No speechSynthesis support");
         return;
@@ -517,7 +518,7 @@
             const msg =
               "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
             const utter = new SpeechSynthesisUtterance(msg);
-            utter.onerror = (e) => console.log("speech error 30:", e.error);
+            //utter.onerror = (e) => console.log("speech error 30:", e.error);
             window.speechSynthesis.speak(utter);
           }, delay30);
         }
@@ -531,7 +532,7 @@
             const msg =
               "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
             const utter = new SpeechSynthesisUtterance(msg);
-            utter.onerror = (e) => console.log("speech error 15:", e.error);
+            //utter.onerror = (e) => console.log("speech error 15:", e.error);
             window.speechSynthesis.speak(utter);
           }, delay15);
         }
@@ -567,3 +568,4 @@
   </script>
 </body>
 </html>
+
