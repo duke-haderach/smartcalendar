@@ -340,7 +340,11 @@ async function loadCalendarEvents() {
   const btn = document.getElementById("enable-voice");
   btn.style.display = "inline-block";
   btn.onclick = () => {
-    scheduleVoiceReminders(events);     // now runs after user gesture
+	console.log("Enable voice clicked");
+    const test = new SpeechSynthesisUtterance("Test voice alert");
+    test.onerror = (e) => console.log("speech error:", e.error);
+    window.speechSynthesis.speak(test);  
+    //scheduleVoiceReminders(events);     // now runs after user gesture
     btn.style.display = "none";
   };
 }
@@ -569,4 +573,5 @@ function getWeatherIcon(code) {
 </script>
 </body>
 </html>
+
 
