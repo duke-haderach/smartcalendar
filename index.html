@@ -190,22 +190,6 @@
   box-sizing: border-box;
 }
 
-/* #enable-voice {
-  display: inline-block;
-  padding: 6px 10px;
-  margin-top: 4px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ffffff;
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-  cursor: pointer;
-  z-index: 10;
-}
-
-#enable-voice:hover {
-  background: rgba(255,255,255,0.25);
-} */
 /* Tablet / small screens: stack left and right vertically */
 /* @media (max-width: 900px) {
   .overlay {
@@ -221,6 +205,7 @@
   </style>
 </head>
 <body>
+  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
   <div class="overlay">
     <!-- LEFT column: clock + events -->
     <div class="left-panel">
@@ -233,8 +218,6 @@
         <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
           Upcoming Events
         </div>
-		<div style="margin-bottom:8px;">
-  		<button id="enable-voice">Enable voice alerts
   		<div id="events-container">
         <div id="events">Loading events…</div>
       </div>
@@ -254,7 +237,6 @@
     </div>
   </div>
 
-  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
   <!-- Google API script (for Calendar later) -->
   <script src="https://apis.google.com/js/api.js"></script>
   <script>
@@ -358,10 +340,6 @@ async function loadCalendarEvents() {
   const btn = document.getElementById("enable-voice");
   btn.style.display = "inline-block";
   btn.onclick = () => {
-	console.log("Enable voice clicked");
-    const test = new SpeechSynthesisUtterance("Voice alerts enabled");
-    test.onerror = (e) => console.log("speech error:", e.error);
-    window.speechSynthesis.speak(test);  
     scheduleVoiceReminders(events);     // now runs after user gesture
     btn.style.display = "none";
   };
@@ -536,41 +514,32 @@ function getWeatherIcon(code) {
     setInterval(loadWeather, 60 * 60 * 1000); // hourly refresh
 
     // ===== VOICE REMINDERS =====  [web:58]
-function scheduleVoiceReminders(events) {
-  if (!("speechSynthesis" in window)) return;
+    function scheduleVoiceReminders(events) {
+	  setTimeout(() => {
+      const utter = new SpeechSynthesisUtterance(msg);
+      utter.onerror = (e) => console.log("speech error", e.error);
+  	  window.speechSynthesis.speak(utter);
+      }, delay);	
+      if (!("speechSynthesis" in window)) 
+		  console.log("No speechSynthesis support");
+		return;
+	  console.log("Scheduling voice reminders for", events.length, "events");	
+      const now = Date.now();
+      events.forEach(ev => {
+        if (!ev.start || !ev.start.dateTime) return; // skip all‑day for now
+        const start = new Date(ev.start.dateTime).getTime();
+        const remindAt = start - 30 * 60 * 1000;
+        const delay = remindAt - now;
+        if (delay <= 0) return;
 
-  const now = Date.now();
-
-  events.forEach(ev => {
-    if (!ev.start || !ev.start.dateTime) return;   // skip all‑day for now
-
-    const start = new Date(ev.start.dateTime).getTime();
-
-    // 30‑minute reminder
-    const remind30 = start - 30 * 60 * 1000;
-    const delay30 = remind30 - now;
-    if (delay30 > 0) {
-      console.log("30‑min reminder in", Math.round(delay30 / 1000), "sec for", ev.summary);
-      setTimeout(() => {
-        const msg = "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
-        const u = new SpeechSynthesisUtterance(msg);
-        window.speechSynthesis.speak(u);
-      }, delay30);
+        setTimeout(() => {
+          const msg =
+            "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
+          const utter = new SpeechSynthesisUtterance(msg);
+          window.speechSynthesis.speak(utter);
+        }, delay);
+      });
     }
-
-    // 15‑minute reminder
-    const remind15 = start - 15 * 60 * 1000;
-    const delay15 = remind15 - now;
-    if (delay15 > 0) {
-      console.log("15‑min reminder in", Math.round(delay15 / 1000), "sec for", ev.summary);
-      setTimeout(() => {
-        const msg = "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
-        const u = new SpeechSynthesisUtterance(msg);
-        window.speechSynthesis.speak(u);
-      }, delay15);
-    }
-  });
-}
 	  </script>
 <!-- TradingView stock widget -->
 <script type="text/javascript">
@@ -600,7 +569,3 @@ function scheduleVoiceReminders(events) {
 </script>
 </body>
 </html>
-
-
-
-
