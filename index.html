@@ -494,50 +494,50 @@
     setInterval(loadWeather, 60 * 60 * 1000);
 
     // ===== VOICE REMINDERS =====
-    function scheduleVoiceReminders(events) {
-      console.log("RUNNING DELAYED REMINDER VERSION")
-      if (!("speechSynthesis" in window)) {
-        console.log("No speechSynthesis support");
-        return;
-      }
+function scheduleVoiceReminders(events) {
+  if (!("speechSynthesis" in window)) {
+    console.log("No speechSynthesis support");
+    return;
+  }
 
-      console.log("Scheduling voice reminders for", events.length, "events");
-      const now = Date.now();
+  console.log("SCHEDULER: using delayed version for", events.length, "events");
+  const now = Date.now();
 
-      events.forEach(ev => {
-        if (!ev.start || !ev.start.dateTime) return; // skip all‑day for now
+  events.forEach(ev => {
+    if (!ev.start || !ev.start.dateTime) return; // skip all‑day for now
 
-        const start = new Date(ev.start.dateTime).getTime();
+    const start = new Date(ev.start.dateTime).getTime();
 
-        // 30‑minute reminder
-        const remind30 = start - 30 * 60 * 1000;
-        const delay30 = remind30 - now;
-        if (delay30 > 0) {
-          console.log("30‑min reminder in", Math.round(delay30 / 1000), "sec for", ev.summary);
-          setTimeout(() => {
-            const msg =
-              "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
-            const utter = new SpeechSynthesisUtterance(msg);
-            //utter.onerror = (e) => console.log("speech error 30:", e.error);
-            window.speechSynthesis.speak(utter);
-          }, delay30);
-        }
-
-        // 15‑minute reminder
-        const remind15 = start - 15 * 60 * 1000;
-        const delay15 = remind15 - now;
-        if (delay15 > 0) {
-          console.log("15‑min reminder in", Math.round(delay15 / 1000), "sec for", ev.summary);
-          setTimeout(() => {
-            const msg =
-              "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
-            const utter = new SpeechSynthesisUtterance(msg);
-            //utter.onerror = (e) => console.log("speech error 15:", e.error);
-            window.speechSynthesis.speak(utter);
-          }, delay15);
-        }
-      });
+    // 30‑minute reminder
+    const remind30 = start - 30 * 60 * 1000;
+    const delay30 = remind30 - now;
+    if (delay30 > 0) {
+      console.log("[30] will speak in", Math.round(delay30 / 1000), "sec for", ev.summary);
+      setTimeout(() => {
+        console.log("[30] speaking for", ev.summary);
+        const msg =
+          "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
+        const utter = new SpeechSynthesisUtterance(msg);
+        window.speechSynthesis.speak(utter);
+      }, delay30);
     }
+
+    // 15‑minute reminder
+    const remind15 = start - 15 * 60 * 1000;
+    const delay15 = remind15 - now;
+    if (delay15 > 0) {
+      console.log("[15] will speak in", Math.round(delay15 / 1000), "sec for", ev.summary);
+      setTimeout(() => {
+        console.log("[15] speaking for", ev.summary);
+        const msg =
+          "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
+        const utter = new SpeechSynthesisUtterance(msg);
+        window.speechSynthesis.speak(utter);
+      }, delay15);
+    }
+  });
+}
+
   </script>
 
   <!-- TradingView stock widget -->
@@ -568,4 +568,5 @@
   </script>
 </body>
 </html>
+
 
