@@ -4,8 +4,9 @@
 <meta charset="UTF-8" />
 <title>Wall Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+<!-- Google APIs -->
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <style>
 html, body {
   margin: 0;
@@ -22,7 +23,6 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
-/* TWO COLUMNS: left (clock+events), right (weather+stock) */
 .overlay {
   position: absolute;
   inset: 0;
@@ -32,23 +32,20 @@ body {
   padding: 16px;
   box-sizing: border-box;
 }
-/* LEFT COLUMN */
 .left-panel {
   flex: 2;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-/* RIGHT COLUMN */
 .right-panel {
   flex: 1;
   display: flex;
-  flex-direction: column; /* weather above, stock below */
+  flex-direction: column;
   gap: 16px;
   margin-left: 16px;
   min-height: 0;
 }
-/* Weather ~60%, stock ~40% of right column */
 #weather-panel {
   flex: 3 1 0;
   min-height: 180px;
@@ -108,7 +105,6 @@ body {
   color: #e3dede;
   margin-left: 65px;
 }
-/* WEATHER: portrait list */
 #weather-current {
   font-size: 22px;
   font-weight: 600;
@@ -146,7 +142,6 @@ body {
   flex: 1;
   text-align: right;
 }
-/* Enable‑voice button */
 #enable-voice {
   display: none;
   padding: 6px 10px;
@@ -161,7 +156,6 @@ body {
 #enable-voice:hover {
   background: rgba(255,255,255,0.25);
 }
-/* Sign-in button */
 #sign-in {
   padding: 8px 16px;
   margin-top: 6px;
@@ -180,7 +174,6 @@ body {
 </head>
 <body>
 <div class="overlay">
-  <!-- LEFT column: clock + events -->
   <div class="left-panel">
     <div class="panel">
       <div id="clock">--:--</div>
@@ -190,15 +183,14 @@ body {
       <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
         Upcoming Events
       </div>
-      <div id="auth-status">Click "Sign in with Google" to load events</div>
-      <button id="sign-in">Sign in with Google</button>
+      <div id="auth-status">Initializing...</div>
+      <button id="sign-in" disabled>Loading Google Sign-in...</button>
       <button id="enable-voice">Enable voice alerts</button>
       <div id="events-container">
         <div id="events"></div>
       </div>
     </div>
   </div>
-  <!-- RIGHT column: weather + stock -->
   <div class="right-panel">
     <div class="panel" id="weather-panel">
       <div id="weather-current">Loading weather…</div>
@@ -211,11 +203,18 @@ body {
 </div>
 
 <script>
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-  console.log('Global error:', msg, 'at', url, ':', lineNo);
-  document.getElementById("auth-status").textContent = "JS Error: " + msg;
-  return false;
-};
+// ===== CONFIGURATION =====
+const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com"; // REPLACE WITH YOURS
+const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE"; // REPLACE WITH YOURS
+const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
+
+// ===== GLOBAL VARIABLES =====
+let tokenClient = null;
+let calendarRefreshInterval = null;
+let reminderCheckInterval = null;
+let spokenEvents = new Set();
+
 // ===== CLOCK =====
 function updateClock() {
   const now = new Date();
@@ -232,19 +231,15 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ===== GOOGLE CALENDAR AUTH + LOAD =====
-// Replace these with your actual credentials
-const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
-const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
-
-// Global variable for token client
-let tokenClient = null;
-
-// 1. Initialize Google API Client
-function initGapi() {
-  console.log("Initializing gapi client...");
+// ===== GOOGLE AUTH =====
+function initGoogleApi() {
+  console.log("Initializing Google API...");
+  
+  if (!window.gapi) {
+    console.error("Google API library not loaded");
+    document.getElementById("auth-status").textContent = "Error: Google API failed to load";
+    return;
+  }
   
   gapi.load('client', async () => {
     try {
@@ -252,119 +247,139 @@ function initGapi() {
         apiKey: API_KEY,
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
       });
-      console.log("✅ gapi.client initialized successfully");
-      
-      // Now initialize GIS
-      initGis();
+      console.log("Google API client initialized");
+      initGoogleIdentity();
     } catch (error) {
-      console.error("❌ gapi.client.init failed:", error);
-      document.getElementById("auth-status").textContent = "Failed to initialize Google API";
+      console.error("Failed to initialize Google API:", error);
+      document.getElementById("auth-status").textContent = "Error initializing Google API";
     }
   });
 }
 
-// 2. Initialize Google Identity Services (GIS)
-function initGis() {
-  console.log("Initializing GIS...");
+function initGoogleIdentity() {
+  console.log("Initializing Google Identity Services...");
   
-  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-    console.error("❌ Google Identity Services not loaded");
-    document.getElementById("auth-status").textContent = "Google sign-in library failed to load";
+  if (!window.google || !window.google.accounts) {
+    console.error("Google Identity Services not loaded");
+    document.getElementById("auth-status").textContent = "Error: Google Sign-in failed to load";
     return;
   }
   
   try {
-    // CREATE THE TOKEN CLIENT
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (tokenResponse) => {
-        console.log("Token callback received:", tokenResponse);
+        console.log("Authentication callback");
         
         if (tokenResponse && tokenResponse.access_token) {
-          // ✅ Success! Set the token
           gapi.client.setToken(tokenResponse);
-          document.getElementById("auth-status").textContent = "✅ Signed in! Loading events...";
-          document.getElementById("sign-in").style.display = "none";
+          updateAuthUI(true);
           loadCalendarEvents();
+          startAutoRefresh();
         } else {
-          // ❌ User cancelled or error
-          console.error("Auth failed:", tokenResponse);
-          document.getElementById("auth-status").textContent = "Sign-in cancelled or failed";
+          console.log("Authentication cancelled or failed");
+          document.getElementById("auth-status").textContent = "Sign-in cancelled";
         }
       },
       error_callback: (error) => {
-        console.error("GIS Error:", error);
+        console.error("Authentication error:", error);
         document.getElementById("auth-status").textContent = "Sign-in error occurred";
       }
     });
     
-    console.log("✅ GIS Token Client created:", tokenClient);
-    
-    // Enable the sign-in button
-    const signInBtn = document.getElementById("sign-in");
-    signInBtn.disabled = false;
-    signInBtn.onclick = handleAuthClick;
-    document.getElementById("auth-status").textContent = "✅ Ready! Click 'Sign in with Google'";
+    console.log("Google Identity Services initialized");
+    setupAuthButton();
     
   } catch (error) {
-    console.error("❌ Failed to create token client:", error);
-    document.getElementById("auth-status").textContent = "Failed to setup Google sign-in";
+    console.error("Failed to initialize Google Identity:", error);
+    document.getElementById("auth-status").textContent = "Error setting up Google Sign-in";
   }
 }
 
-// 3. Handle button click
+function setupAuthButton() {
+  const signInBtn = document.getElementById("sign-in");
+  const token = gapi.client.getToken();
+  
+  if (token && token.access_token) {
+    signInBtn.textContent = "Sign out";
+    signInBtn.disabled = false;
+    document.getElementById("auth-status").textContent = "Already signed in";
+    loadCalendarEvents();
+    startAutoRefresh();
+  } else {
+    signInBtn.textContent = "Sign in with Google";
+    signInBtn.disabled = false;
+    document.getElementById("auth-status").textContent = "Ready to sign in";
+  }
+  
+  signInBtn.onclick = handleAuthClick;
+}
+
 function handleAuthClick() {
-  console.log("handleAuthClick called, tokenClient:", tokenClient);
+  const token = gapi.client.getToken();
+  
+  if (token && token.access_token) {
+    handleSignOut();
+  } else {
+    handleSignIn();
+  }
+}
+
+function handleSignIn() {
+  console.log("Starting sign in...");
   
   if (!tokenClient) {
-    console.error("tokenClient is null!");
-    document.getElementById("auth-status").textContent = "Sign-in not ready yet. Try reloading.";
+    document.getElementById("auth-status").textContent = "Sign-in not ready. Please refresh.";
     return;
   }
   
-  console.log("Calling requestAccessToken()...");
-  document.getElementById("auth-status").textContent = "Opening Google sign-in popup...";
-  
-  // THIS LINE TRIGGERS THE POPUP
+  document.getElementById("auth-status").textContent = "Opening Google sign-in...";
   tokenClient.requestAccessToken();
 }
 
-// 4. Start everything when page loads
-window.addEventListener('load', () => {
-  console.log("Page loaded, checking Google libraries...");
+function handleSignOut() {
+  console.log("Signing out...");
   
-  // Check if gapi exists
-  if (!window.gapi) {
-    console.error("❌ gapi library not loaded!");
-    document.getElementById("auth-status").textContent = "Google API library failed to load";
-    return;
+  const token = gapi.client.getToken();
+  if (token) {
+    google.accounts.oauth2.revoke(token.access_token, () => {
+      console.log("Access token revoked");
+    });
   }
   
-  // Check if google.accounts exists
-  if (!window.google || !window.google.accounts) {
-    console.error("❌ Google Identity Services not loaded!");
-    document.getElementById("auth-status").textContent = "Google sign-in library failed to load";
-    return;
-  }
+  gapi.client.setToken(null);
+  stopAutoRefresh();
+  stopVoiceReminders();
   
-  console.log("✅ Both libraries loaded, initializing...");
-  document.getElementById("auth-status").textContent = "Initializing Google services...";
+  localStorage.removeItem('calendarEvents');
+  localStorage.removeItem('eventsLastUpdated');
   
-  // Start the initialization chain
-  initGapi();
-});
+  document.getElementById("events").innerHTML = "";
+  document.getElementById("sign-in").textContent = "Sign in with Google";
+  document.getElementById("auth-status").textContent = "Signed out. Click to sign in again.";
+  document.getElementById("enable-voice").style.display = "none";
+  
+  spokenEvents.clear();
+}
 
-// 5. Your existing loadCalendarEvents function (keep it)
+function updateAuthUI(isSignedIn) {
+  const signInBtn = document.getElementById("sign-in");
+  signInBtn.textContent = isSignedIn ? "Sign out" : "Sign in with Google";
+  document.getElementById("auth-status").textContent = isSignedIn ? "Signed in successfully!" : "Ready to sign in";
+}
+
+// ===== CALENDAR EVENTS =====
 async function loadCalendarEvents() {
   console.log("Loading calendar events...");
+  
   try {
     const now = new Date();
     const timeMin = now.toISOString();
     const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const resp = await gapi.client.calendar.events.list({
-      calendarId: "family03331431524389313579@group.calendar.google.com",
+    const response = await gapi.client.calendar.events.list({
+      calendarId: CALENDAR_ID,
       timeMin,
       timeMax,
       showDeleted: false,
@@ -373,115 +388,202 @@ async function loadCalendarEvents() {
       maxResults: 100,
     });
     
-    console.log("✅ Events loaded:", resp.result.items.length);
-    const events = resp.result.items || [];
+    const events = response.result.items || [];
+    console.log(`Loaded ${events.length} events`);
     
-    if (!events.length) {
-      document.getElementById("events").textContent = "No upcoming events.";
+    if (events.length === 0) {
+      document.getElementById("events").textContent = "No upcoming events found.";
       return;
     }
-
+    
     renderEvents(events);
+    
     localStorage.setItem('calendarEvents', JSON.stringify(events));
     localStorage.setItem('eventsLastUpdated', Date.now());
-
-    // Show voice alerts button
+    
     const voiceBtn = document.getElementById("enable-voice");
     voiceBtn.style.display = "inline-block";
     voiceBtn.onclick = () => {
       scheduleVoiceReminders(events);
       voiceBtn.style.display = "none";
-      document.getElementById("auth-status").textContent = "✅ Voice alerts enabled!";
+      document.getElementById("auth-status").textContent = "Voice alerts enabled!";
     };
     
-  } catch (err) {
-    console.error("Calendar error:", err);
+  } catch (error) {
+    console.error("Error loading calendar:", error);
     document.getElementById("auth-status").textContent = "Error loading calendar";
-    if (err.status === 401) {
-      gapi.client.setToken(null);
-      document.getElementById("sign-in").style.display = "inline-block";
+    
+    if (error.status === 401) {
+      handleSignOut();
     }
   }
 }
-  
+
 function renderEvents(events) {
   const container = document.getElementById("events");
   container.innerHTML = "";
 
-  const byDate = {};
-  events.forEach((ev) => {
-    const start = ev.start.dateTime || ev.start.date;
-    const d = new Date(start);
-    const key = d.toDateString();
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push({ raw: ev, date: d });
+  const eventsByDate = {};
+  
+  events.forEach(event => {
+    const start = event.start.dateTime || event.start.date;
+    const date = new Date(start);
+    const dateKey = date.toDateString();
+    
+    if (!eventsByDate[dateKey]) {
+      eventsByDate[dateKey] = [];
+    }
+    
+    eventsByDate[dateKey].push({ raw: event, date });
   });
 
-  Object.keys(byDate)
+  Object.keys(eventsByDate)
     .sort((a, b) => new Date(a) - new Date(b))
-    .forEach((key) => {
+    .forEach(dateKey => {
       const dayHeader = document.createElement("div");
       dayHeader.className = "event-day";
-      dayHeader.textContent = key;
+      dayHeader.textContent = dateKey;
       container.appendChild(dayHeader);
 
-      byDate[key]
+      eventsByDate[dateKey]
         .sort((a, b) => a.date - b.date)
-        .forEach((e) => {
-          const item = document.createElement("div");
-          item.className = "event-item";
+        .forEach(eventData => {
+          const eventItem = document.createElement("div");
+          eventItem.className = "event-item";
 
           const timeSpan = document.createElement("span");
           timeSpan.className = "event-time";
-          const isAllDay = !!e.raw.start.date;
-          timeSpan.textContent = isAllDay
-            ? "All day"
-            : e.date.toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
+          const isAllDay = !!eventData.raw.start.date;
+          timeSpan.textContent = isAllDay ? "All day" : 
+            eventData.date.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
 
           const titleSpan = document.createElement("span");
           titleSpan.className = "event-title";
-          titleSpan.textContent = e.raw.summary || "(No title)";
+          titleSpan.textContent = eventData.raw.summary || "(No title)";
 
-          item.appendChild(timeSpan);
-          item.appendChild(titleSpan);
+          eventItem.appendChild(timeSpan);
+          eventItem.appendChild(titleSpan);
 
-          if (e.raw.location) {
-            const locDiv = document.createElement("div");
-            locDiv.className = "event-location";
-            locDiv.textContent = e.raw.location;
-            item.appendChild(locDiv);
+          if (eventData.raw.location) {
+            const locationDiv = document.createElement("div");
+            locationDiv.className = "event-location";
+            locationDiv.textContent = eventData.raw.location;
+            eventItem.appendChild(locationDiv);
           }
 
-          container.appendChild(item);
+          container.appendChild(eventItem);
         });
     });
 }
 
-// ===== OPEN-METEO WEATHER =====
+// ===== AUTO REFRESH =====
+function startAutoRefresh() {
+  console.log("Starting auto-refresh (every 5 minutes)");
+  
+  if (calendarRefreshInterval) {
+    clearInterval(calendarRefreshInterval);
+  }
+  
+  loadCalendarEvents();
+  calendarRefreshInterval = setInterval(loadCalendarEvents, 5 * 60 * 1000);
+}
+
+function stopAutoRefresh() {
+  if (calendarRefreshInterval) {
+    clearInterval(calendarRefreshInterval);
+    calendarRefreshInterval = null;
+    console.log("Stopped auto-refresh");
+  }
+}
+
+// ===== VOICE REMINDERS =====
+function scheduleVoiceReminders(events) {
+  console.log("Scheduling voice reminders for", events.length, "events");
+  
+  if (!("speechSynthesis" in window)) {
+    alert("Your browser doesn't support voice synthesis");
+    return;
+  }
+  
+  if (reminderCheckInterval) {
+    clearInterval(reminderCheckInterval);
+    spokenEvents.clear();
+  }
+  
+  reminderCheckInterval = setInterval(() => checkReminders(events), 30000);
+  checkReminders(events);
+}
+
+function checkReminders(events) {
+  const now = new Date();
+  const nowMs = now.getTime();
+  
+  events.forEach(event => {
+    if (!event.start || !event.start.dateTime) return;
+    
+    const eventStart = new Date(event.start.dateTime);
+    const eventStartMs = eventStart.getTime();
+    const eventId = event.id || event.summary;
+    const minutesUntilEvent = (eventStartMs - nowMs) / (60 * 1000);
+    
+    if (minutesUntilEvent <= 30 && minutesUntilEvent > 29.5) {
+      const reminderKey = `${eventId}_30min`;
+      if (!spokenEvents.has(reminderKey)) {
+        speakReminder(event, 30);
+        spokenEvents.add(reminderKey);
+      }
+    }
+    
+    if (minutesUntilEvent <= 15 && minutesUntilEvent > 14.5) {
+      const reminderKey = `${eventId}_15min`;
+      if (!spokenEvents.has(reminderKey)) {
+        speakReminder(event, 15);
+        spokenEvents.add(reminderKey);
+      }
+    }
+  });
+}
+
+function speakReminder(event, minutesBefore) {
+  console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
+  const message = `Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+  }, 100);
+}
+
+function stopVoiceReminders() {
+  if (reminderCheckInterval) {
+    clearInterval(reminderCheckInterval);
+    reminderCheckInterval = null;
+    spokenEvents.clear();
+    console.log("Stopped voice reminders");
+  }
+}
+
+// ===== WEATHER =====
 const LAT = 38.81;
 const LON = -90.72;
 
 function loadWeather() {
-  const url =
-    "https://api.open-meteo.com/v1/forecast?" +
-    "latitude=" +
-    LAT +
-    "&longitude=" +
-    LON +
-    "&daily=temperature_2m_max,temperature_2m_min,weathercode" +
-    "&temperature_unit=fahrenheit" +
-    "&current_weather=true&timezone=auto";
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&current_weather=true&timezone=auto`;
 
   fetch(url)
-    .then((r) => r.json())
-    .then((data) => renderWeather(data))
-    .catch((err) => {
+    .then(response => response.json())
+    .then(data => renderWeather(data))
+    .catch(error => {
       document.getElementById("weather-current").textContent = "Weather error";
-      console.error(err);
+      console.error("Weather error:", error);
     });
 }
 
@@ -489,56 +591,56 @@ function renderWeather(data) {
   const current = data.current_weather;
   const daily = data.daily;
 
-  const currentEl = document.getElementById("weather-current");
-  currentEl.textContent =
-    Math.round(current.temperature) + "° " + mapWeatherCode(current.weathercode);
+  document.getElementById("weather-current").textContent = 
+    `${Math.round(current.temperature)}° ${getWeatherDescription(current.weathercode)}`;
 
   const forecastEl = document.getElementById("weather-forecast");
   forecastEl.innerHTML = "";
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const days = daily.time.length;
-  let shown = 0;
+  let displayed = 0;
 
-  for (let i = 0; i < days && shown < 7; i++) {
-    const d = new Date(daily.time[i]);
-    const localDay = new Date(d);
-    localDay.setHours(0, 0, 0, 0);
-    if (localDay < today) continue;
+  for (let i = 0; i < daily.time.length && displayed < 7; i++) {
+    const date = new Date(daily.time[i]);
+    const localDate = new Date(date);
+    localDate.setHours(0, 0, 0, 0);
+    
+    if (localDate < today) continue;
 
     const row = document.createElement("div");
     row.className = "weather-day";
 
-    const iconEl = document.createElement("img");
-    iconEl.className = "weather-icon";
-    iconEl.src = getWeatherIcon(daily.weathercode[i]);
-    iconEl.alt = mapWeatherCode(daily.weathercode[i]);
+    const icon = document.createElement("img");
+    icon.className = "weather-icon";
+    icon.src = getWeatherIcon(daily.weathercode[i]);
+    icon.alt = getWeatherDescription(daily.weathercode[i]);
 
-    const nameEl = document.createElement("div");
-    nameEl.className = "weather-name";
-    nameEl.textContent = d.toLocaleDateString(undefined, {
+    const dayName = document.createElement("div");
+    dayName.className = "weather-name";
+    dayName.textContent = date.toLocaleDateString(undefined, {
       weekday: "short",
       month: "short",
       day: "numeric",
     });
 
-    const tempEl = document.createElement("div");
-    tempEl.className = "weather-temp";
-    const hi = Math.round(daily.temperature_2m_max[i]);
-    const lo = Math.round(daily.temperature_2m_min[i]);
-    tempEl.textContent = hi + "° / " + lo + "°";
+    const temp = document.createElement("div");
+    temp.className = "weather-temp";
+    const high = Math.round(daily.temperature_2m_max[i]);
+    const low = Math.round(daily.temperature_2m_min[i]);
+    temp.textContent = `${high}° / ${low}°`;
 
-    const descEl = document.createElement("div");
-    descEl.className = "weather-desc";
-    descEl.textContent = mapWeatherCode(daily.weathercode[i]);
+    const desc = document.createElement("div");
+    desc.className = "weather-desc";
+    desc.textContent = getWeatherDescription(daily.weathercode[i]);
 
-    row.appendChild(iconEl);
-    row.appendChild(nameEl);
-    row.appendChild(tempEl);
-    row.appendChild(descEl);
+    row.appendChild(icon);
+    row.appendChild(dayName);
+    row.appendChild(temp);
+    row.appendChild(desc);
     forecastEl.appendChild(row);
-    shown++;
+    
+    displayed++;
   }
 }
 
@@ -553,7 +655,7 @@ function getWeatherIcon(code) {
   return "icons/unknown.png";
 }
 
-function mapWeatherCode(code) {
+function getWeatherDescription(code) {
   if (code === 0) return "Clear";
   if ([1, 2, 3].includes(code)) return "Cloudy";
   if ([45, 48].includes(code)) return "Fog";
@@ -564,121 +666,54 @@ function mapWeatherCode(code) {
   return "N/A";
 }
 
-loadWeather();
-setInterval(loadWeather, 60 * 60 * 1000);
-
-// ===== VOICE REMINDERS =====
-let reminderCheckInterval = null;
-let spokenEvents = new Set(); // Track already spoken reminders
-
-function parseCalendarDate(dateString) {
-    return new Date(dateString);
-}
-
-function scheduleVoiceReminders(events) {
-    console.log("Starting voice reminder scheduler");
+// ===== INITIALIZATION =====
+window.addEventListener('load', () => {
+  console.log("Page loaded, initializing...");
+  
+  loadWeather();
+  setInterval(loadWeather, 60 * 60 * 1000);
+  
+  const savedEvents = localStorage.getItem('calendarEvents');
+  const lastUpdated = localStorage.getItem('eventsLastUpdated');
+  
+  if (savedEvents && lastUpdated && (Date.now() - lastUpdated < 60 * 60 * 1000)) {
+    const events = JSON.parse(savedEvents);
+    renderEvents(events);
     
-    if (!("speechSynthesis" in window)) {
-        console.log("No speechSynthesis support");
-        return;
-    }
-    
-    if (reminderCheckInterval) {
-        clearInterval(reminderCheckInterval);
-        spokenEvents.clear();
-    }
-    
-    reminderCheckInterval = setInterval(() => checkReminders(events), 30000);
-    checkReminders(events);
-}
+    const voiceBtn = document.getElementById("enable-voice");
+    voiceBtn.style.display = "inline-block";
+    voiceBtn.onclick = () => {
+      scheduleVoiceReminders(events);
+      voiceBtn.style.display = "none";
+      document.getElementById("auth-status").textContent = "Voice alerts enabled!";
+    };
+  }
+  
+  initGoogleApi();
+});
 
-function checkReminders(events) {
-    const now = new Date();
-    const nowMs = now.getTime();
-    
-    events.forEach(ev => {
-        if (!ev.start || !ev.start.dateTime) return;
-        
-        const eventStart = parseCalendarDate(ev.start.dateTime);
-        const eventStartMs = eventStart.getTime();
-        const eventId = ev.id || ev.summary;
-        
-        const minutesUntilEvent = (eventStartMs - nowMs) / (60 * 1000);
-        
-        if (minutesUntilEvent <= 30 && minutesUntilEvent > 29.5) {
-            const reminderKey = `${eventId}_30min`;
-            if (!spokenEvents.has(reminderKey)) {
-                speakReminder(ev, 30);
-                spokenEvents.add(reminderKey);
-            }
-        }
-        
-        if (minutesUntilEvent <= 15 && minutesUntilEvent > 14.5) {
-            const reminderKey = `${eventId}_15min`;
-            if (!spokenEvents.has(reminderKey)) {
-                speakReminder(ev, 15);
-                spokenEvents.add(reminderKey);
-            }
-        }
-    });
-}
-
-function speakReminder(event, minutesBefore) {
-    console.log(`[${minutesBefore}] Speaking reminder for:`, event.summary);
-    const msg = `Reminder. Event "${event.summary || "Untitled"}" starts in ${minutesBefore} minutes.`;
-    const utter = new SpeechSynthesisUtterance(msg);
-    utter.rate = 1.0;
-    utter.pitch = 1.0;
-    utter.volume = 1.0;
-    
-    window.speechSynthesis.cancel();
-    
-    setTimeout(() => {
-        window.speechSynthesis.speak(utter);
-    }, 100);
-}
-
+// ===== CLEANUP =====
 function cleanupOldReminders() {
-    const now = Date.now();
-    for (const key of spokenEvents) {
-        spokenEvents.delete(key);
-    }
-    const lastUpdated = localStorage.getItem('eventsLastUpdated');
-    if (lastUpdated && (now - lastUpdated > 24 * 60 * 60 * 1000)) {
-        localStorage.removeItem('calendarEvents');
-        localStorage.removeItem('eventsLastUpdated');
-    }
+  const now = Date.now();
+  spokenEvents.clear();
+  
+  const lastUpdated = localStorage.getItem('eventsLastUpdated');
+  if (lastUpdated && (now - lastUpdated > 24 * 60 * 60 * 1000)) {
+    localStorage.removeItem('calendarEvents');
+    localStorage.removeItem('eventsLastUpdated');
+  }
 }
 
 setInterval(cleanupOldReminders, 24 * 60 * 60 * 1000);
-
-// On page load, check for existing events and initialize
-window.addEventListener('load', () => {
-    console.log("Page loaded.");
-    const savedEvents = localStorage.getItem('calendarEvents');
-    const lastUpdated = localStorage.getItem('eventsLastUpdated');
-    if (savedEvents && lastUpdated && (Date.now() - lastUpdated < 60 * 60 * 1000)) {
-        const events = JSON.parse(savedEvents);
-        renderEvents(events);
-        const btn = document.getElementById("enable-voice");
-        btn.style.display = "inline-block";
-        btn.onclick = () => {
-            scheduleVoiceReminders(events);
-            btn.style.display = "none";
-            document.getElementById("auth-status").textContent = "Voice alerts enabled!";
-        };
-    }
-});
 </script>
 
-<!-- TradingView stock widget -->
 <script type="text/javascript">
-(function () {
+(function() {
   const container = document.getElementById("tradingview-widget");
   if (!container) return;
+  
   const script = document.createElement("script");
-  script.src =
-    "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
+  script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
   script.async = true;
   script.innerHTML = JSON.stringify({
     symbols: [["SPY", "AMEX:SPY|1M"]],
@@ -690,16 +725,10 @@ window.addEventListener('load', () => {
     autosize: true,
     showVolume: true,
   });
+  
   container.style.height = "100%";
   container.appendChild(script);
 })();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
