@@ -621,21 +621,15 @@ setInterval(cleanupOldReminders, 24 * 60 * 60 * 1000);
 
 // On page load, check for existing events and initialize
 window.addEventListener('load', () => {
-    // Initialize Google API
-    initGoogleApi();
-    
-    // Check for cached events
+    console.log("Page loaded.");
     const savedEvents = localStorage.getItem('calendarEvents');
     const lastUpdated = localStorage.getItem('eventsLastUpdated');
-    
     if (savedEvents && lastUpdated && (Date.now() - lastUpdated < 60 * 60 * 1000)) {
         const events = JSON.parse(savedEvents);
         renderEvents(events);
-        
         const btn = document.getElementById("enable-voice");
         btn.style.display = "inline-block";
         btn.onclick = () => {
-            console.log("BUTTON: Enable voice clicked");
             scheduleVoiceReminders(events);
             btn.style.display = "none";
             document.getElementById("auth-status").textContent = "Voice alerts enabled!";
@@ -669,5 +663,6 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
