@@ -162,6 +162,20 @@ body {
 #enable-voice:hover {
   background: rgba(255,255,255,0.25);
 }
+/* Sign-in button */
+#sign-in {
+  padding: 8px 16px;
+  margin-top: 6px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ffffff;
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  cursor: pointer;
+}
+#sign-in:hover {
+  background: rgba(255,255,255,0.25);
+}
 </style>
 </head>
 <body>
@@ -176,9 +190,10 @@ body {
       <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
         Upcoming Events
       </div>
+      <button id="sign-in">Sign in with Google</button>
       <button id="enable-voice">Enable voice alerts</button>
       <div id="events-container">
-        <div id="events">Loading events…</div>
+        <div id="events">Please sign in to load events.</div>
       </div>
     </div>
   </div>
@@ -228,12 +243,17 @@ function gapiLoaded() {
 
 async function initializeGapiClient() {
   console.log("initializeGapiClient called");
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: [DISCOVERY_DOC],
-  });
-  gapiInited = true;
-  maybeInitAuth();
+  try {
+    await gapi.client.init({
+      apiKey: API_KEY,
+      discoveryDocs: [DISCOVERY_DOC],
+    });
+    gapiInited = true;
+    console.log("GAPI client initialized");
+    updateSigninStatus();
+  } catch (error) {
+    console.error("Error initializing GAPI client:", error);
+  }
 }
 
 function gisLoaded() {
@@ -241,28 +261,74 @@ function gisLoaded() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
-    callback: "", // set later
+    callback: (tokenResponse) => {
+      if (tokenResponse && tokenResponse.access_token) {
+        gapi.client.setToken(tokenResponse);
+        loadCalendarEvents();
+      } else {
+        console.error("Token response error:", tokenResponse);
+      }
+    },
+    error_callback: (error) => {
+      console.error("Error in token client:", error);
+    }
   });
   gisInited = true;
-  maybeInitAuth();
+  console.log("GIS client initialized");
+  updateSigninStatus();
 }
 
-function maybeInitAuth() {
-  if (!(gapiInited && gisInited)) return;
+function updateSigninStatus() {
+  if (gapiInited && gisInited) {
+    const token = gapi.client.getToken();
+    const signInBtn = document.getElementById("sign-in");
+    
+    if (token) {
+      // User is signed in
+      signInBtn.textContent = "Sign out";
+      signInBtn.onclick = handleSignOut;
+      loadCalendarEvents();
+    } else {
+      // User is not signed in
+      signInBtn.textContent = "Sign in with Google";
+      signInBtn.onclick = handleAuthClick;
+      signInBtn.style.display = "inline-block";
+    }
+  }
+}
 
-  tokenClient.callback = async (resp) => {
-    if (resp.error) throw resp;
-    await loadCalendarEvents();
-  };
+function handleAuthClick() {
+  console.log("Sign in button clicked");
+  if (!tokenClient) {
+    console.error("Token client not initialized yet");
+    return;
+  }
+  
+  // Request access token with consent
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
 
-  if (gapi.client.getToken() === null) {
-    tokenClient.requestAccessToken({ prompt: "consent" });
-  } else {
-    tokenClient.requestAccessToken({ prompt: "" });
+function handleSignOut() {
+  console.log("Sign out clicked");
+  const token = gapi.client.getToken();
+  if (token) {
+    google.accounts.oauth2.revoke(token.access_token, () => {
+      console.log("Access token revoked");
+    });
+    gapi.client.setToken(null);
+    document.getElementById("events").innerHTML = "Signed out. Please sign in again.";
+    document.getElementById("sign-in").textContent = "Sign in with Google";
+    document.getElementById("sign-in").onclick = handleAuthClick;
+    document.getElementById("enable-voice").style.display = "none";
+    
+    // Clear localStorage
+    localStorage.removeItem('calendarEvents');
+    localStorage.removeItem('eventsLastUpdated');
   }
 }
 
 async function loadCalendarEvents() {
+  console.log("Loading calendar events...");
   const now = new Date();
   const timeMin = now.toISOString();
   const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -278,9 +344,16 @@ async function loadCalendarEvents() {
       orderBy: "startTime",
       maxResults: 100,
     });
+    console.log("Events loaded successfully:", resp.result.items.length);
   } catch (err) {
-    document.getElementById("events").textContent = "Calendar error";
-    console.error(err);
+    console.error("Calendar error:", err);
+    document.getElementById("events").textContent = "Calendar error: " + err.message;
+    
+    // If there's an auth error, prompt re-auth
+    if (err.status === 401) {
+      gapi.client.setToken(null);
+      updateSigninStatus();
+    }
     return;
   }
 
@@ -296,13 +369,13 @@ async function loadCalendarEvents() {
   localStorage.setItem('calendarEvents', JSON.stringify(events));
   localStorage.setItem('eventsLastUpdated', Date.now());
 
-  // show enable‑voice button and schedule on click
-  const btn = document.getElementById("enable-voice");
-  btn.style.display = "inline-block";
-  btn.onclick = () => {
+  // show enable‑voice button
+  const voiceBtn = document.getElementById("enable-voice");
+  voiceBtn.style.display = "inline-block";
+  voiceBtn.onclick = () => {
     console.log("BUTTON: Enable voice clicked");
     scheduleVoiceReminders(events);
-    btn.style.display = "none";
+    voiceBtn.style.display = "none";
   };
 }
 
