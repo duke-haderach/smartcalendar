@@ -299,6 +299,24 @@ function updateSigninStatus() {
 
 function handleAuthClick() {
   console.log("Sign in button clicked");
+  document.getElementById("auth-status").textContent = "Opening Google sign-in...";
+  // Create a direct OAuth URL (as fallback)
+  const redirectUri = window.location.origin + window.location.pathname;
+  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${CLIENT_ID}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `response_type=token&` +
+    `scope=${encodeURIComponent(SCOPES)}&` +
+    `include_granted_scopes=true&` +
+    `state=google_auth`;
+  
+  // Open in popup
+  const popup = window.open(oauthUrl, 'google_auth', 'width=600,height=600');
+  
+  if (!popup) {
+    document.getElementById("auth-status").textContent = "Popup blocked! Please allow popups for this site.";
+  }
+}
   if (!tokenClient) {
     console.error("Token client not initialized yet");
     return;
@@ -685,4 +703,5 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
