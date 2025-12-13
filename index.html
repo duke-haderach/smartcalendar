@@ -4,8 +4,10 @@
 <meta charset="UTF-8" />
 <title>Wall Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<!-- Only load gapi.js, not the new GSI -->
-<script src="https://apis.google.com/js/api.js"></script>
+<!-- Load Google API Client Library -->
+  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+  <!-- Load NEW Google Identity Services (GIS) -->
+  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 <style>
 html, body {
   margin: 0;
@@ -663,6 +665,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
