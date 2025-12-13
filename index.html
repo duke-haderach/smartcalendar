@@ -234,201 +234,235 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ===== GOOGLE CALENDAR AUTH + LOAD =====
-// Replace these with your actual credentials
-const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
-const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 
-let tokenClient; // The new GIS token client
-let gapiInited = false;
-let gisInited = false;
+// ===== SIMPLE GOOGLE AUTH TEST =====
+console.log("TEST: Script is running");
 
-// 1. Load the Google API Client Library (gapi)
-function gapiLoaded() {
-  console.log("gapi.js loaded");
-  // Load the 'client' module which contains gapi.client.init
-  gapi.load('client', initializeGapiClient);
-}
-
-// 2. Initialize gapi.client
-async function initializeGapiClient() {
-  console.log("Initializing gapi.client...");
-  try {
-    await gapi.client.init({
-      apiKey: API_KEY,
-      discoveryDocs: [DISCOVERY_DOC],
-    });
-    gapiInited = true;
-    console.log("gapi.client initialized.");
-    maybeEnableAuthButton();
-  } catch (error) {
-    console.error("Error initializing gapi.client:", error);
-    document.getElementById("auth-status").textContent = "Failed to load Google API client.";
-  }
-}
-
-// 3. Initialize the Google Identity Services (GIS) token client
-function gisLoaded() {
-  console.log("GIS (Identity Services) loaded.");
-  // This is the NEW, correct way to create a token client
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (tokenResponse) => {
-      // This runs AFTER the user completes the OAuth popup
-      console.log("Token callback fired.", tokenResponse);
-      if (tokenResponse && tokenResponse.access_token) {
-        // Success! Give the token to gapi.client
-        gapi.client.setToken(tokenResponse);
-        document.getElementById("auth-status").textContent = "Signed in! Loading calendar...";
-        document.getElementById("sign-in").style.display = "none"; // Hide sign-in button
-        loadCalendarEvents();
-      } else {
-        // User closed the popup or denied permission
-        console.error("Auth failed or was cancelled.", tokenResponse);
-        document.getElementById("auth-status").textContent = "Sign-in was cancelled.";
-      }
-    },
-    error_callback: (error) => {
-      console.error("GIS Error in token flow:", error);
-      document.getElementById("auth-status").textContent = "A sign-in error occurred.";
-    }
-  });
-  gisInited = true;
-  console.log("GIS token client ready.");
-  maybeEnableAuthButton();
-}
-
-// 4. Enable the button only when both libraries are ready
-function maybeEnableAuthButton() {
-  const signInBtn = document.getElementById("sign-in");
-  if (gapiInited && gisInited && signInBtn) {
-    console.log("Both libraries ready. Enabling sign-in button.");
-    signInBtn.disabled = false;
-    signInBtn.onclick = handleAuthClick;
-    document.getElementById("auth-status").textContent = "Ready. Click 'Sign in with Google'.";
-  }
-}
-
-// 5. Handle the actual button click
-function handleAuthClick() {
-  console.log("handleAuthClick: Triggering OAuth popup via tokenClient.");
-  document.getElementById("auth-status").textContent = "Opening Google sign-in...";
+// 1. Set up a simple button handler FIRST
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("TEST: DOM is ready");
   
-  // THIS LINE TRIGGERS THE GOOGLE OAUTH POPUP
-  tokenClient.requestAccessToken();
-}
-
-// 6. Load calendar events (unchanged from your working version)
-async function loadCalendarEvents() {
-  console.log("loadCalendarEvents called");
-  try {
-    const now = new Date();
-    const timeMin = now.toISOString();
-    const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const resp = await gapi.client.calendar.events.list({
-      calendarId: "family03331431524389313579@group.calendar.google.com",
-      timeMin,
-      timeMax,
-      showDeleted: false,
-      singleEvents: true,
-      orderBy: "startTime",
-      maxResults: 100,
-    });
+  const signInBtn = document.getElementById("sign-in");
+  if (signInBtn) {
+    console.log("TEST: Found sign-in button");
     
-    console.log("Events loaded successfully:", resp.result.items ? resp.result.items.length : 0);
-    const events = resp.result.items || [];
-    
-    if (!events.length) {
-      document.getElementById("events").textContent = "No upcoming events.";
-      return;
-    }
-
-    renderEvents(events);
-    // Save for voice reminders and persistence
-    localStorage.setItem('calendarEvents', JSON.stringify(events));
-    localStorage.setItem('eventsLastUpdated', Date.now());
-
-    // Show the voice alerts button
-    const voiceBtn = document.getElementById("enable-voice");
-    voiceBtn.style.display = "inline-block";
-    voiceBtn.onclick = () => {
-      console.log("Enabling voice alerts.");
-      scheduleVoiceReminders(events);
-      voiceBtn.style.display = "none";
-      document.getElementById("auth-status").textContent = "Voice alerts are active!";
+    // Force enable the button with a simple test
+    signInBtn.disabled = false;
+    signInBtn.onclick = function() {
+      console.log("TEST: Button was clicked!");
+      document.getElementById("auth-status").textContent = "Button works! Testing popup...";
+      
+      // Try to open ANY popup
+      const testPopup = window.open('https://google.com', 'test', 'width=500,height=500');
+      if (!testPopup) {
+        document.getElementById("auth-status").textContent = "POPUP BLOCKED! Allow popups for this site.";
+      }
     };
     
-  } catch (err) {
-    console.error("Calendar error:", err);
-    document.getElementById("auth-status").textContent = "Error loading calendar.";
-    // If token is invalid, clear it so user can sign in again
-    if (err.status === 401) {
-      gapi.client.setToken(null);
-      document.getElementById("sign-in").style.display = "inline-block";
-    }
+    document.getElementById("auth-status").textContent = "Ready - Click 'Sign in with Google'";
+  } else {
+    console.error("TEST: Could not find sign-in button!");
   }
-}
+});
 
-function renderEvents(events) {
-  const container = document.getElementById("events");
-  container.innerHTML = "";
+// Check if Google libraries exist
+console.log("TEST: window.gapi exists?", typeof window.gapi);
+console.log("TEST: window.google exists?", typeof window.google);
+// ===== GOOGLE CALENDAR AUTH + LOAD =====
+// Replace these with your actual credentials
+// const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
+// const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
+// const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+// const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 
-  const byDate = {};
-  events.forEach((ev) => {
-    const start = ev.start.dateTime || ev.start.date;
-    const d = new Date(start);
-    const key = d.toDateString();
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push({ raw: ev, date: d });
-  });
+// let tokenClient; // The new GIS token client
+// let gapiInited = false;
+// let gisInited = false;
 
-  Object.keys(byDate)
-    .sort((a, b) => new Date(a) - new Date(b))
-    .forEach((key) => {
-      const dayHeader = document.createElement("div");
-      dayHeader.className = "event-day";
-      dayHeader.textContent = key;
-      container.appendChild(dayHeader);
+// // 1. Load the Google API Client Library (gapi)
+// function gapiLoaded() {
+//   console.log("gapi.js loaded");
+//   // Load the 'client' module which contains gapi.client.init
+//   gapi.load('client', initializeGapiClient);
+// }
 
-      byDate[key]
-        .sort((a, b) => a.date - b.date)
-        .forEach((e) => {
-          const item = document.createElement("div");
-          item.className = "event-item";
+// // 2. Initialize gapi.client
+// async function initializeGapiClient() {
+//   console.log("Initializing gapi.client...");
+//   try {
+//     await gapi.client.init({
+//       apiKey: API_KEY,
+//       discoveryDocs: [DISCOVERY_DOC],
+//     });
+//     gapiInited = true;
+//     console.log("gapi.client initialized.");
+//     maybeEnableAuthButton();
+//   } catch (error) {
+//     console.error("Error initializing gapi.client:", error);
+//     document.getElementById("auth-status").textContent = "Failed to load Google API client.";
+//   }
+// }
 
-          const timeSpan = document.createElement("span");
-          timeSpan.className = "event-time";
-          const isAllDay = !!e.raw.start.date;
-          timeSpan.textContent = isAllDay
-            ? "All day"
-            : e.date.toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
+// // 3. Initialize the Google Identity Services (GIS) token client
+// function gisLoaded() {
+//   console.log("GIS (Identity Services) loaded.");
+//   // This is the NEW, correct way to create a token client
+//   tokenClient = google.accounts.oauth2.initTokenClient({
+//     client_id: CLIENT_ID,
+//     scope: SCOPES,
+//     callback: (tokenResponse) => {
+//       // This runs AFTER the user completes the OAuth popup
+//       console.log("Token callback fired.", tokenResponse);
+//       if (tokenResponse && tokenResponse.access_token) {
+//         // Success! Give the token to gapi.client
+//         gapi.client.setToken(tokenResponse);
+//         document.getElementById("auth-status").textContent = "Signed in! Loading calendar...";
+//         document.getElementById("sign-in").style.display = "none"; // Hide sign-in button
+//         loadCalendarEvents();
+//       } else {
+//         // User closed the popup or denied permission
+//         console.error("Auth failed or was cancelled.", tokenResponse);
+//         document.getElementById("auth-status").textContent = "Sign-in was cancelled.";
+//       }
+//     },
+//     error_callback: (error) => {
+//       console.error("GIS Error in token flow:", error);
+//       document.getElementById("auth-status").textContent = "A sign-in error occurred.";
+//     }
+//   });
+//   gisInited = true;
+//   console.log("GIS token client ready.");
+//   maybeEnableAuthButton();
+// }
 
-          const titleSpan = document.createElement("span");
-          titleSpan.className = "event-title";
-          titleSpan.textContent = e.raw.summary || "(No title)";
+// // 4. Enable the button only when both libraries are ready
+// function maybeEnableAuthButton() {
+//   const signInBtn = document.getElementById("sign-in");
+//   if (gapiInited && gisInited && signInBtn) {
+//     console.log("Both libraries ready. Enabling sign-in button.");
+//     signInBtn.disabled = false;
+//     signInBtn.onclick = handleAuthClick;
+//     document.getElementById("auth-status").textContent = "Ready. Click 'Sign in with Google'.";
+//   }
+// }
 
-          item.appendChild(timeSpan);
-          item.appendChild(titleSpan);
+// // 5. Handle the actual button click
+// function handleAuthClick() {
+//   console.log("handleAuthClick: Triggering OAuth popup via tokenClient.");
+//   document.getElementById("auth-status").textContent = "Opening Google sign-in...";
+  
+//   // THIS LINE TRIGGERS THE GOOGLE OAUTH POPUP
+//   tokenClient.requestAccessToken();
+// }
 
-          if (e.raw.location) {
-            const locDiv = document.createElement("div");
-            locDiv.className = "event-location";
-            locDiv.textContent = e.raw.location;
-            item.appendChild(locDiv);
-          }
+// // 6. Load calendar events (unchanged from your working version)
+// async function loadCalendarEvents() {
+//   console.log("loadCalendarEvents called");
+//   try {
+//     const now = new Date();
+//     const timeMin = now.toISOString();
+//     const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-          container.appendChild(item);
-        });
-    });
-}
+//     const resp = await gapi.client.calendar.events.list({
+//       calendarId: "family03331431524389313579@group.calendar.google.com",
+//       timeMin,
+//       timeMax,
+//       showDeleted: false,
+//       singleEvents: true,
+//       orderBy: "startTime",
+//       maxResults: 100,
+//     });
+    
+//     console.log("Events loaded successfully:", resp.result.items ? resp.result.items.length : 0);
+//     const events = resp.result.items || [];
+    
+//     if (!events.length) {
+//       document.getElementById("events").textContent = "No upcoming events.";
+//       return;
+//     }
+
+//     renderEvents(events);
+//     // Save for voice reminders and persistence
+//     localStorage.setItem('calendarEvents', JSON.stringify(events));
+//     localStorage.setItem('eventsLastUpdated', Date.now());
+
+//     // Show the voice alerts button
+//     const voiceBtn = document.getElementById("enable-voice");
+//     voiceBtn.style.display = "inline-block";
+//     voiceBtn.onclick = () => {
+//       console.log("Enabling voice alerts.");
+//       scheduleVoiceReminders(events);
+//       voiceBtn.style.display = "none";
+//       document.getElementById("auth-status").textContent = "Voice alerts are active!";
+//     };
+    
+//   } catch (err) {
+//     console.error("Calendar error:", err);
+//     document.getElementById("auth-status").textContent = "Error loading calendar.";
+//     // If token is invalid, clear it so user can sign in again
+//     if (err.status === 401) {
+//       gapi.client.setToken(null);
+//       document.getElementById("sign-in").style.display = "inline-block";
+//     }
+//   }
+// }
+
+// function renderEvents(events) {
+//   const container = document.getElementById("events");
+//   container.innerHTML = "";
+
+//   const byDate = {};
+//   events.forEach((ev) => {
+//     const start = ev.start.dateTime || ev.start.date;
+//     const d = new Date(start);
+//     const key = d.toDateString();
+//     if (!byDate[key]) byDate[key] = [];
+//     byDate[key].push({ raw: ev, date: d });
+//   });
+
+//   Object.keys(byDate)
+//     .sort((a, b) => new Date(a) - new Date(b))
+//     .forEach((key) => {
+//       const dayHeader = document.createElement("div");
+//       dayHeader.className = "event-day";
+//       dayHeader.textContent = key;
+//       container.appendChild(dayHeader);
+
+//       byDate[key]
+//         .sort((a, b) => a.date - b.date)
+//         .forEach((e) => {
+//           const item = document.createElement("div");
+//           item.className = "event-item";
+
+//           const timeSpan = document.createElement("span");
+//           timeSpan.className = "event-time";
+//           const isAllDay = !!e.raw.start.date;
+//           timeSpan.textContent = isAllDay
+//             ? "All day"
+//             : e.date.toLocaleTimeString([], {
+//                 hour: "numeric",
+//                 minute: "2-digit",
+//                 hour12: true,
+//               });
+
+//           const titleSpan = document.createElement("span");
+//           titleSpan.className = "event-title";
+//           titleSpan.textContent = e.raw.summary || "(No title)";
+
+//           item.appendChild(timeSpan);
+//           item.appendChild(titleSpan);
+
+//           if (e.raw.location) {
+//             const locDiv = document.createElement("div");
+//             locDiv.className = "event-location";
+//             locDiv.textContent = e.raw.location;
+//             item.appendChild(locDiv);
+//           }
+
+//           container.appendChild(item);
+//         });
+//     });
+// }
 
 // ===== OPEN-METEO WEATHER =====
 const LAT = 38.81;
@@ -665,6 +699,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
