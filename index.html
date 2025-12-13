@@ -4,10 +4,8 @@
 <meta charset="UTF-8" />
 <title>Wall Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<!-- Load Google API Client Library -->
-  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-  <!-- Load NEW Google Identity Services (GIS) -->
-  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 <style>
 html, body {
   margin: 0;
@@ -234,40 +232,71 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+// ===== GOOGLE LIBRARY LOAD TEST =====
+console.log("LIBRARY TEST: Starting");
 
-// ===== SIMPLE GOOGLE AUTH TEST =====
-console.log("TEST: Script is running");
-
-// 1. Set up a simple button handler FIRST
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("TEST: DOM is ready");
+// Track library loading
+window.gapiLoaded = function() {
+  console.log("LIBRARY TEST: gapi.js loaded!");
+  console.log("gapi exists?", typeof gapi);
+  console.log("gapi.load exists?", typeof gapi.load);
   
-  const signInBtn = document.getElementById("sign-in");
-  if (signInBtn) {
-    console.log("TEST: Found sign-in button");
-    
-    // Force enable the button with a simple test
-    signInBtn.disabled = false;
-    signInBtn.onclick = function() {
-      console.log("TEST: Button was clicked!");
-      document.getElementById("auth-status").textContent = "Button works! Testing popup...";
+  // Try to load the client
+  if (gapi && gapi.load) {
+    gapi.load('client', function() {
+      console.log("LIBRARY TEST: gapi.client loaded");
       
-      // Try to open ANY popup
-      const testPopup = window.open('https://google.com', 'test', 'width=500,height=500');
-      if (!testPopup) {
-        document.getElementById("auth-status").textContent = "POPUP BLOCKED! Allow popups for this site.";
-      }
-    };
-    
-    document.getElementById("auth-status").textContent = "Ready - Click 'Sign in with Google'";
-  } else {
-    console.error("TEST: Could not find sign-in button!");
+      // Initialize with minimal config
+      gapi.client.init({
+        apiKey: "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE", // Your actual API key
+      }).then(function() {
+        console.log("LIBRARY TEST: gapi.client.init succeeded");
+      }).catch(function(err) {
+        console.error("LIBRARY TEST: gapi.client.init failed:", err);
+      });
+    });
   }
-});
+};
 
-// Check if Google libraries exist
-console.log("TEST: window.gapi exists?", typeof window.gapi);
-console.log("TEST: window.google exists?", typeof window.google);
+window.gisLoaded = function() {
+  console.log("LIBRARY TEST: GIS (accounts.google.com/gsi/client) loaded!");
+  console.log("google.accounts exists?", typeof google.accounts);
+  console.log("google.accounts.oauth2 exists?", typeof google.accounts?.oauth2);
+  
+  // Try to initialize token client
+  if (google.accounts && google.accounts.oauth2) {
+    try {
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com", // Your actual client ID
+        scope: "https://www.googleapis.com/auth/calendar.readonly",
+        callback: function(response) {
+          console.log("LIBRARY TEST: Token callback fired:", response);
+        }
+      });
+      console.log("LIBRARY TEST: Token client created:", tokenClient);
+    } catch (err) {
+      console.error("LIBRARY TEST: Failed to create token client:", err);
+    }
+  }
+};
+
+// Simple button handler
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById("sign-in");
+  btn.onclick = function() {
+    console.log("LIBRARY TEST: Button clicked");
+    console.log("Current state - gapi:", typeof gapi, "google:", typeof google);
+    
+    // Try to trigger Google auth if libraries loaded
+    if (window.tokenClient) {
+      console.log("LIBRARY TEST: Calling requestAccessToken");
+      window.tokenClient.requestAccessToken();
+    } else {
+      console.error("LIBRARY TEST: tokenClient not available");
+    }
+  };
+});
+  
 // ===== GOOGLE CALENDAR AUTH + LOAD =====
 // Replace these with your actual credentials
 // const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
@@ -699,6 +728,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
