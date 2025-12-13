@@ -1,527 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Wall Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Wall Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Google APIs (Calendar) -->
-  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
-      color: #ffffff;
-      overflow: hidden;
-    }
-
-    body {
-      background-image: url("background.jpg");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-
-    /* TWO COLUMNS: left (clock+events), right (weather+stock) */
-    .overlay {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top,
-                  rgba(0,0,0,0.35), rgba(0,0,0,0.85));
-      display: flex;
-      flex-direction: row;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    /* LEFT COLUMN */
-    .left-panel {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* RIGHT COLUMN */
-    .right-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;  /* weather above, stock below */
-      gap: 16px;
-      margin-left: 16px;
-      min-height: 0;
-    }
-
-    /* Weather ~60%, stock ~40% of right column */
-    #weather-panel {
-      flex: 3 1 0;
-      min-height: 180px;
-      max-height: 1060px;
-      overflow-y: auto;
-    }
-
-    #stock-panel {
-      flex: 2 1 0;
-      min-height: 140px;
-    }
-
-    .panel {
-      background: rgba(0, 0, 0, 0.45);
-      border-radius: 8px;
-      padding: 12px 16px;
-      box-sizing: border-box;
-    }
-
-    #clock {
-      font-size: 32px;
-      font-weight: 600;
-    }
-
-    #date {
-      font-size: 18px;
-      opacity: 0.8;
-    }
-
-    #events-container {
-      max-height: 800px;
-      overflow-y: auto;
-    }
-
-    #events {
-      flex: 1;
-      overflow-y: auto;
-      font-size: 16px;
-      max-height: 100%;
-    }
-
-    .event-day {
-      margin-top: 10px;
-      font-weight: 600;
-      font-size: 15px;
-      opacity: 0.9;
-    }
-
-    .event-item {
-      margin-top: 4px;
-      padding: 4px 6px;
-      background: rgba(0, 255, 0, 0.05);
-      border-radius: 4px;
-      color: #f7f5f5;
-      font-size: 15px;
-      font-weight: bold;
-    }
-
-    .event-time {
-      font-weight: 600;
-      margin-right: 6px;
-    }
-
-    .event-location {
-      display: block;
-      font-size: 12px;
-      color: #e3dede;
-      margin-left: 65px;
-    }
-
-    /* WEATHER: portrait list */
-    #weather-current {
-      font-size: 22px;
-      font-weight: 600;
-    }
-
-    #weather-forecast {
-      margin-top: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 14px;
-    }
-
-    .weather-day {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 6px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 4px;
-    }
-
-    .weather-icon {
-      width: 38px;
-      height: 38px;
-      margin-right: 8px;
-    }
-
-    .weather-name {
-      width: 80px;
-      font-weight: 600;
-    }
-
-    .weather-temp {
-      font-weight: 600;
-      margin-right: 10px;
-    }
-
-    .weather-desc {
-      opacity: 0.9;
-      flex: 1;
-      text-align: right;
-    }
-
-    /* Enable‑voice button */
-    #enable-voice {
-      display: none;
-      padding: 6px 10px;
-      margin-top: 6px;
-      font-size: 14px;
-      border-radius: 4px;
-      border: 1px solid #ffffff;
-      background: rgba(255,255,255,0.1);
-      color: #ffffff;
-      cursor: pointer;
-    }
-
-    #enable-voice:hover {
-      background: rgba(255,255,255,0.25);
-    }
-  </style>
+<style>
+body {
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:black;
+  color:white;
+}
+.panel {
+  background:rgba(255,255,255,0.08);
+  padding:12px;
+  margin:12px;
+  border-radius:8px;
+}
+#clock { font-size:32px; }
+.event-item { margin-top:6px; }
+#enable-voice {
+  margin:8px 0;
+  padding:6px 10px;
+  background:#222;
+  color:white;
+  border:1px solid white;
+  cursor:pointer;
+}
+</style>
 </head>
+
 <body>
-  <div class="overlay">
-    <!-- LEFT column: clock + events -->
-    <div class="left-panel">
-      <div class="panel">
-        <div id="clock">--:--</div>
-        <div id="date">Loading date…</div>
-      </div>
 
-      <div class="panel" id="events-panel">
-        <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
-          Upcoming Events
-        </div>
-        <button id="enable-voice">Enable voice alerts</button>
-        <div id="events-container">
-          <div id="events">Loading events…</div>
-        </div>
-      </div>
-    </div>
+<div class="panel">
+  <div id="clock">--:--</div>
+  <div id="date">Loading…</div>
+</div>
 
-    <!-- RIGHT column: weather + stock -->
-    <div class="right-panel">
-      <div class="panel" id="weather-panel">
-        <div id="weather-current">Loading weather…</div>
-        <div id="weather-forecast"></div>
-      </div>
+<div class="panel">
+  <h2>Upcoming Events</h2>
+  <button id="enable-voice" style="display:none;">Enable voice alerts</button>
+  <div id="events">Loading events…</div>
+</div>
 
-      <div class="panel" id="stock-panel">
-        <div id="tradingview-widget" style="width:100%;height:100%;"></div>
-      </div>
-    </div>
-  </div>
+<script>
+/* ========= BOOT CHECK ========= */
+console.log("Dashboard JS started");
 
-  <script>
-    // ===== CLOCK =====
-    function updateClock() {
-      const now = new Date();
-      document.getElementById("clock").textContent =
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      document.getElementById("date").textContent =
-        now.toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "long",
-          day: "numeric"
-        });
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
+/* ========= DOM ========= */
+const clockEl = document.getElementById("clock");
+const dateEl = document.getElementById("date");
+const eventsEl = document.getElementById("events");
+const enableVoiceBtn = document.getElementById("enable-voice");
 
-    // ===== GOOGLE CALENDAR AUTH + LOAD =====
-    const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
-    const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
-    const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-    const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+/* ========= CLOCK ========= */
+function updateClock() {
+  const now = new Date();
+  clockEl.textContent = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  dateEl.textContent = now.toLocaleDateString(undefined, {
+    weekday:"long", month:"long", day:"numeric"
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-    let tokenClient, gapiReady=false, gisReady=false;
+/* ========= GOOGLE CALENDAR ========= */
+const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
+const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
+const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+
+let tokenClient;
+let gapiReady = false;
+let gisReady = false;
 let calendarEvents = [];
 
-function gapiLoaded() { gapi.load("client", initGapi); }
-async function initGapi() {
-  await gapi.client.init({ apiKey: API_KEY, discoveryDocs:[DISCOVERY_DOC] });
-  gapiReady=true; maybeAuth();
+function gapiLoaded() {
+  console.log("gapi loaded");
+  gapi.load("client", async () => {
+    await gapi.client.init({ apiKey: API_KEY, discoveryDocs:[DISCOVERY_DOC] });
+    gapiReady = true;
+    maybeAuth();
+  });
 }
+
 function gisLoaded() {
+  console.log("gis loaded");
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES, callback: ""
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: ""
   });
-  gisReady=true; maybeAuth();
-}
-function maybeAuth() {
-  if (!(gapiReady && gisReady)) return;
-  tokenClient.callback = async () => loadEvents();
-  tokenClient.requestAccessToken({ prompt: "" });
+  gisReady = true;
+  maybeAuth();
 }
 
-async function loadEvents() {
-  const now = new Date();
-  const resp = await gapi.client.calendar.events.list({
-    calendarId: "family03331431524389313579@group.calendar.google.com",
-    timeMin: now.toISOString(),
-    timeMax: new Date(now.getTime()+30*86400000).toISOString(),
-    singleEvents: true,
-    orderBy: "startTime"
-  });
-  calendarEvents = resp.result.items || [];
-  renderEvents(calendarEvents);
-  enableVoiceBtn.style.display = "inline-block";
-}
-
-/* ===== RENDER EVENTS ===== */
-function renderEvents(events) {
-  eventsDiv.innerHTML = "";
-  events.forEach(ev => {
-    const d = new Date(ev.start.dateTime || ev.start.date);
-    const div = document.createElement("div");
-    div.className="event-item";
-    div.innerHTML = `
-      <span class="event-time">${ev.start.date ? "All day" :
-        d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span>
-      ${ev.summary || "(No title)"}
-    `;
-    eventsDiv.appendChild(div);
-  });
-}
-
-/* ===== VOICE REMINDERS (FIXED) ===== */
-let spoken = new Set();
-let voiceLoopStarted = false;
-
-function startVoiceReminderLoop() {
-  if (voiceLoopStarted) return;
-  voiceLoopStarted = true;
-
-  speechSynthesis.getVoices(); // warm up
-
-  setInterval(() => {
-    const now = Date.now();
-
-    calendarEvents.forEach(ev => {
-      if (!ev.start?.dateTime) return;
-
-      const start = new Date(ev.start.dateTime).getTime();
-      const mins = Math.round((start - now) / 60000);
-
-      if ((mins === 30 || mins === 15) && !spoken.has(ev.id+mins)) {
-        spoken.add(ev.id+mins);
-
-        const msg = `Reminder. ${ev.summary || "Event"} starts in ${mins} minutes.`;
-        const u = new SpeechSynthesisUtterance(msg);
-        speechSynthesis.cancel();
-        speechSynthesis.speak(u);
-
-        console.log("VOICE:", msg);
-      }
-    });
-  }, 60000);
-}
-
-enableVoiceBtn.onclick = () => {
-  startVoiceReminderLoop();
-  enableVoiceBtn.style.display = "none";
-};
-    
-
-    // ===== OPEN-METEO WEATHER =====  [web:60][web:62]
-    const LAT = 38.81;
-    const LON = -90.72;
-
-    function loadWeather() {
-      const url =
-        "https://api.open-meteo.com/v1/forecast?" +
-        "latitude=" + LAT +
-        "&longitude=" + LON +
-        "&daily=temperature_2m_max,temperature_2m_min,weathercode" +
-        "&temperature_unit=fahrenheit" +
-        "&current_weather=true&timezone=auto";
-
-      fetch(url)
-        .then(r => r.json())
-        .then(data => renderWeather(data))
-        .catch(err => {
-          document.getElementById("weather-current").textContent = "Weather error";
-          console.error(err);
-        });
-    }
-
-    function renderWeather(data) {
-      const current = data.current_weather;
-      const daily = data.daily;
-
-      const currentEl = document.getElementById("weather-current");
-      currentEl.textContent =
-        Math.round(current.temperature) + "°  " + mapWeatherCode(current.weathercode);
-
-      const forecastEl = document.getElementById("weather-forecast");
-      forecastEl.innerHTML = "";
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const days = daily.time.length;
-      let shown = 0;
-
-      for (let i = 0; i < days && shown < 7; i++) {
-        const d = new Date(daily.time[i]);
-        const localDay = new Date(d);
-        localDay.setHours(0, 0, 0, 0);
-        if (localDay < today) continue;
-
-        const row = document.createElement("div");
-        row.className = "weather-day";
-
-        const iconEl = document.createElement("img");
-        iconEl.className = "weather-icon";
-        iconEl.src = getWeatherIcon(daily.weathercode[i]);
-        iconEl.alt = mapWeatherCode(daily.weathercode[i]);
-
-        const nameEl = document.createElement("div");
-        nameEl.className = "weather-name";
-        nameEl.textContent = d.toLocaleDateString(undefined, {
-          weekday: "short",
-          month: "short",
-          day: "numeric"
-        });
-
-        const tempEl = document.createElement("div");
-        tempEl.className = "weather-temp";
-        const hi = Math.round(daily.temperature_2m_max[i]);
-        const lo = Math.round(daily.temperature_2m_min[i]);
-        tempEl.textContent = hi + "° / " + lo + "°";
-
-        const descEl = document.createElement("div");
-        descEl.className = "weather-desc";
-        descEl.textContent = mapWeatherCode(daily.weathercode[i]);
-
-        row.appendChild(iconEl);
-        row.appendChild(nameEl);
-        row.appendChild(tempEl);
-        row.appendChild(descEl);
-
-        forecastEl.appendChild(row);
-        shown++;
-      }
-    }
-
-    function getWeatherIcon(code) {
-      if (code === 0) return "icons/clear.png";
-      if ([1, 2, 3].includes(code)) return "icons/partly-cloudy.png";
-      if ([45, 48].includes(code)) return "icons/fog.png";
-      if ([51, 53, 55, 56, 57].includes(code)) return "icons/drizzle.png";
-      if ([61, 63, 65, 80, 81, 82].includes(code)) return "icons/rain.png";
-      if ([71, 73, 75, 77, 85, 86].includes(code)) return "icons/snow.png";
-      if ([95, 96, 99].includes(code)) return "icons/storm.png";
-      return "icons/unknown.png";
-    }
-
-    function mapWeatherCode(code) {
-      if (code === 0) return "Clear";
-      if ([1,2,3].includes(code)) return "Cloudy";
-      if ([45,48].includes(code)) return "Fog";
-      if ([51,53,55,56,57].includes(code)) return "Drizzle";
-      if ([61,63,65,80,81,82].includes(code)) return "Rain";
-      if ([71,73,75,77,85,86].includes(code)) return "Snow";
-      if ([95,96,99].includes(code)) return "Storm";
-      return "N/A";
-    }
-
-    loadWeather();
-    setInterval(loadWeather, 60 * 60 * 1000);
-
-    // ===== VOICE REMINDERS =====
-// function scheduleVoiceReminders(events) {
-//   console.log("NOOP scheduler called, events =", events.length);
-//   if (!("speechSynthesis" in window)) {
-//     console.log("No speechSynthesis support");
-//     return;
-//   }
-
-//   console.log("SCHEDULER: using delayed version for", events.length, "events");
-//   const now = Date.now();
-
-//   events.forEach(ev => {
-//     if (!ev.start || !ev.start.dateTime) return; // skip all‑day for now
-
-//     const start = new Date(ev.start.dateTime).getTime();
-
-//     // 30‑minute reminder
-//     const remind30 = start - 30 * 60 * 1000;
-//     const delay30 = remind30 - now;
-//     if (delay30 > 0) {
-//       console.log("[30] will speak in", Math.round(delay30 / 1000), "sec for", ev.summary);
-//       setTimeout(() => {
-//         console.log("[30] speaking for", ev.summary);
-//         const msg =
-//           "Reminder. Event " + (ev.summary || "no title") + " starts in 30 minutes.";
-//         const utter = new SpeechSynthesisUtterance(msg);
-//         window.speechSynthesis.speak(utter);
-//       }, delay30);
-//     }
-
-//     // 15‑minute reminder
-//     const remind15 = start - 15 * 60 * 1000;
-//     const delay15 = remind15 - now;
-//     if (delay15 > 0) {
-//       console.log("[15] will speak in", Math.round(delay15 / 1000), "sec for", ev.summary);
-//       setTimeout(() => {
-//         console.log("[15] speaking for", ev.summary);
-//         const msg =
-//           "Reminder. Event " + (ev.summary || "no title") + " starts in 15 minutes.";
-//         const utter = new SpeechSynthesisUtterance(msg);
-//         window.speechSynthesis.speak(utter);
-//       }, delay15);
-//     }
-//   });
-// }
-
-  </script>
-
-  <!-- TradingView stock widget -->
-  <script type="text/javascript">
-    (function () {
-      const container = document.getElementById("tradingview-widget");
-      if (!container) return;
-
-      const script = document.createElement("script");
-      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
-      script.async = true;
-      script.innerHTML = JSON.stringify({
-        symbols: [
-          ["SPY", "AMEX:SPY|1M"]
-        ],
-        chartOnly: false,
-        width: "100%",
-        height: "100%",
-        locale: "en",
-        colorTheme: "dark",
-        autosize: true,
-        showVolume: true
-      });
-
-      container.style.height = "100%";
-      container.appendChild(script);
-    })();
-  </script>
-</body>
-</html>
-
-
-
-
-
-
-
-
+function
