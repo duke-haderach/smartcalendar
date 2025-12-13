@@ -550,7 +550,7 @@ function checkReminders(events) {
 
 function speakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
-  const message = `Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const message = `Hey Spade family Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
@@ -732,3 +732,4 @@ setInterval(cleanupOldReminders, 24 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
