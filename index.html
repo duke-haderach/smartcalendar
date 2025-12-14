@@ -220,11 +220,11 @@ body {
   
   /* Maintain 70/30 split but adjust margins */
   .left-panel {
-    flex: 7; /* 70% */
+    flex: 6; /* 70% */
   }
   
   .right-panel {
-    flex: 3; /* 30% */
+    flex: 4; /* 30% */
     margin-left: 12px;
   }
   
@@ -715,7 +715,7 @@ function renderEvents(events) {
           if (endTime && !isAllDay) {
             const endTimeSpan = document.createElement("div");
             endTimeSpan.className = "event-end-time";
-            endTimeSpan.textContent = "to " + endTime.toLocaleTimeString([], {
+            endTimeSpan.textContent = endTime.toLocaleTimeString([], {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
@@ -1105,6 +1105,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
