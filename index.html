@@ -7,6 +7,8 @@
 <!-- Google APIs -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
+<!-- TradingView Widget (custom to reduce size) -->
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <style>
 html, body {
   margin: 0;
@@ -62,13 +64,89 @@ body {
   padding: 12px 16px;
   box-sizing: border-box;
 }
+/* ===== CLOCK WIDGET ===== */
+#clock-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+#clock-widget {
+  display: flex;
+  flex-direction: column;
+}
 #clock {
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 42px; /* Larger for emphasis */
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 #date {
   font-size: 18px;
-  opacity: 0.8;
+  opacity: 0.9;
+  margin-top: 4px;
+}
+/* Analog Clock */
+#analog-clock {
+  width: 100px;
+  height: 100px;
+  position: relative;
+}
+.clock-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+.clock-center {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+.hour-hand, .minute-hand, .second-hand {
+  position: absolute;
+  transform-origin: bottom center;
+  left: 50%;
+  bottom: 50%;
+}
+.hour-hand {
+  width: 4px;
+  height: 30px;
+  background: #ffffff;
+  margin-left: -2px;
+  border-radius: 2px;
+}
+.minute-hand {
+  width: 3px;
+  height: 40px;
+  background: #ffffff;
+  margin-left: -1.5px;
+  border-radius: 1.5px;
+}
+.second-hand {
+  width: 2px;
+  height: 45px;
+  background: #ff4444;
+  margin-left: -1px;
+  border-radius: 1px;
+}
+.clock-mark {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+}
+.mark-hour {
+  width: 3px;
+  height: 8px;
+}
+.mark-minute {
+  width: 2px;
+  height: 4px;
 }
 #events-container {
   max-height: 800px;
@@ -85,26 +163,52 @@ body {
   font-weight: 600;
   font-size: 15px;
   opacity: 0.9;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
+/* ===== FIXED EVENT LAYOUT ===== */
 .event-item {
-  margin-top: 4px;
-  padding: 4px 6px;
+  margin-top: 6px;
+  padding: 6px 8px;
   background: rgba(0, 255, 0, 0.05);
-  border-radius: 4px;
+  border-radius: 6px;
   color: #f7f5f5;
   font-size: 15px;
   font-weight: bold;
+  display: flex;
+  flex-direction: column;
+}
+.event-time-container {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 4px;
 }
 .event-time {
   font-weight: 600;
-  margin-right: 6px;
+  min-width: 140px; /* Fixed width for time column */
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.event-title {
+  flex: 1;
+  line-height: 1.4;
+}
+/* Second line for end time and location */
+.event-details {
+  display: flex;
+  margin-left: 140px; /* Aligns with event title start */
+  font-size: 13px;
+  color: #e3dede;
+  gap: 20px;
+}
+.event-end-time {
+  font-weight: 500;
+  white-space: nowrap;
 }
 .event-location {
-  display: block;
-  font-size: 12px;
-  color: #e3dede;
-  margin-left: 65px;
+  flex: 1;
 }
+/* ===== WEATHER ===== */
 #weather-current {
   font-size: 22px;
   font-weight: 600;
@@ -136,16 +240,15 @@ body {
 .weather-temp {
   font-weight: 600;
   margin-right: 10px;
-  /* ADDED: More space between date and temperature */
   margin-left: 15px;
 }
 .weather-desc {
   opacity: 0.9;
   flex: 1;
   text-align: right;
-  /* ADDED: More space between temperature and description */
   margin-left: 15px;
 }
+/* ===== BUTTONS ===== */
 #enable-voice {
   padding: 6px 10px;
   margin-top: 6px;
@@ -179,11 +282,29 @@ body {
 <body>
 <div class="overlay">
   <div class="left-panel">
+    <!-- Clock Panel with Analog Clock -->
     <div class="panel">
-      <div id="clock">--:--</div>
-      <div id="date">Loading date…</div>
+      <div id="clock-container">
+        <div id="clock-widget">
+          <div id="clock">--:-- --</div>
+          <div id="date">Loading date…</div>
+        </div>
+        <div id="analog-clock">
+          <div class="clock-face">
+            <div class="clock-center"></div>
+            <div class="hour-hand"></div>
+            <div class="minute-hand"></div>
+            <div class="second-hand"></div>
+          </div>
+        </div>
+      </div>
     </div>
+    
+    <!-- Events Panel -->
     <div class="panel" id="events-panel">
+      <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
+        Upcoming Events
+      </div>
       <div id="auth-status">Initializing...</div>
       <button id="sign-in" disabled>Loading Google Sign-in...</button>
       <button id="enable-voice">Enable voice alerts</button>
@@ -192,13 +313,16 @@ body {
       </div>
     </div>
   </div>
+  
+  <!-- Right Panel -->
   <div class="right-panel">
     <div class="panel" id="weather-panel">
       <div id="weather-current">Loading weather…</div>
       <div id="weather-forecast"></div>
     </div>
     <div class="panel" id="stock-panel">
-      <div id="tradingview-widget" style="width:100%;height:100%;"></div>
+      <!-- Custom TradingView Widget with reduced size -->
+      <div id="tradingview-widget"></div>
     </div>
   </div>
 </div>
@@ -215,22 +339,71 @@ let tokenClient = null;
 let calendarRefreshInterval = null;
 let reminderCheckInterval = null;
 let spokenEvents = new Set();
-let voiceEnabled = false; // Track if voice is enabled for the day
-let voiceEnabledDate = null; // Track when voice was enabled
+let voiceEnabled = false;
+let voiceEnabledDate = null;
 
-// ===== CLOCK =====
+// ===== CLOCK FUNCTIONS =====
 function updateClock() {
   const now = new Date();
-  document.getElementById("clock").textContent = now.toLocaleTimeString([], {
-    hour: "2-digit",
+  
+  // Digital clock with AM/PM
+  const timeString = now.toLocaleTimeString([], {
+    hour: "numeric",
     minute: "2-digit",
+    hour12: true
   });
+  document.getElementById("clock").textContent = timeString;
+  
+  // Date
   document.getElementById("date").textContent = now.toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
+  
+  // Update analog clock
+  updateAnalogClock(now);
 }
+
+function updateAnalogClock(now) {
+  const hours = now.getHours() % 12;
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  
+  // Calculate angles
+  const hourAngle = (hours * 30) + (minutes * 0.5); // 30 degrees per hour, 0.5 per minute
+  const minuteAngle = (minutes * 6) + (seconds * 0.1); // 6 degrees per minute, 0.1 per second
+  const secondAngle = seconds * 6; // 6 degrees per second
+  
+  // Update hands
+  document.querySelector('.hour-hand').style.transform = `translateX(-50%) rotate(${hourAngle}deg)`;
+  document.querySelector('.minute-hand').style.transform = `translateX(-50%) rotate(${minuteAngle}deg)`;
+  document.querySelector('.second-hand').style.transform = `translateX(-50%) rotate(${secondAngle}deg)`;
+}
+
+function createClockMarks() {
+  const clockFace = document.querySelector('.clock-face');
+  
+  // Create hour marks (12)
+  for (let i = 0; i < 12; i++) {
+    const mark = document.createElement('div');
+    mark.className = 'clock-mark mark-hour';
+    
+    const angle = i * 30; // 30 degrees each
+    const radius = 45; // Position from center
+    const x = 50 + radius * Math.sin(angle * Math.PI / 180);
+    const y = 50 - radius * Math.cos(angle * Math.PI / 180);
+    
+    mark.style.left = `${x}%`;
+    mark.style.top = `${y}%`;
+    mark.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+    
+    clockFace.appendChild(mark);
+  }
+}
+
+// Initialize clock
+createClockMarks();
 setInterval(updateClock, 1000);
 updateClock();
 
@@ -357,7 +530,7 @@ function handleSignOut() {
   
   localStorage.removeItem('calendarEvents');
   localStorage.removeItem('eventsLastUpdated');
-  localStorage.removeItem('voiceEnabledDate'); // Clear voice tracking
+  localStorage.removeItem('voiceEnabledDate');
   
   document.getElementById("events").innerHTML = "";
   document.getElementById("sign-in").textContent = "Sign in with Google";
@@ -408,10 +581,8 @@ async function loadCalendarEvents() {
     localStorage.setItem('calendarEvents', JSON.stringify(events));
     localStorage.setItem('eventsLastUpdated', Date.now());
     
-    // Check if voice was enabled today
     checkVoiceEnabledForToday();
     
-    // Auto-enable voice reminders if enabled for today
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
@@ -441,7 +612,7 @@ function renderEvents(events) {
       eventsByDate[dateKey] = [];
     }
     
-    eventsByDate[dateKey].push({ raw: event, date });
+    eventsByDate[dateKey].push(event);
   });
 
   Object.keys(eventsByDate)
@@ -453,35 +624,69 @@ function renderEvents(events) {
       container.appendChild(dayHeader);
 
       eventsByDate[dateKey]
-        .sort((a, b) => a.date - b.date)
-        .forEach(eventData => {
+        .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date))
+        .forEach(event => {
           const eventItem = document.createElement("div");
           eventItem.className = "event-item";
 
-          const timeSpan = document.createElement("span");
+          // Parse times
+          const isAllDay = !!event.start.date;
+          const startTime = event.start.dateTime ? new Date(event.start.dateTime) : null;
+          const endTime = event.end.dateTime ? new Date(event.end.dateTime) : null;
+          
+          // Create time container (first line)
+          const timeContainer = document.createElement("div");
+          timeContainer.className = "event-time-container";
+          
+          const timeSpan = document.createElement("div");
           timeSpan.className = "event-time";
-          const isAllDay = !!eventData.raw.start.date;
-          timeSpan.textContent = isAllDay ? "All day" : 
-            eventData.date.toLocaleTimeString([], {
+          
+          if (isAllDay) {
+            timeSpan.textContent = "All day";
+          } else if (startTime) {
+            timeSpan.textContent = startTime.toLocaleTimeString([], {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
             });
-
-          const titleSpan = document.createElement("span");
-          titleSpan.className = "event-title";
-          titleSpan.textContent = eventData.raw.summary || "(No title)";
-
-          eventItem.appendChild(timeSpan);
-          eventItem.appendChild(titleSpan);
-
-          if (eventData.raw.location) {
-            const locationDiv = document.createElement("div");
-            locationDiv.className = "event-location";
-            locationDiv.textContent = eventData.raw.location;
-            eventItem.appendChild(locationDiv);
           }
-
+          
+          const titleSpan = document.createElement("div");
+          titleSpan.className = "event-title";
+          titleSpan.textContent = event.summary || "(No title)";
+          
+          timeContainer.appendChild(timeSpan);
+          timeContainer.appendChild(titleSpan);
+          eventItem.appendChild(timeContainer);
+          
+          // Create details container (second line)
+          if (!isAllDay || event.location) {
+            const detailsContainer = document.createElement("div");
+            detailsContainer.className = "event-details";
+            
+            // Add end time if available
+            if (endTime && !isAllDay) {
+              const endTimeSpan = document.createElement("div");
+              endTimeSpan.className = "event-end-time";
+              endTimeSpan.textContent = `to ${endTime.toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })}`;
+              detailsContainer.appendChild(endTimeSpan);
+            }
+            
+            // Add location if available
+            if (event.location) {
+              const locationDiv = document.createElement("div");
+              locationDiv.className = "event-location";
+              locationDiv.textContent = event.location;
+              detailsContainer.appendChild(locationDiv);
+            }
+            
+            eventItem.appendChild(detailsContainer);
+          }
+          
           container.appendChild(eventItem);
         });
     });
@@ -533,13 +738,11 @@ function scheduleVoiceReminders(events) {
     return;
   }
   
-  // Mark voice as enabled for today
   const today = new Date().toDateString();
   localStorage.setItem('voiceEnabledDate', today);
   voiceEnabled = true;
   voiceEnabledDate = today;
   
-  // Hide the enable button
   document.getElementById("enable-voice").style.display = "none";
   
   if (reminderCheckInterval) {
@@ -547,7 +750,6 @@ function scheduleVoiceReminders(events) {
     spokenEvents.clear();
   }
   
-  // Check every 10 seconds for more accurate timing
   reminderCheckInterval = setInterval(() => checkReminders(events), 10000);
   checkReminders(events);
 }
@@ -564,10 +766,6 @@ function checkReminders(events) {
     const eventId = event.id || event.summary;
     const minutesUntilEvent = (eventStartMs - nowMs) / (60 * 1000);
     
-    console.log(`Event: ${event.summary}, Minutes until: ${minutesUntilEvent.toFixed(1)}`);
-    
-    // FIXED: Use wider time windows to catch the reminders
-    // 30-minute reminder (between 30:00 and 29:30)
     if (minutesUntilEvent <= 30 && minutesUntilEvent > 29.5) {
       const reminderKey = `${eventId}_30min`;
       if (!spokenEvents.has(reminderKey)) {
@@ -577,7 +775,6 @@ function checkReminders(events) {
       }
     }
     
-    // FIXED: 15-minute reminder (between 15:00 and 14:30)
     if (minutesUntilEvent <= 15 && minutesUntilEvent > 14.5) {
       const reminderKey = `${eventId}_15min`;
       if (!spokenEvents.has(reminderKey)) {
@@ -591,16 +788,13 @@ function checkReminders(events) {
 
 function speakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
-  const message = `Hey Spade family your next event is: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const message = `Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
   
-  // Cancel any ongoing speech
   window.speechSynthesis.cancel();
-  
-  // Small delay to ensure cancellation is processed
   setTimeout(() => {
     window.speechSynthesis.speak(utterance);
   }, 50);
@@ -710,6 +904,63 @@ function getWeatherDescription(code) {
   return "N/A";
 }
 
+// ===== TRADINGVIEW WIDGET (CUSTOM FOR SMALLER SIZE) =====
+function initTradingViewWidget() {
+  const container = document.getElementById('tradingview-widget');
+  if (!container || !window.TradingView) return;
+  
+  // Clear previous content
+  container.innerHTML = '';
+  
+  // Create a minimal chart widget with smaller branding
+  new TradingView.widget({
+    "container_id": "tradingview-widget",
+    "width": "100%",
+    "height": "100%",
+    "symbol": "AMEX:SPY",
+    "interval": "D",
+    "timezone": "Etc/UTC",
+    "theme": "dark",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#1a1a1a",
+    "enable_publishing": false,
+    "allow_symbol_change": false,
+    "hide_side_toolbar": false,
+    "hideideas": true,
+    "studies": [],
+    "show_popup_button": false,
+    "popup_width": "1000",
+    "popup_height": "650",
+    // Reduced branding options
+    "withdateranges": false,
+    "hide_volume": false,
+    "hide_top_toolbar": false,
+    "save_image": false,
+    "calendar": false,
+    "news": [],
+    "details": false,
+    "hotlist": false,
+    "watchlist": false
+  });
+  
+  // Additional CSS to reduce branding size
+  const style = document.createElement('style');
+  style.textContent = `
+    #tradingview-widget .tradingview-widget-copyright {
+      font-size: 9px !important;
+      opacity: 0.7 !important;
+    }
+    #tradingview-widget .tradingview-widget-container iframe {
+      border: none !important;
+    }
+    #tradingview-widget .logo {
+      transform: scale(0.8) !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // ===== INITIALIZATION =====
 window.addEventListener('load', () => {
   console.log("Page loaded, initializing...");
@@ -724,19 +975,29 @@ window.addEventListener('load', () => {
     const events = JSON.parse(savedEvents);
     renderEvents(events);
     
-    // Check voice status and update button
     checkVoiceEnabledForToday();
     
-    // Set up voice button handler
     const voiceBtn = document.getElementById("enable-voice");
     voiceBtn.onclick = () => {
       scheduleVoiceReminders(events);
     };
     
-    // Auto-enable if previously enabled today
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
+  }
+  
+  // Initialize TradingView when library loads
+  if (window.TradingView) {
+    initTradingViewWidget();
+  } else {
+    // Wait for TradingView to load
+    const checkTradingView = setInterval(() => {
+      if (window.TradingView) {
+        clearInterval(checkTradingView);
+        initTradingViewWidget();
+      }
+    }, 100);
   }
   
   initGoogleApi();
@@ -747,7 +1008,6 @@ function cleanupOldReminders() {
   const now = Date.now();
   spokenEvents.clear();
   
-  // Check if we need to reset voice for new day
   const today = new Date().toDateString();
   if (voiceEnabledDate && voiceEnabledDate !== today) {
     voiceEnabled = false;
@@ -765,32 +1025,7 @@ function cleanupOldReminders() {
   }
 }
 
-// Check every hour if it's a new day
 setInterval(cleanupOldReminders, 60 * 60 * 1000);
-</script>
-
-<script type="text/javascript">
-(function() {
-  const container = document.getElementById("tradingview-widget");
-  if (!container) return;
-  
-  const script = document.createElement("script");
-  script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
-  script.async = true;
-  script.innerHTML = JSON.stringify({
-    symbols: [["SPY", "AMEX:SPY|1M"]],
-    chartOnly: false,
-    width: "100%",
-    height: "100%",
-    locale: "en",
-    colorTheme: "dark",
-    autosize: true,
-    showVolume: true,
-  });
-  
-  container.style.height = "100%";
-  container.appendChild(script);
-})();
 </script>
 </body>
 </html>
