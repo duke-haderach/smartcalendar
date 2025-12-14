@@ -512,6 +512,7 @@ function renderEvents(events) {
           const timeContainer = document.createElement("div");
           timeContainer.className = "event-time-container";
           
+          // START TIME (was missing)
           const timeSpan = document.createElement("div");
           timeSpan.className = "event-time";
           
@@ -523,9 +524,13 @@ function renderEvents(events) {
               minute: "2-digit",
               hour12: true,
             });
+          } else {
+            timeSpan.textContent = "Time TBD";
           }
           
-          // End time (FIX 2)
+          timeContainer.appendChild(timeSpan);
+          
+          // END TIME (only if not all-day event)
           if (endTime && !isAllDay) {
             const endTimeSpan = document.createElement("div");
             endTimeSpan.className = "event-end-time";
@@ -558,7 +563,7 @@ function renderEvents(events) {
         });
     });
 }
-
+  
 // ===== VOICE ALERTS SETUP =====
 function setupVoiceAlertsButton() {
   const voiceBtn = document.getElementById("enable-voice");
@@ -688,7 +693,7 @@ function checkReminders(events) {
 
 function speakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
-  const message = `Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const message = `Hey Spade family you have got: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
@@ -919,4 +924,5 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
