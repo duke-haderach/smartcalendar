@@ -136,14 +136,17 @@ body {
 .weather-temp {
   font-weight: 600;
   margin-right: 10px;
+  /* ADDED: More space between date and temperature */
+  margin-left: 15px;
 }
 .weather-desc {
   opacity: 0.9;
   flex: 1;
   text-align: right;
+  /* ADDED: More space between temperature and description */
+  margin-left: 15px;
 }
 #enable-voice {
-  display: none;
   padding: 6px 10px;
   margin-top: 6px;
   font-size: 14px;
@@ -152,6 +155,7 @@ body {
   background: rgba(255,255,255,0.1);
   color: #ffffff;
   cursor: pointer;
+  display: inline-block;
 }
 #enable-voice:hover {
   background: rgba(255,255,255,0.25);
@@ -180,9 +184,6 @@ body {
       <div id="date">Loading date…</div>
     </div>
     <div class="panel" id="events-panel">
-      <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
-        Upcoming Events
-      </div>
       <div id="auth-status">Initializing...</div>
       <button id="sign-in" disabled>Loading Google Sign-in...</button>
       <button id="enable-voice">Enable voice alerts</button>
@@ -204,8 +205,8 @@ body {
 
 <script>
 // ===== CONFIGURATION =====
-const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com"; // REPLACE WITH YOURS
-const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE"; // REPLACE WITH YOURS
+const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleusercontent.com";
+const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
 const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
 
@@ -214,6 +215,8 @@ let tokenClient = null;
 let calendarRefreshInterval = null;
 let reminderCheckInterval = null;
 let spokenEvents = new Set();
+let voiceEnabled = false; // Track if voice is enabled for the day
+let voiceEnabledDate = null; // Track when voice was enabled
 
 // ===== CLOCK =====
 function updateClock() {
@@ -354,13 +357,17 @@ function handleSignOut() {
   
   localStorage.removeItem('calendarEvents');
   localStorage.removeItem('eventsLastUpdated');
+  localStorage.removeItem('voiceEnabledDate'); // Clear voice tracking
   
   document.getElementById("events").innerHTML = "";
   document.getElementById("sign-in").textContent = "Sign in with Google";
   document.getElementById("auth-status").textContent = "Signed out. Click to sign in again.";
-  document.getElementById("enable-voice").style.display = "none";
+  document.getElementById("enable-voice").style.display = "inline-block";
+  document.getElementById("enable-voice").textContent = "Enable voice alerts";
   
   spokenEvents.clear();
+  voiceEnabled = false;
+  voiceEnabledDate = null;
 }
 
 function updateAuthUI(isSignedIn) {
@@ -401,13 +408,13 @@ async function loadCalendarEvents() {
     localStorage.setItem('calendarEvents', JSON.stringify(events));
     localStorage.setItem('eventsLastUpdated', Date.now());
     
-    const voiceBtn = document.getElementById("enable-voice");
-    voiceBtn.style.display = "inline-block";
-    voiceBtn.onclick = () => {
+    // Check if voice was enabled today
+    checkVoiceEnabledForToday();
+    
+    // Auto-enable voice reminders if enabled for today
+    if (voiceEnabled) {
       scheduleVoiceReminders(events);
-      voiceBtn.style.display = "none";
-      document.getElementById("auth-status").textContent = "Voice alerts enabled!";
-    };
+    }
     
   } catch (error) {
     console.error("Error loading calendar:", error);
@@ -501,6 +508,23 @@ function stopAutoRefresh() {
 }
 
 // ===== VOICE REMINDERS =====
+function checkVoiceEnabledForToday() {
+  const savedDate = localStorage.getItem('voiceEnabledDate');
+  const today = new Date().toDateString();
+  
+  if (savedDate === today) {
+    voiceEnabled = true;
+    voiceEnabledDate = today;
+    document.getElementById("enable-voice").style.display = "none";
+    console.log("Voice alerts already enabled for today");
+  } else {
+    voiceEnabled = false;
+    voiceEnabledDate = null;
+    document.getElementById("enable-voice").style.display = "inline-block";
+    document.getElementById("enable-voice").textContent = "Enable voice alerts";
+  }
+}
+
 function scheduleVoiceReminders(events) {
   console.log("Scheduling voice reminders for", events.length, "events");
   
@@ -509,12 +533,22 @@ function scheduleVoiceReminders(events) {
     return;
   }
   
+  // Mark voice as enabled for today
+  const today = new Date().toDateString();
+  localStorage.setItem('voiceEnabledDate', today);
+  voiceEnabled = true;
+  voiceEnabledDate = today;
+  
+  // Hide the enable button
+  document.getElementById("enable-voice").style.display = "none";
+  
   if (reminderCheckInterval) {
     clearInterval(reminderCheckInterval);
     spokenEvents.clear();
   }
   
-  reminderCheckInterval = setInterval(() => checkReminders(events), 30000);
+  // Check every 10 seconds for more accurate timing
+  reminderCheckInterval = setInterval(() => checkReminders(events), 10000);
   checkReminders(events);
 }
 
@@ -530,17 +564,24 @@ function checkReminders(events) {
     const eventId = event.id || event.summary;
     const minutesUntilEvent = (eventStartMs - nowMs) / (60 * 1000);
     
+    console.log(`Event: ${event.summary}, Minutes until: ${minutesUntilEvent.toFixed(1)}`);
+    
+    // FIXED: Use wider time windows to catch the reminders
+    // 30-minute reminder (between 30:00 and 29:30)
     if (minutesUntilEvent <= 30 && minutesUntilEvent > 29.5) {
       const reminderKey = `${eventId}_30min`;
       if (!spokenEvents.has(reminderKey)) {
+        console.log(`Triggering 30-min reminder for: ${event.summary}`);
         speakReminder(event, 30);
         spokenEvents.add(reminderKey);
       }
     }
     
+    // FIXED: 15-minute reminder (between 15:00 and 14:30)
     if (minutesUntilEvent <= 15 && minutesUntilEvent > 14.5) {
       const reminderKey = `${eventId}_15min`;
       if (!spokenEvents.has(reminderKey)) {
+        console.log(`Triggering 15-min reminder for: ${event.summary}`);
         speakReminder(event, 15);
         spokenEvents.add(reminderKey);
       }
@@ -550,16 +591,19 @@ function checkReminders(events) {
 
 function speakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
-  const message = `Hey Spade family Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const message = `Hey Spade family your next event is: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
   
+  // Cancel any ongoing speech
   window.speechSynthesis.cancel();
+  
+  // Small delay to ensure cancellation is processed
   setTimeout(() => {
     window.speechSynthesis.speak(utterance);
-  }, 100);
+  }, 50);
 }
 
 function stopVoiceReminders() {
@@ -680,13 +724,19 @@ window.addEventListener('load', () => {
     const events = JSON.parse(savedEvents);
     renderEvents(events);
     
+    // Check voice status and update button
+    checkVoiceEnabledForToday();
+    
+    // Set up voice button handler
     const voiceBtn = document.getElementById("enable-voice");
-    voiceBtn.style.display = "inline-block";
     voiceBtn.onclick = () => {
       scheduleVoiceReminders(events);
-      voiceBtn.style.display = "none";
-      document.getElementById("auth-status").textContent = "Voice alerts enabled!";
     };
+    
+    // Auto-enable if previously enabled today
+    if (voiceEnabled) {
+      scheduleVoiceReminders(events);
+    }
   }
   
   initGoogleApi();
@@ -697,6 +747,17 @@ function cleanupOldReminders() {
   const now = Date.now();
   spokenEvents.clear();
   
+  // Check if we need to reset voice for new day
+  const today = new Date().toDateString();
+  if (voiceEnabledDate && voiceEnabledDate !== today) {
+    voiceEnabled = false;
+    voiceEnabledDate = null;
+    localStorage.removeItem('voiceEnabledDate');
+    document.getElementById("enable-voice").style.display = "inline-block";
+    document.getElementById("enable-voice").textContent = "Enable voice alerts";
+    console.log("Voice alerts reset for new day");
+  }
+  
   const lastUpdated = localStorage.getItem('eventsLastUpdated');
   if (lastUpdated && (now - lastUpdated > 24 * 60 * 60 * 1000)) {
     localStorage.removeItem('calendarEvents');
@@ -704,7 +765,8 @@ function cleanupOldReminders() {
   }
 }
 
-setInterval(cleanupOldReminders, 24 * 60 * 60 * 1000);
+// Check every hour if it's a new day
+setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 
 <script type="text/javascript">
@@ -732,4 +794,3 @@ setInterval(cleanupOldReminders, 24 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
-
