@@ -184,6 +184,9 @@ body {
       <div id="date">Loading date…</div>
     </div>
     <div class="panel" id="events-panel">
+      <div style="font-size:18px;font-weight:600;margin-bottom:6px;">
+        Upcoming Events
+      </div>
       <div id="auth-status">Initializing...</div>
       <button id="sign-in" disabled>Loading Google Sign-in...</button>
       <button id="enable-voice">Enable voice alerts</button>
@@ -591,7 +594,7 @@ function checkReminders(events) {
 
 function speakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
-  const message = `Hey Spade family your next event is: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const message = `Hey Spade family you have got: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
