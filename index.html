@@ -23,6 +23,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
+/* TWO COLUMNS: left (clock+events), right (weather+stock) */
 .overlay {
   position: absolute;
   inset: 0;
@@ -32,20 +33,23 @@ body {
   padding: 16px;
   box-sizing: border-box;
 }
+/* LEFT COLUMN */
 .left-panel {
-  flex: 2;
+  flex: 7;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+/* RIGHT COLUMN */
 .right-panel {
-  flex: 1;
+  flex: 3;
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* weather above, stock below */
   gap: 16px;
   margin-left: 16px;
   min-height: 0;
 }
+/* Weather ~60%, stock ~40% of right column */
 #weather-panel {
   flex: 3 1 0;
   min-height: 180px;
@@ -62,6 +66,7 @@ body {
   padding: 12px 16px;
   box-sizing: border-box;
 }
+/* ===== FIX 3: CLOCK WIDGET - AM/PM FORMAT ===== */
 #clock {
   font-size: 32px;
   font-weight: 600;
@@ -86,25 +91,48 @@ body {
   font-size: 15px;
   opacity: 0.9;
 }
+/* ===== FIX 1 & 2: EVENT LAYOUT FIX ===== */
 .event-item {
   margin-top: 4px;
-  padding: 4px 6px;
+  padding: 6px 8px;
   background: rgba(0, 255, 0, 0.05);
   border-radius: 4px;
   color: #f7f5f5;
   font-size: 15px;
   font-weight: bold;
+  display: flex;
+  flex-wrap: wrap;
+}
+.event-time-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+  margin-right: 10px;
 }
 .event-time {
   font-weight: 600;
-  margin-right: 6px;
+  white-space: nowrap;
+}
+.event-end-time {
+  font-size: 13px;
+  color: #e3dede;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.event-title {
+  flex: 1;
+  min-width: 200px;
+  line-height: 1.4;
 }
 .event-location {
   display: block;
   font-size: 12px;
   color: #e3dede;
-  margin-left: 65px;
+  margin-top: 4px;
+  width: 100%;
+  margin-left: 110px; /* Aligns with event title */
 }
+/* WEATHER: portrait list */
 #weather-current {
   font-size: 22px;
   font-weight: 600;
@@ -133,19 +161,19 @@ body {
   width: 80px;
   font-weight: 600;
 }
+/* ===== FIX 3: MORE SPACE IN WEATHER WIDGET ===== */
 .weather-temp {
   font-weight: 600;
   margin-right: 10px;
-  /* ADDED: More space between date and temperature */
-  margin-left: 15px;
+  margin-left: 15px; /* Added more space after date */
 }
 .weather-desc {
   opacity: 0.9;
   flex: 1;
   text-align: right;
-  /* ADDED: More space between temperature and description */
-  margin-left: 15px;
+  margin-left: 15px; /* Added more space after temperature */
 }
+/* Enable‑voice button */
 #enable-voice {
   padding: 6px 10px;
   margin-top: 6px;
@@ -160,6 +188,7 @@ body {
 #enable-voice:hover {
   background: rgba(255,255,255,0.25);
 }
+/* Sign-in button */
 #sign-in {
   padding: 8px 16px;
   margin-top: 6px;
@@ -174,13 +203,22 @@ body {
 #sign-in:hover {
   background: rgba(255,255,255,0.25);
 }
+/* ===== FIX 4: TRADINGVIEW CUSTOM STYLING ===== */
+.tradingview-widget-copyright {
+  font-size: 9px !important;
+  opacity: 0.6 !important;
+}
+.tradingview-widget-container .logo {
+  transform: scale(0.7) !important;
+}
 </style>
 </head>
 <body>
 <div class="overlay">
+  <!-- LEFT column: clock + events -->
   <div class="left-panel">
     <div class="panel">
-      <div id="clock">--:--</div>
+      <div id="clock">--:-- --</div> <!-- AM/PM will be added -->
       <div id="date">Loading date…</div>
     </div>
     <div class="panel" id="events-panel">
@@ -195,6 +233,7 @@ body {
       </div>
     </div>
   </div>
+  <!-- RIGHT column: weather + stock -->
   <div class="right-panel">
     <div class="panel" id="weather-panel">
       <div id="weather-current">Loading weather…</div>
@@ -218,16 +257,20 @@ let tokenClient = null;
 let calendarRefreshInterval = null;
 let reminderCheckInterval = null;
 let spokenEvents = new Set();
-let voiceEnabled = false; // Track if voice is enabled for the day
-let voiceEnabledDate = null; // Track when voice was enabled
+let voiceEnabled = false;
+let voiceEnabledDate = null;
 
-// ===== CLOCK =====
+// ===== FIX 3: CLOCK - AM/PM FORMAT =====
 function updateClock() {
   const now = new Date();
+  
+  // Digital clock with AM/PM
   document.getElementById("clock").textContent = now.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true  // This adds AM/PM
   });
+  
   document.getElementById("date").textContent = now.toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
@@ -360,7 +403,7 @@ function handleSignOut() {
   
   localStorage.removeItem('calendarEvents');
   localStorage.removeItem('eventsLastUpdated');
-  localStorage.removeItem('voiceEnabledDate'); // Clear voice tracking
+  localStorage.removeItem('voiceEnabledDate');
   
   document.getElementById("events").innerHTML = "";
   document.getElementById("sign-in").textContent = "Sign in with Google";
@@ -411,10 +454,8 @@ async function loadCalendarEvents() {
     localStorage.setItem('calendarEvents', JSON.stringify(events));
     localStorage.setItem('eventsLastUpdated', Date.now());
     
-    // Check if voice was enabled today
     checkVoiceEnabledForToday();
     
-    // Auto-enable voice reminders if enabled for today
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
@@ -429,6 +470,7 @@ async function loadCalendarEvents() {
   }
 }
 
+// ===== FIX 1 & 2: UPDATED EVENT RENDER FUNCTION =====
 function renderEvents(events) {
   const container = document.getElementById("events");
   container.innerHTML = "";
@@ -444,7 +486,7 @@ function renderEvents(events) {
       eventsByDate[dateKey] = [];
     }
     
-    eventsByDate[dateKey].push({ raw: event, date });
+    eventsByDate[dateKey].push(event);
   });
 
   Object.keys(eventsByDate)
@@ -456,35 +498,62 @@ function renderEvents(events) {
       container.appendChild(dayHeader);
 
       eventsByDate[dateKey]
-        .sort((a, b) => a.date - b.date)
-        .forEach(eventData => {
+        .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date))
+        .forEach(event => {
           const eventItem = document.createElement("div");
           eventItem.className = "event-item";
 
-          const timeSpan = document.createElement("span");
+          // Parse times
+          const isAllDay = !!event.start.date;
+          const startTime = event.start.dateTime ? new Date(event.start.dateTime) : null;
+          const endTime = event.end.dateTime ? new Date(event.end.dateTime) : null;
+          
+          // Time container (left column)
+          const timeContainer = document.createElement("div");
+          timeContainer.className = "event-time-container";
+          
+          const timeSpan = document.createElement("div");
           timeSpan.className = "event-time";
-          const isAllDay = !!eventData.raw.start.date;
-          timeSpan.textContent = isAllDay ? "All day" : 
-            eventData.date.toLocaleTimeString([], {
+          
+          if (isAllDay) {
+            timeSpan.textContent = "All day";
+          } else if (startTime) {
+            timeSpan.textContent = startTime.toLocaleTimeString([], {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
             });
-
-          const titleSpan = document.createElement("span");
+          }
+          
+          // End time (FIX 2)
+          if (endTime && !isAllDay) {
+            const endTimeSpan = document.createElement("div");
+            endTimeSpan.className = "event-end-time";
+            endTimeSpan.textContent = "to " + endTime.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+            timeContainer.appendChild(endTimeSpan);
+          }
+          
+          // Title (right column)
+          const titleSpan = document.createElement("div");
           titleSpan.className = "event-title";
-          titleSpan.textContent = eventData.raw.summary || "(No title)";
-
-          eventItem.appendChild(timeSpan);
+          titleSpan.textContent = event.summary || "(No title)";
+          
+          // Add to event item
+          eventItem.appendChild(timeContainer);
           eventItem.appendChild(titleSpan);
-
-          if (eventData.raw.location) {
+          
+          // Location (full width below)
+          if (event.location) {
             const locationDiv = document.createElement("div");
             locationDiv.className = "event-location";
-            locationDiv.textContent = eventData.raw.location;
+            locationDiv.textContent = event.location;
             eventItem.appendChild(locationDiv);
           }
-
+          
           container.appendChild(eventItem);
         });
     });
@@ -536,13 +605,11 @@ function scheduleVoiceReminders(events) {
     return;
   }
   
-  // Mark voice as enabled for today
   const today = new Date().toDateString();
   localStorage.setItem('voiceEnabledDate', today);
   voiceEnabled = true;
   voiceEnabledDate = today;
   
-  // Hide the enable button
   document.getElementById("enable-voice").style.display = "none";
   
   if (reminderCheckInterval) {
@@ -550,7 +617,6 @@ function scheduleVoiceReminders(events) {
     spokenEvents.clear();
   }
   
-  // Check every 10 seconds for more accurate timing
   reminderCheckInterval = setInterval(() => checkReminders(events), 10000);
   checkReminders(events);
 }
@@ -567,10 +633,6 @@ function checkReminders(events) {
     const eventId = event.id || event.summary;
     const minutesUntilEvent = (eventStartMs - nowMs) / (60 * 1000);
     
-    console.log(`Event: ${event.summary}, Minutes until: ${minutesUntilEvent.toFixed(1)}`);
-    
-    // FIXED: Use wider time windows to catch the reminders
-    // 30-minute reminder (between 30:00 and 29:30)
     if (minutesUntilEvent <= 30 && minutesUntilEvent > 29.5) {
       const reminderKey = `${eventId}_30min`;
       if (!spokenEvents.has(reminderKey)) {
@@ -580,7 +642,6 @@ function checkReminders(events) {
       }
     }
     
-    // FIXED: 15-minute reminder (between 15:00 and 14:30)
     if (minutesUntilEvent <= 15 && minutesUntilEvent > 14.5) {
       const reminderKey = `${eventId}_15min`;
       if (!spokenEvents.has(reminderKey)) {
@@ -594,16 +655,13 @@ function checkReminders(events) {
 
 function speakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
-  const message = `Hey Spade family you have got: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const message = `Reminder: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
   
-  // Cancel any ongoing speech
   window.speechSynthesis.cancel();
-  
-  // Small delay to ensure cancellation is processed
   setTimeout(() => {
     window.speechSynthesis.speak(utterance);
   }, 50);
@@ -713,6 +771,64 @@ function getWeatherDescription(code) {
   return "N/A";
 }
 
+// ===== FIX 4: TRADINGVIEW WIDGET WITH REDUCED BRANDING =====
+function initTradingViewWidget() {
+  const container = document.getElementById('tradingview-widget');
+  if (!container) return;
+  
+  // Clear previous content
+  container.innerHTML = '';
+  
+  // Create a new script element
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+  script.innerHTML = JSON.stringify({
+    "symbols": [["SPY", "AMEX:SPY|1M"]],
+    "chartOnly": false,
+    "width": "100%",
+    "height": "100%",
+    "locale": "en",
+    "colorTheme": "dark",
+    "autosize": true,
+    "showVolume": true,
+    "hideMarketStatus": true, // Hide market status to reduce clutter
+    "scalePosition": "right",
+    "scaleMode": "Normal",
+    "fontFamily": "Arial, sans-serif",
+    "fontSize": "10",
+    "noTimeScale": false,
+    "valuesTracking": "1",
+    "changeMode": "price-and-percent",
+    "chartType": "area",
+    "gridLineColor": "rgba(255, 255, 255, 0.06)",
+    "timeHoursFormat": "12-hours"
+  });
+  
+  container.appendChild(script);
+  
+  // Add CSS to reduce branding size
+  setTimeout(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .tradingview-widget-copyright {
+        font-size: 9px !important;
+        opacity: 0.6 !important;
+        margin-top: 2px !important;
+      }
+      .tradingview-widget-container .logo {
+        transform: scale(0.7) !important;
+        opacity: 0.7 !important;
+      }
+      .tradingview-widget-container .apply-common-tooltip {
+        font-size: 11px !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }, 1000); // Wait for widget to load
+}
+
 // ===== INITIALIZATION =====
 window.addEventListener('load', () => {
   console.log("Page loaded, initializing...");
@@ -727,20 +843,20 @@ window.addEventListener('load', () => {
     const events = JSON.parse(savedEvents);
     renderEvents(events);
     
-    // Check voice status and update button
     checkVoiceEnabledForToday();
     
-    // Set up voice button handler
     const voiceBtn = document.getElementById("enable-voice");
     voiceBtn.onclick = () => {
       scheduleVoiceReminders(events);
     };
     
-    // Auto-enable if previously enabled today
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
   }
+  
+  // Initialize TradingView widget
+  initTradingViewWidget();
   
   initGoogleApi();
 });
@@ -750,7 +866,6 @@ function cleanupOldReminders() {
   const now = Date.now();
   spokenEvents.clear();
   
-  // Check if we need to reset voice for new day
   const today = new Date().toDateString();
   if (voiceEnabledDate && voiceEnabledDate !== today) {
     voiceEnabled = false;
@@ -768,32 +883,7 @@ function cleanupOldReminders() {
   }
 }
 
-// Check every hour if it's a new day
 setInterval(cleanupOldReminders, 60 * 60 * 1000);
-</script>
-
-<script type="text/javascript">
-(function() {
-  const container = document.getElementById("tradingview-widget");
-  if (!container) return;
-  
-  const script = document.createElement("script");
-  script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
-  script.async = true;
-  script.innerHTML = JSON.stringify({
-    symbols: [["SPY", "AMEX:SPY|1M"]],
-    chartOnly: false,
-    width: "100%",
-    height: "100%",
-    locale: "en",
-    colorTheme: "dark",
-    autosize: true,
-    showVolume: true,
-  });
-  
-  container.style.height = "100%";
-  container.appendChild(script);
-})();
 </script>
 </body>
 </html>
