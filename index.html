@@ -559,6 +559,39 @@ function renderEvents(events) {
     });
 }
 
+// ===== VOICE ALERTS SETUP =====
+function setupVoiceAlertsButton() {
+  const voiceBtn = document.getElementById("enable-voice");
+  if (!voiceBtn) return;
+  
+  voiceBtn.onclick = function() {
+    console.log("Enable voice alerts button clicked");
+    
+    // Get events from localStorage
+    const savedEvents = localStorage.getItem('calendarEvents');
+    if (!savedEvents) {
+      console.error("No events found in localStorage");
+      document.getElementById("auth-status").textContent = "No events to enable alerts for";
+      return;
+    }
+    
+    try {
+      const events = JSON.parse(savedEvents);
+      console.log(`Enabling voice alerts for ${events.length} events`);
+      
+      scheduleVoiceReminders(events);
+      voiceBtn.style.display = "none";
+      document.getElementById("auth-status").textContent = "Voice alerts enabled!";
+      
+    } catch (error) {
+      console.error("Error parsing events:", error);
+      document.getElementById("auth-status").textContent = "Error enabling voice alerts";
+    }
+  };
+  
+  console.log("Voice alerts button setup complete");
+}
+  
 // ===== AUTO REFRESH =====
 function startAutoRefresh() {
   console.log("Starting auto-refresh (every 5 minutes)");
@@ -845,11 +878,10 @@ window.addEventListener('load', () => {
     
     checkVoiceEnabledForToday();
     
-    const voiceBtn = document.getElementById("enable-voice");
-    voiceBtn.onclick = () => {
-      scheduleVoiceReminders(events);
-    };
+    // Setup voice button handler
+    setupVoiceAlertsButton();
     
+    // Auto-enable if previously enabled today
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
@@ -887,3 +919,4 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
