@@ -503,7 +503,12 @@ function initGoogleIdentity() {
         console.log("Authentication callback");
         
         if (tokenResponse && tokenResponse.access_token) {
+          tokenResponse.issue_time = Date.now();
           gapi.client.setToken(tokenResponse);
+
+          // Save token to localStorage for persistence
+          localStorage.setItem('googleToken', JSON.stringify(tokenResponse));
+          localStorage.setItem('tokenSavedAt', Date.now());          
           updateAuthUI(true);
           loadCalendarEvents();
           startAutoRefresh();
@@ -603,6 +608,42 @@ function updateAuthUI(isSignedIn) {
   document.getElementById("auth-status").textContent = isSignedIn ? "Signed in successfully!" : "Ready to sign in";
 }
 
+// Add this function to check and refresh token
+function checkAndRefreshToken() {
+  const token = gapi.client.getToken();
+  
+  if (!token || !token.access_token) {
+    console.log("No token found, user needs to sign in");
+    return false;
+  }
+  
+  // Check if token is about to expire (in next 5 minutes)
+  const now = Date.now();
+  const expiresIn = token.expires_in * 1000; // Convert to milliseconds
+  const tokenAge = now - (token.issue_time || now);
+  
+  if (tokenAge > (expiresIn - 5 * 60 * 1000)) {
+    console.log("Token about to expire, refreshing...");
+    refreshGoogleToken();
+    return true;
+  }
+  
+  return false;
+}
+
+// Add this function to refresh the token
+function refreshGoogleToken() {
+  if (!tokenClient) {
+    console.error("Token client not available");
+    return;
+  }
+  
+  // Request a new token without user prompt
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+// Call this every 30 minutes
+setInterval(checkAndRefreshToken, 30 * 60 * 1000);
 // ===== CALENDAR EVENTS =====
 async function loadCalendarEvents() {
   console.log("Loading calendar events...");
@@ -1071,6 +1112,23 @@ window.addEventListener('load', () => {
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
+      // Check for saved Google token
+  const savedToken = localStorage.getItem('googleToken');
+  const tokenSavedAt = localStorage.getItem('tokenSavedAt');
+  
+  if (savedToken && tokenSavedAt && (Date.now() - tokenSavedAt < 50 * 60 * 1000)) {
+    // Token saved less than 50 minutes ago, try to use it
+    try {
+      const token = JSON.parse(savedToken);
+      gapi.client.setToken(token);
+      console.log("Restored saved token");
+      updateAuthUI(true);
+      loadCalendarEvents();
+      startAutoRefresh();
+    } catch (e) {
+      console.error("Failed to restore token:", e);
+    }
+  }
   }
   
   // Initialize TradingView widget
@@ -1105,6 +1163,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
