@@ -123,7 +123,6 @@ body {
   flex: 1;
   min-width: 60%;
   line-height: 1.4;
-  /* margin-left: 25%; /* Aligns with event title */ */
 }
 .event-location {
   display: block;
@@ -131,7 +130,6 @@ body {
   color: #e3dede;
   margin-top: 4px;
   width: 100%;
-  /* min-width: 60%; */
   margin-left: 25%; /* Aligns with event title */
 }
 /* WEATHER: portrait list */
@@ -1054,12 +1052,12 @@ function initTradingViewWidget() {
     "locale": "en",
     "colorTheme": "dark",
     "autosize": true,
-    "showVolume": true,
+    "showVolume": false,
     "hideMarketStatus": true, // Hide market status to reduce clutter
     "scalePosition": "right",
     "scaleMode": "Normal",
     "fontFamily": "Arial, sans-serif",
-    "fontSize": "10",
+    "fontSize": "08",
     "noTimeScale": false,
     "valuesTracking": "1",
     "changeMode": "price-and-percent",
@@ -1165,15 +1163,3 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
