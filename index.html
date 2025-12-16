@@ -130,7 +130,7 @@ body {
   color: #e3dede;
   margin-top: 4px;
   width: 100%;
-  /* margin-left: 2ch; /* Aligns with event title */ */
+  margin-left: 25%; /* Aligns with event title */
 }
 /* WEATHER: portrait list */
 #weather-current {
@@ -261,7 +261,7 @@ body {
   
   .event-location {
     font-size: 11px;
-    /* margin-left: 25%; /* Match time container width */ */
+    margin-left: 25%; /* Match time container width */
   }
   
   /* Adjust weather for tablet */
@@ -314,7 +314,7 @@ body {
   
   .event-location {
     font-size: 10px;
-    /* margin-left: 30%; /* Match time container */ */
+    margin-left: 30%; /* Match time container */
   }
   
   /* Hide weather description on very small tablets */
@@ -368,7 +368,7 @@ body {
   
   .event-location {
     font-size: 10px;
-    /* margin-left: 35%; */
+    margin-left: 35%;
   }
   
   /* Hide weather description, show only temp */
@@ -763,32 +763,25 @@ function renderEvents(events) {
             });
             timeContainer.appendChild(endTimeSpan);
           }
-          // Right column: title, then end time + location on same line
-          const rightCol = document.createElement("div");
-          rightCol.className = "event-right";
-
+          
+          // Title (right column)
           const titleSpan = document.createElement("div");
           titleSpan.className = "event-title";
           titleSpan.textContent = event.summary || "(No title)";
-          rightCol.appendChild(titleSpan);
-
-          //Row with end time (if any) and location
-          const metaRow = document.createElement("div");
-          metaRow.className = "event-meta-row";
-                  
+          
+          // Add to event item
+          eventItem.appendChild(timeContainer);
+          eventItem.appendChild(titleSpan);
+          
+          // Location (full width below)
           if (event.location) {
             const locationDiv = document.createElement("div");
             locationDiv.className = "event-location";
             locationDiv.textContent = event.location;
-            metaRow.appendChild(locationDiv);
+            eventItem.appendChild(locationDiv);
           }
           
-          rightCol.appendChild(metaRow);
-          
-          // Add to event item (replace the old title+location append)
-          eventItem.appendChild(timeContainer);
-          eventItem.appendChild(rightCol);
-          container.appendChild(eventItem);       
+          container.appendChild(eventItem);
         });
     });
 }
