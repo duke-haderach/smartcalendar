@@ -788,20 +788,20 @@ function renderEvents(events) {
           titleSpan.textContent = event.summary || "(No title)";
           rightCol.appendChild(titleSpan);
 
-          // Row with end time (if any) and location
-          // const metaRow = document.createElement("div");
-          // metaRow.className = "event-meta-row";
+          Row with end time (if any) and location
+          const metaRow = document.createElement("div");
+          metaRow.className = "event-meta-row";
           
-          // if (endTime && !isAllDay) {
-          //   const endTimeSpan = document.createElement("div");
-          //   endTimeSpan.className = "event-end-time";
-          //   endTimeSpan.textContent = endTime.toLocaleTimeString([], {
-          //     hour: "numeric",
-          //     minute: "2-digit",
-          //     hour12: true,
-          //   });
-          //   metaRow.appendChild(endTimeSpan);
-          // }
+          if (endTime && !isAllDay) {
+            const endTimeSpan = document.createElement("div");
+            endTimeSpan.className = "event-end-time";
+            endTimeSpan.textContent = endTime.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+            //metaRow.appendChild(endTimeSpan);
+          }
           
           if (event.location) {
             const locationDiv = document.createElement("div");
@@ -1197,6 +1197,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
