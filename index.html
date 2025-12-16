@@ -118,8 +118,6 @@ body {
   color: #e3dede;
   margin-top: 2px;
   white-space: nowrap;
-  margin-right: 8px;  /* small gap before location */
-  margin-top: 0;      /* remove old top margin so it lines up better */
 }
 .event-title {
   flex: 1;
@@ -132,22 +130,8 @@ body {
   color: #e3dede;
   margin-top: 4px;
   width: 100%;
-  white-space: nowrap;
   margin-left: 2ch; /* Aligns with event title */
 }
-/* Right column wrapper */
-.event-right {
-  flex: 1;
-  min-width: 60%;
-  display: flex;
-  flex-direction: column;
-}  
-/* Row that holds end time and location */
-.event-meta-row {
-  display: flex;
-  align-items: baseline;
-  margin-top: 2px;
-}  
 /* WEATHER: portrait list */
 #weather-current {
   font-size: 22px;
@@ -788,21 +772,10 @@ function renderEvents(events) {
           titleSpan.textContent = event.summary || "(No title)";
           rightCol.appendChild(titleSpan);
 
-          Row with end time (if any) and location
+          //Row with end time (if any) and location
           const metaRow = document.createElement("div");
           metaRow.className = "event-meta-row";
-          
-          if (endTime && !isAllDay) {
-            const endTimeSpan = document.createElement("div");
-            endTimeSpan.className = "event-end-time";
-            endTimeSpan.textContent = endTime.toLocaleTimeString([], {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            });
-            //metaRow.appendChild(endTimeSpan);
-          }
-          
+                  
           if (event.location) {
             const locationDiv = document.createElement("div");
             locationDiv.className = "event-location";
@@ -1197,6 +1170,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
