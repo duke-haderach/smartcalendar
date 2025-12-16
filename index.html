@@ -763,24 +763,31 @@ function renderEvents(events) {
             });
             timeContainer.appendChild(endTimeSpan);
           }
+          // Right column: title, then end time + location on same line
+          const rightCol = document.createElement("div");
+          rightCol.className = "event-right";
           
-          // Title (right column)
           const titleSpan = document.createElement("div");
           titleSpan.className = "event-title";
           titleSpan.textContent = event.summary || "(No title)";
+          rightCol.appendChild(titleSpan);
           
-          // Add to event item
-          eventItem.appendChild(timeContainer);
-          eventItem.appendChild(titleSpan);
-          
-          // Location (full width below)
+          // Row with end time (if any) and location
+          const metaRow = document.createElement("div");
+          metaRow.className = "event-meta-row";
+                   
           if (event.location) {
             const locationDiv = document.createElement("div");
             locationDiv.className = "event-location";
             locationDiv.textContent = event.location;
-            eventItem.appendChild(locationDiv);
+            metaRow.appendChild(locationDiv);
           }
           
+          rightCol.appendChild(metaRow);
+          
+          // Add to event item (replace the old title+location append)
+          eventItem.appendChild(timeContainer);
+          eventItem.appendChild(rightCol);          
           container.appendChild(eventItem);
         });
     });
@@ -1163,3 +1170,4 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
