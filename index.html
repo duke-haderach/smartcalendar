@@ -243,6 +243,47 @@ body {
 .weather-day.selected {
   background: rgba(255,255,255,0.15);  /* highlight selected day */
 }
+.weather-hourly-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+#weather-back-btn {
+  margin-right: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid #ffffff;
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+#weather-back-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.weather-hourly-title {
+  font-weight: 600;
+}
+
+.weather-hourly-list {
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.weather-hourly-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.weather-hourly-row:last-child {
+  border-bottom: none;
+}
 
 /* ===== FIX 4: TRADINGVIEW CUSTOM STYLING ===== */
 .tradingview-widget-copyright {
@@ -487,7 +528,10 @@ let reminderCheckInterval = null;
 let spokenEvents = new Set();
 let voiceEnabled = false;
 let voiceEnabledDate = null;
-
+let weatherDailyData = null;     // store last daily data
+let weatherCurrentView = "daily";
+let weatherSelectedDate = null;
+  
 // ===== FIX 3: CLOCK - AM/PM FORMAT =====
 function updateClock() {
   const now = new Date();
@@ -1032,7 +1076,9 @@ function loadWeather() {
 function renderWeather(data) {
   const current = data.current_weather;
   const daily = data.daily;
-
+  weatherDailyData = data;       // cache for "back"
+  weatherCurrentView = "daily";
+  weatherSelectedDate = null;
   document.getElementById("weather-current").textContent = 
     `${Math.round(current.temperature)}° ${getWeatherDescription(current.weathercode)}`;
 
@@ -1053,7 +1099,7 @@ function renderWeather(data) {
     const row = document.createElement("div");
     row.className = "weather-day";
     row.dataset.date = daily.time[i];        // ISO date string like "2025-12-17"
-    row.onclick = () => handleDayClick(row); // defined next section
+    row.onclick = () => showHourlyView(daily.time[i]); // defined next section
     
     const icon = document.createElement("img");
     icon.className = "weather-icon";
@@ -1202,6 +1248,97 @@ function renderHourly(data, dateStr) {
   detail.innerHTML = html;
 }
 
+function showHourlyView(dateStr) {
+  weatherCurrentView = "hourly";
+  weatherSelectedDate = dateStr;
+
+  const forecastEl = document.getElementById("weather-forecast");
+  forecastEl.innerHTML = `<div>Loading hourly forecast…</div>`;
+
+  const url = `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${LAT}` +
+    `&longitude=${LON}` +
+    `&hourly=temperature_2m,precipitation_probability,weathercode` +
+    `&start_date=${dateStr}` +
+    `&end_date=${dateStr}` +
+    `&temperature_unit=fahrenheit` +
+    `&timezone=auto`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => renderHourlyView(data, dateStr))
+    .catch(err => {
+      console.error("Hourly weather error:", err);
+      forecastEl.innerHTML = `<div>Hourly forecast unavailable</div>`;
+    });
+}
+
+function renderHourlyView(data, dateStr) {
+  const forecastEl = document.getElementById("weather-forecast");
+  const hourly = data.hourly;
+  if (!hourly || !hourly.time || hourly.time.length === 0) {
+    forecastEl.innerHTML = `<div>No hourly data.</div>`;
+    return;
+  }
+
+  const times = hourly.time;
+  const temps = hourly.temperature_2m;
+  const probs = hourly.precipitation_probability || [];
+  const codes = hourly.weathercode || [];
+
+  let html = "";
+
+  // Back + title bar
+  html += `
+    <div class="weather-hourly-header">
+      <button id="weather-back-btn">◀ Back</button>
+      <div class="weather-hourly-title">
+        Hourly for ${new Date(dateStr).toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })}
+      </div>
+    </div>
+  `;
+
+  html += `<div class="weather-hourly-list">`;
+
+  // Example: every 2 hours
+  for (let i = 0; i < times.length; i += 2) {
+    const t = new Date(times[i]);
+    const timeLabel = t.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    const temp = Math.round(temps[i]);
+    const prob = probs[i] != null ? probs[i] : "";
+    const desc = getWeatherDescription(codes[i]);
+
+    html += `
+      <div class="weather-hourly-row">
+        <div>${timeLabel}</div>
+        <div>${temp}°</div>
+        <div>${prob !== "" ? prob + "%" : ""}</div>
+        <div>${desc}</div>
+      </div>
+    `;
+  }
+  html += `</div>`;
+
+  forecastEl.innerHTML = html;
+
+  document
+    .getElementById("weather-back-btn")
+    .addEventListener("click", showDailyView);
+}
+
+function showDailyView() {
+  if (!weatherDailyData) return;
+  weatherCurrentView = "daily";
+  renderWeather(weatherDailyData);  // re-render original 7‑day list
+}
+  
 // ===== FIX 4: TRADINGVIEW WIDGET WITH REDUCED BRANDING =====
 function initTradingViewWidget() {
   const container = document.getElementById('tradingview-widget');
@@ -1334,6 +1471,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
