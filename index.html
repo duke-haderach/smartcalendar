@@ -1024,8 +1024,8 @@ function prespeakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
   const message = `Hey Spade family you have got: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
+  utterance.rate = 0.8;
+  utterance.pitch = 0.9;
   utterance.volume = 1.0;
   
   window.speechSynthesis.cancel();
@@ -1471,6 +1471,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
