@@ -1291,7 +1291,7 @@ function renderHourlyView(data, dateStr) {
   // Back + title bar
   html += `
     <div class="weather-hourly-header">
-      <button id="weather-back-btn">◀ Back</button>
+      <button id="weather-back-btn">◀</button>
       <div class="weather-hourly-title">
         Hourly for ${new Date(dateStr).toLocaleDateString(undefined, {
           weekday: "short",
@@ -1305,10 +1305,10 @@ function renderHourlyView(data, dateStr) {
   html += `<div class="weather-hourly-list">`;
 
   // Example: every 2 hours
-  for (let i = 0; i < times.length; i += 2) {
+  for (let i = 0; i < times.length; i += 1) {
     const t = new Date(times[i]);
     const timeLabel = t.toLocaleTimeString([], {
-      hour: "numeric",
+      hour: "2-digit",//"numeric",
       minute: "2-digit",
     });
     const temp = Math.round(temps[i]);
@@ -1471,6 +1471,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
