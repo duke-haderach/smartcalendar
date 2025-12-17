@@ -1062,7 +1062,7 @@ const LAT = 38.81;
 const LON = -90.72;
 
 function loadWeather() {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&current_weather=true&timezone=auto`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&current_weather=true&forecast_days=11&timezone=auto`;
 
   fetch(url)
     .then(response => response.json())
@@ -1471,6 +1471,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
