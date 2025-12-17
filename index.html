@@ -114,7 +114,7 @@ body {
   white-space: nowrap;
 }
 .event-end-time {
-  font-size: 13px;
+  font-size: 10px;
   color: #e3dede;
   margin-top: 2px;
   white-space: nowrap;
@@ -210,6 +210,40 @@ body {
 #sign-in:hover {
   background: rgba(255,255,255,0.25);
 }
+#weather-hourly-detail {
+  margin-top: 8px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  padding: 6px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.weather-hourly-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.weather-hourly-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.weather-hourly-row:last-child {
+  border-bottom: none;
+}
+
+.weather-day {
+  cursor: pointer;              /* make rows feel clickable */
+}
+
+.weather-day.selected {
+  background: rgba(255,255,255,0.15);  /* highlight selected day */
+}
+
 /* ===== FIX 4: TRADINGVIEW CUSTOM STYLING ===== */
 .tradingview-widget-copyright {
   font-size: 9px !important;
@@ -255,8 +289,13 @@ body {
     margin-right: 8px;
   }
   
-  .event-time, .event-end-time {
+  .event-time {
     font-size: 14px;
+    white-space: nowrap;
+  }
+
+   .event-end-time {
+    font-size: 10px;
     white-space: nowrap;
   }
   
@@ -361,11 +400,11 @@ body {
   }
   
   .event-time {
-    font-size: 13px;
+    font-size: 14px;
   }
   
   .event-end-time {
-    font-size: 12px;
+    font-size: 10px;
   }
   
   .event-title {
@@ -426,6 +465,7 @@ body {
     <div class="panel" id="weather-panel">
       <div id="weather-current">Loading weather…</div>
       <div id="weather-forecast"></div>
+      <div id="weather-hourly-detail"></div>
     </div>
     <div class="panel" id="stock-panel">
       <div id="tradingview-widget" style="width:100%;height:100%;"></div>
@@ -911,7 +951,7 @@ function checkReminders(events) {
       const reminderKey = `${eventId}_30min`;
       if (!spokenEvents.has(reminderKey)) {
         console.log(`Triggering 30-min reminder for: ${event.summary}`);
-        speakReminder(event, 30);
+        prespeakReminder(event, 30);
         spokenEvents.add(reminderKey);
       }
     }
@@ -920,14 +960,23 @@ function checkReminders(events) {
       const reminderKey = `${eventId}_15min`;
       if (!spokenEvents.has(reminderKey)) {
         console.log(`Triggering 15-min reminder for: ${event.summary}`);
-        speakReminder(event, 15);
+        prespeakReminder(event, 15);
+        spokenEvents.add(reminderKey);
+      }
+    }
+
+    if (minutesUntilEvent >= 15 && minutesUntilEvent < 15.5) {
+      const reminderKey = `${eventId}_15min`;
+      if (!spokenEvents.has(reminderKey)) {
+        console.log(`Triggering 15-min post reminder for: ${event.summary}`);
+        postspeakReminder(event, 15);
         spokenEvents.add(reminderKey);
       }
     }
   });
 }
 
-function speakReminder(event, minutesBefore) {
+function prespeakReminder(event, minutesBefore) {
   console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
   const message = `Hey Spade family you have got: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
   const utterance = new SpeechSynthesisUtterance(message);
@@ -941,6 +990,20 @@ function speakReminder(event, minutesBefore) {
   }, 50);
 }
 
+function postspeakReminder(event, minutesBefore) {
+  console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
+  const message = `Hey Spade family you missed: "${event.summary || "Event"}" happened ago ${minutesBefore} minutes.`;
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+  }, 50);
+}
+  
 function stopVoiceReminders() {
   if (reminderCheckInterval) {
     clearInterval(reminderCheckInterval);
@@ -989,7 +1052,9 @@ function renderWeather(data) {
 
     const row = document.createElement("div");
     row.className = "weather-day";
-
+    row.dataset.date = daily.time[i];        // ISO date string like "2025-12-17"
+    row.onclick = () => handleDayClick(row); // defined next section
+    
     const icon = document.createElement("img");
     icon.className = "weather-icon";
     icon.src = getWeatherIcon(daily.weathercode[i]);
@@ -1043,6 +1108,98 @@ function getWeatherDescription(code) {
   if ([71, 73, 75, 77, 85, 86].includes(code)) return "Snow";
   if ([95, 96, 99].includes(code)) return "Storm";
   return "N/A";
+}
+
+// ===== HOURLY WEATHER ON DEMAND =====
+const HOURLY_VARS = "temperature_2m,precipitation_probability,weathercode";
+let lastSelectedDayRow = null;
+
+function handleDayClick(row) {
+  const dateStr = row.dataset.date; // e.g., "2025-12-17"
+
+  // Toggle: clicking same day hides detail
+  if (lastSelectedDayRow === row) {
+    row.classList.remove("selected");
+    lastSelectedDayRow = null;
+    document.getElementById("weather-hourly-detail").innerHTML = "";
+    return;
+  }
+
+  if (lastSelectedDayRow) {
+    lastSelectedDayRow.classList.remove("selected");
+  }
+  row.classList.add("selected");
+  lastSelectedDayRow = row;
+
+  fetchHourlyForDate(dateStr);
+}
+
+function fetchHourlyForDate(dateStr) {
+  const detail = document.getElementById("weather-hourly-detail");
+  detail.innerHTML = "Loading hourly forecast…";
+
+  // Open-Meteo: request 1-day hourly forecast for that date
+  const url = `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${LAT}` +
+    `&longitude=${LON}` +
+    `&hourly=${encodeURIComponent(HOURLY_VARS)}` +
+    `&start_date=${dateStr}` +
+    `&end_date=${dateStr}` +
+    `&temperature_unit=fahrenheit` +
+    `&timezone=auto`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => renderHourly(data, dateStr))
+    .catch(err => {
+      console.error("Hourly weather error:", err);
+      detail.textContent = "Hourly forecast unavailable";
+    });
+}
+
+function renderHourly(data, dateStr) {
+  const detail = document.getElementById("weather-hourly-detail");
+  const hourly = data.hourly;
+  if (!hourly || !hourly.time || hourly.time.length === 0) {
+    detail.textContent = "No hourly data.";
+    return;
+  }
+
+  const times = hourly.time;
+  const temps = hourly.temperature_2m;
+  const probs = hourly.precipitation_probability || [];
+  const codes = hourly.weathercode || [];
+
+  // Build a compact list: e.g., every 2 hours
+  let html = "";
+  html += `<div class="weather-hourly-title">Hourly forecast for ${
+    new Date(dateStr).toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric"
+    })
+  }</div>`;
+
+  html += `<div>`;
+  for (let i = 0; i < times.length; i += 2) {
+    const t = new Date(times[i]);
+    const timeLabel = t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const temp = Math.round(temps[i]);
+    const prob = probs[i] != null ? probs[i] : "";
+    const desc = getWeatherDescription(codes[i]);
+
+    html += `
+      <div class="weather-hourly-row">
+        <div>${timeLabel}</div>
+        <div>${temp}°</div>
+        <div>${prob !== "" ? prob + "%" : ""}</div>
+        <div>${desc}</div>
+      </div>
+    `;
+  }
+  html += `</div>`;
+
+  detail.innerHTML = html;
 }
 
 // ===== FIX 4: TRADINGVIEW WIDGET WITH REDUCED BRANDING =====
@@ -1177,6 +1334,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
