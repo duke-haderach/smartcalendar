@@ -1009,7 +1009,7 @@ function checkReminders(events) {
       }
     }
 
-    if (minutesUntilEvent >= 15 && minutesUntilEvent < 15.5) {
+    if (minutesUntilEvent <= -15 && minutesUntilEvent > -15.5) {
       const reminderKey = `${eventId}_15min`;
       if (!spokenEvents.has(reminderKey)) {
         console.log(`Triggering 15-min post reminder for: ${event.summary}`);
@@ -1471,6 +1471,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
