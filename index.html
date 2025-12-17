@@ -1089,7 +1089,7 @@ function renderWeather(data) {
   today.setHours(0, 0, 0, 0);
   let displayed = 0;
 
-  for (let i = 0; i < daily.time.length && displayed < 7; i++) {
+  for (let i = 0; i < daily.time.length && displayed < 11; i++) {
     const date = new Date(daily.time[i]);
     const localDate = new Date(date);
     localDate.setHours(0, 0, 0, 0);
@@ -1471,6 +1471,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
