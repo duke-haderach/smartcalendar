@@ -552,6 +552,232 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+// ===== ENHANCED TOKEN PERSISTENCE SYSTEM =====
+const TOKEN_STORAGE_KEY = 'google_auth_token';
+const TOKEN_BACKUP_KEY = 'google_token_backup';
+
+// 1. Enhanced token saving with multiple backups
+function saveTokenWithBackup(tokenResponse) {
+  if (!tokenResponse || !tokenResponse.access_token) return;
+  
+  // Add timestamp
+  tokenResponse.issue_time = Date.now();
+  tokenResponse.expires_at = Date.now() + (tokenResponse.expires_in * 1000);
+  
+  // Save to primary storage
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenResponse));
+    localStorage.setItem('last_token_save', Date.now().toString());
+    
+    // Backup to sessionStorage (less likely to be cleared)
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenResponse));
+    
+    // Backup to IndexedDB (most persistent)
+    backupTokenToIndexedDB(tokenResponse);
+    
+    console.log("Token saved with multiple backups");
+  } catch (e) {
+    console.error("Failed to save token:", e);
+  }
+}
+
+// 2. IndexedDB backup (most reliable)
+function backupTokenToIndexedDB(token) {
+  if (!window.indexedDB) return;
+  
+  const request = indexedDB.open('DashboardDB', 1);
+  
+  request.onupgradeneeded = function(event) {
+    const db = event.target.result;
+    if (!db.objectStoreNames.contains('tokens')) {
+      db.createObjectStore('tokens', { keyPath: 'id' });
+    }
+  };
+  
+  request.onsuccess = function(event) {
+    const db = event.target.result;
+    const transaction = db.transaction(['tokens'], 'readwrite');
+    const store = transaction.objectStore('tokens');
+    
+    store.put({ id: 'google_token', token: token, savedAt: Date.now() });
+  };
+}
+
+// 3. Restore from any available source
+function restoreTokenFromAnySource() {
+  console.log("Attempting token restoration...");
+  
+  // Try localStorage first
+  let token = null;
+  const saved = localStorage.getItem(TOKEN_STORAGE_KEY);
+  
+  if (saved) {
+    try {
+      token = JSON.parse(saved);
+      console.log("Found token in localStorage");
+    } catch (e) {
+      console.error("Failed to parse localStorage token:", e);
+    }
+  }
+  
+  // If no token in localStorage, try sessionStorage
+  if (!token || !token.access_token) {
+    const sessionSaved = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+    if (sessionSaved) {
+      try {
+        token = JSON.parse(sessionSaved);
+        console.log("Found token in sessionStorage");
+      } catch (e) {
+        console.error("Failed to parse sessionStorage token:", e);
+      }
+    }
+  }
+  
+  // If still no token, try IndexedDB
+  if ((!token || !token.access_token) && window.indexedDB) {
+    token = restoreTokenFromIndexedDB();
+  }
+  
+  return token;
+}
+
+function restoreTokenFromIndexedDB() {
+  return new Promise((resolve) => {
+    const request = indexedDB.open('DashboardDB', 1);
+    
+    request.onsuccess = function(event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('tokens')) {
+        resolve(null);
+        return;
+      }
+      
+      const transaction = db.transaction(['tokens'], 'readonly');
+      const store = transaction.objectStore('tokens');
+      const getRequest = store.get('google_token');
+      
+      getRequest.onsuccess = function() {
+        if (getRequest.result && getRequest.result.token) {
+          console.log("Found token in IndexedDB");
+          resolve(getRequest.result.token);
+        } else {
+          resolve(null);
+        }
+      };
+      
+      getRequest.onerror = function() {
+        resolve(null);
+      };
+    };
+    
+    request.onerror = function() {
+      resolve(null);
+    };
+  });
+}
+
+// 4. Enhanced token validation
+function validateAndRefreshToken() {
+  const token = gapi.client.getToken();
+  
+  // If we have a token in gapi, check its validity
+  if (token && token.access_token) {
+    const now = Date.now();
+    const expiresAt = token.expires_at || (token.issue_time + (token.expires_in * 1000));
+    
+    // If token expires in less than 10 minutes, refresh it
+    if (expiresAt - now < 10 * 60 * 1000) {
+      console.log("Token expiring soon, refreshing...");
+      refreshTokenSilently();
+      return true;
+    }
+    return true;
+  }
+  
+  // No token in gapi, try to restore
+  console.log("No active token, attempting restoration...");
+  const restoredToken = restoreTokenFromAnySource();
+  
+  if (restoredToken && restoredToken.access_token) {
+    const now = Date.now();
+    const expiresAt = restoredToken.expires_at || (restoredToken.issue_time + (restoredToken.expires_in * 1000));
+    
+    // Only use if not expired
+    if (expiresAt > now) {
+      gapi.client.setToken(restoredToken);
+      console.log("Token restored successfully");
+      updateAuthUI(true);
+      return true;
+    } else {
+      console.log("Restored token is expired");
+    }
+  }
+  
+  return false;
+}
+
+// 5. Silent token refresh
+function refreshTokenSilently() {
+  if (!tokenClient) {
+    console.error("Token client not available for refresh");
+    return;
+  }
+  
+  console.log("Attempting silent token refresh...");
+  
+  // Request new token without user interaction
+  tokenClient.requestAccessToken({ 
+    prompt: '',
+    hint: getSavedEmail() // Optional: pass saved email if available
+  });
+}
+
+// 6. Save user email for hint (optional)
+function getSavedEmail() {
+  return localStorage.getItem('user_email') || '';
+}
+
+function saveUserEmail(email) {
+  if (email) {
+    localStorage.setItem('user_email', email);
+  }
+}
+
+// 7. Periodic token check (every 5 minutes)
+setInterval(() => {
+  console.log("Periodic token check...");
+  validateAndRefreshToken();
+}, 5 * 60 * 1000);
+
+// 8. Fire Tablet specific: Handle sleep/wake aggressively
+let isTablet = /Kindle|Silk.*Mobile Safari|Android.*Fire/.test(navigator.userAgent);
+
+if (isTablet) {
+  console.log("Fire Tablet detected, enabling aggressive token management");
+  
+  // Check token immediately on wake
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      console.log("Tablet woke from sleep, validating token...");
+      setTimeout(() => {
+        if (!validateAndRefreshToken()) {
+          // Token restoration failed, show sign-in button
+          document.getElementById("sign-in").style.display = "inline-block";
+          document.getElementById("auth-status").textContent = "Session expired, please sign in";
+        }
+      }, 1000);
+    }
+  });
+  
+  // Save token more frequently on tablets
+  setInterval(() => {
+    const token = gapi.client.getToken();
+    if (token && token.access_token) {
+      saveTokenWithBackup(token);
+    }
+  }, 2 * 60 * 1000); // Every 2 minutes
+}
+
 // ===== GOOGLE AUTH =====
 function initGoogleApi() {
   console.log("Initializing Google API...");
@@ -593,26 +819,30 @@ function initGoogleIdentity() {
       callback: (tokenResponse) => {
         console.log("Authentication callback");
         
-        if (tokenResponse && tokenResponse.access_token) {
-          tokenResponse.issue_time = Date.now();
-          gapi.client.setToken(tokenResponse);
-
-          // Save token to localStorage for persistence
-          localStorage.setItem('googleToken', JSON.stringify(tokenResponse));
-          localStorage.setItem('tokenSavedAt', Date.now());          
-          updateAuthUI(true);
-          loadCalendarEvents();
-          startAutoRefresh();
-        } else {
-          console.log("Authentication cancelled or failed");
-          document.getElementById("auth-status").textContent = "Sign-in cancelled";
+      // Try to extract and save email
+      if (tokenResponse.id_token) {
+        try {
+          const payload = JSON.parse(atob(tokenResponse.id_token.split('.')[1]));
+          if (payload.email) saveUserEmail(payload.email);
+        } catch (e) {
+          console.log("Could not extract email from token");
         }
-      },
-      error_callback: (error) => {
-        console.error("Authentication error:", error);
-        document.getElementById("auth-status").textContent = "Sign-in error occurred";
       }
-    });
+      
+      gapi.client.setToken(tokenResponse);
+      updateAuthUI(true);
+      loadCalendarEvents();
+      startAutoRefresh();
+    } else {
+      console.log("Authentication failed or cancelled");
+      document.getElementById("auth-status").textContent = "Sign-in cancelled";
+    }
+  },
+  error_callback: (error) => {
+    console.error("Authentication error:", error);
+    document.getElementById("auth-status").textContent = "Sign-in error occurred";
+  }
+});
     
     console.log("Google Identity Services initialized");
     setupAuthButton();
@@ -1398,46 +1628,35 @@ function initTradingViewWidget() {
 }
 
 // ===== INITIALIZATION =====
-window.addEventListener('load', () => {
+  window.addEventListener('load', () => {
   console.log("Page loaded, initializing...");
   
   loadWeather();
   setInterval(loadWeather, 60 * 60 * 1000);
   
-  const savedEvents = localStorage.getItem('calendarEvents');
-  const lastUpdated = localStorage.getItem('eventsLastUpdated');
-  
-  if (savedEvents && lastUpdated && (Date.now() - lastUpdated < 60 * 60 * 1000)) {
-    const events = JSON.parse(savedEvents);
-    renderEvents(events);
-    
-    checkVoiceEnabledForToday();
-    
-    // Setup voice button handler
-    setupVoiceAlertsButton();
-    
-    // Auto-enable if previously enabled today
-    if (voiceEnabled) {
-      scheduleVoiceReminders(events);
-    }
-      // Check for saved Google token
-  const savedToken = localStorage.getItem('googleToken');
-  const tokenSavedAt = localStorage.getItem('tokenSavedAt');
-  
-  if (savedToken && tokenSavedAt && (Date.now() - tokenSavedAt < 50 * 60 * 1000)) {
-    // Token saved less than 50 minutes ago, try to use it
-    try {
-      const token = JSON.parse(savedToken);
-      gapi.client.setToken(token);
-      console.log("Restored saved token");
-      updateAuthUI(true);
+  // Try to restore token first
+  setTimeout(() => {
+    if (validateAndRefreshToken()) {
+      // Token restored, load events
+      console.log("Token restored on load, loading events...");
       loadCalendarEvents();
       startAutoRefresh();
-    } catch (e) {
-      console.error("Failed to restore token:", e);
+    } else {
+      // No token, check for cached events
+      const savedEvents = localStorage.getItem('calendarEvents');
+      const lastUpdated = localStorage.getItem('eventsLastUpdated');
+      
+      if (savedEvents && lastUpdated && (Date.now() - lastUpdated < 60 * 60 * 1000)) {
+        const events = JSON.parse(savedEvents);
+        renderEvents(events);
+        
+        checkVoiceEnabledForToday();
+        setupVoiceAlertsButton();
+      }
+      
+      console.log("No valid token found, showing sign-in button");
     }
-  }
-  }
+  }, 1000);
   
   // Initialize TradingView widget
   initTradingViewWidget();
@@ -1471,6 +1690,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
