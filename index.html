@@ -552,28 +552,43 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ===== ENHANCED TOKEN PERSISTENCE SYSTEM =====
-const TOKEN_STORAGE_KEY = 'google_auth_token';
-const TOKEN_BACKUP_KEY = 'google_token_backup';
+/ ===== FIRE TABLET ANTI-SIGN-OUT SYSTEM =====
+const TOKEN_STORAGE_KEYS = {
+  PRIMARY: 'google_auth_token_v2',
+  BACKUP: 'google_token_backup',
+  SESSION: 'google_session_token'
+};
 
-// 1. Enhanced token saving with multiple backups
-function saveTokenWithBackup(tokenResponse) {
+// 1. Detect if running on Fire Tablet
+function isFireTablet() {
+  const ua = navigator.userAgent;
+  return /Kindle|Silk.*Mobile Safari|Android.*Fire/.test(ua) || 
+         /KF[A-Z]{2,4}/.test(ua); // Detect Kindle Fire models
+}
+
+// 2. Enhanced token saving with multiple storage locations
+function saveTokenRobustly(tokenResponse) {
   if (!tokenResponse || !tokenResponse.access_token) return;
   
-  // Add timestamp
+  // Add metadata
   tokenResponse.issue_time = Date.now();
   tokenResponse.expires_at = Date.now() + (tokenResponse.expires_in * 1000);
+  tokenResponse.device_id = getDeviceId();
   
-  // Save to primary storage
   try {
-    localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenResponse));
-    localStorage.setItem('last_token_save', Date.now().toString());
+    // Save to localStorage (primary)
+    localStorage.setItem(TOKEN_STORAGE_KEYS.PRIMARY, JSON.stringify(tokenResponse));
     
-    // Backup to sessionStorage (less likely to be cleared)
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenResponse));
+    // Save to sessionStorage (survives page reloads)
+    sessionStorage.setItem(TOKEN_STORAGE_KEYS.SESSION, JSON.stringify(tokenResponse));
     
-    // Backup to IndexedDB (most persistent)
-    backupTokenToIndexedDB(tokenResponse);
+    // Save to IndexedDB if available (most persistent)
+    if (window.indexedDB) {
+      saveTokenToIndexedDB(tokenResponse);
+    }
+    
+    // Save as cookie as last resort (7 days expiry)
+    setTokenCookie(tokenResponse);
     
     console.log("Token saved with multiple backups");
   } catch (e) {
@@ -581,69 +596,53 @@ function saveTokenWithBackup(tokenResponse) {
   }
 }
 
-// 2. IndexedDB backup (most reliable)
-function backupTokenToIndexedDB(token) {
-  if (!window.indexedDB) return;
-  
-  const request = indexedDB.open('DashboardDB', 1);
-  
-  request.onupgradeneeded = function(event) {
-    const db = event.target.result;
-    if (!db.objectStoreNames.contains('tokens')) {
-      db.createObjectStore('tokens', { keyPath: 'id' });
-    }
-  };
-  
-  request.onsuccess = function(event) {
-    const db = event.target.result;
-    const transaction = db.transaction(['tokens'], 'readwrite');
-    const store = transaction.objectStore('tokens');
-    
-    store.put({ id: 'google_token', token: token, savedAt: Date.now() });
-  };
-}
-
-// 3. Restore from any available source
-function restoreTokenFromAnySource() {
-  console.log("Attempting token restoration...");
-  
-  // Try localStorage first
-  let token = null;
-  const saved = localStorage.getItem(TOKEN_STORAGE_KEY);
-  
-  if (saved) {
-    try {
-      token = JSON.parse(saved);
-      console.log("Found token in localStorage");
-    } catch (e) {
-      console.error("Failed to parse localStorage token:", e);
-    }
-  }
-  
-  // If no token in localStorage, try sessionStorage
-  if (!token || !token.access_token) {
-    const sessionSaved = sessionStorage.getItem(TOKEN_STORAGE_KEY);
-    if (sessionSaved) {
-      try {
-        token = JSON.parse(sessionSaved);
-        console.log("Found token in sessionStorage");
-      } catch (e) {
-        console.error("Failed to parse sessionStorage token:", e);
-      }
-    }
-  }
-  
-  // If still no token, try IndexedDB
-  if ((!token || !token.access_token) && window.indexedDB) {
-    token = restoreTokenFromIndexedDB();
-  }
-  
-  return token;
-}
-
-function restoreTokenFromIndexedDB() {
+// 3. IndexedDB storage (most reliable on Fire Tablet)
+function saveTokenToIndexedDB(token) {
   return new Promise((resolve) => {
-    const request = indexedDB.open('DashboardDB', 1);
+    if (!window.indexedDB) {
+      resolve(false);
+      return;
+    }
+    
+    const request = indexedDB.open('DashboardAuthDB', 1);
+    
+    request.onupgradeneeded = function(event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('tokens')) {
+        db.createObjectStore('tokens', { keyPath: 'id' });
+      }
+    };
+    
+    request.onsuccess = function(event) {
+      const db = event.target.result;
+      const transaction = db.transaction(['tokens'], 'readwrite');
+      const store = transaction.objectStore('tokens');
+      
+      const tokenRecord = {
+        id: 'google_token',
+        token: token,
+        savedAt: Date.now(),
+        deviceId: getDeviceId()
+      };
+      
+      store.put(tokenRecord);
+      resolve(true);
+    };
+    
+    request.onerror = function() {
+      resolve(false);
+    };
+  });
+}
+
+function getTokenFromIndexedDB() {
+  return new Promise((resolve) => {
+    if (!window.indexedDB) {
+      resolve(null);
+      return;
+    }
+    
+    const request = indexedDB.open('DashboardAuthDB', 1);
     
     request.onsuccess = function(event) {
       const db = event.target.result;
@@ -658,8 +657,13 @@ function restoreTokenFromIndexedDB() {
       
       getRequest.onsuccess = function() {
         if (getRequest.result && getRequest.result.token) {
-          console.log("Found token in IndexedDB");
-          resolve(getRequest.result.token);
+          // Check if token is from same device and not too old
+          const tokenAge = Date.now() - getRequest.result.savedAt;
+          if (tokenAge < 24 * 60 * 60 * 1000) { // 24 hours max
+            resolve(getRequest.result.token);
+          } else {
+            resolve(null);
+          }
         } else {
           resolve(null);
         }
@@ -676,106 +680,150 @@ function restoreTokenFromIndexedDB() {
   });
 }
 
-// 4. Enhanced token validation
-function validateAndRefreshToken() {
-  const token = gapi.client.getToken();
+// 4. Cookie storage (Fire Tablet browsers keep cookies longer)
+function setTokenCookie(token) {
+  if (!token || !token.access_token) return;
   
-  // If we have a token in gapi, check its validity
-  if (token && token.access_token) {
-    const now = Date.now();
-    const expiresAt = token.expires_at || (token.issue_time + (token.expires_in * 1000));
-    
-    // If token expires in less than 10 minutes, refresh it
-    if (expiresAt - now < 10 * 60 * 1000) {
-      console.log("Token expiring soon, refreshing...");
-      refreshTokenSilently();
-      return true;
-    }
-    return true;
-  }
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const cookieValue = encodeURIComponent(JSON.stringify({
+    access_token: token.access_token,
+    issue_time: token.issue_time,
+    expires_in: token.expires_in
+  }));
   
-  // No token in gapi, try to restore
-  console.log("No active token, attempting restoration...");
-  const restoredToken = restoreTokenFromAnySource();
-  
-  if (restoredToken && restoredToken.access_token) {
-    const now = Date.now();
-    const expiresAt = restoredToken.expires_at || (restoredToken.issue_time + (restoredToken.expires_in * 1000));
-    
-    // Only use if not expired
-    if (expiresAt > now) {
-      gapi.client.setToken(restoredToken);
-      console.log("Token restored successfully");
-      updateAuthUI(true);
-      return true;
-    } else {
-      console.log("Restored token is expired");
+  document.cookie = `dashboard_token=${cookieValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+}
+
+function getTokenFromCookie() {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'dashboard_token' && value) {
+      try {
+        return JSON.parse(decodeURIComponent(value));
+      } catch (e) {
+        console.error("Failed to parse token cookie:", e);
+      }
     }
   }
-  
-  return false;
+  return null;
 }
 
-// 5. Silent token refresh
-function refreshTokenSilently() {
-  if (!tokenClient) {
-    console.error("Token client not available for refresh");
-    return;
+// 5. Generate device ID for tracking
+function getDeviceId() {
+  let deviceId = localStorage.getItem('dashboard_device_id');
+  if (!deviceId) {
+    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('dashboard_device_id', deviceId);
   }
-  
-  console.log("Attempting silent token refresh...");
-  
-  // Request new token without user interaction
-  tokenClient.requestAccessToken({ 
-    prompt: '',
-    hint: getSavedEmail() // Optional: pass saved email if available
-  });
+  return deviceId;
 }
 
-// 6. Save user email for hint (optional)
-function getSavedEmail() {
-  return localStorage.getItem('user_email') || '';
-}
-
-function saveUserEmail(email) {
-  if (email) {
-    localStorage.setItem('user_email', email);
-  }
-}
-
-// 7. Periodic token check (every 5 minutes)
-setInterval(() => {
-  console.log("Periodic token check...");
-  validateAndRefreshToken();
-}, 5 * 60 * 1000);
-
-// 8. Fire Tablet specific: Handle sleep/wake aggressively
-let isTablet = /Kindle|Silk.*Mobile Safari|Android.*Fire/.test(navigator.userAgent);
-
-if (isTablet) {
-  console.log("Fire Tablet detected, enabling aggressive token management");
+// 6. Restore token from ANY available source
+async function restoreTokenFromAllSources() {
+  console.log("Attempting token restoration from all sources...");
   
-  // Check token immediately on wake
-  document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-      console.log("Tablet woke from sleep, validating token...");
-      setTimeout(() => {
-        if (!validateAndRefreshToken()) {
-          // Token restoration failed, show sign-in button
-          document.getElementById("sign-in").style.display = "inline-block";
-          document.getElementById("auth-status").textContent = "Session expired, please sign in";
-        }
-      }, 1000);
+  const sources = [
+    { name: 'localStorage', token: getTokenFromLocalStorage() },
+    { name: 'sessionStorage', token: getTokenFromSessionStorage() },
+    { name: 'IndexedDB', token: await getTokenFromIndexedDB() },
+    { name: 'Cookie', token: getTokenFromCookie() }
+  ];
+  
+  for (const source of sources) {
+    if (source.token && source.token.access_token) {
+      const now = Date.now();
+      const expiresAt = source.token.expires_at || 
+                       (source.token.issue_time + (source.token.expires_in * 1000));
+      
+      // Check if token is still valid (with 5-minute buffer)
+      if (expiresAt > now + 5 * 60 * 1000) {
+        console.log(`Token restored from ${source.name}`);
+        return source.token;
+      } else {
+        console.log(`Token from ${source.name} is expired`);
+      }
     }
-  });
+  }
   
-  // Save token more frequently on tablets
+  console.log("No valid token found in any source");
+  return null;
+}
+
+function getTokenFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem(TOKEN_STORAGE_KEYS.PRIMARY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function getTokenFromSessionStorage() {
+  try {
+    const saved = sessionStorage.getItem(TOKEN_STORAGE_KEYS.SESSION);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 7. Fire Tablet specific: Aggressive token maintenance
+function setupFireTabletTokenMaintenance() {
+  if (!isFireTablet()) return;
+  
+  console.log("Fire Tablet detected - enabling aggressive token maintenance");
+  
+  // Save token more frequently
   setInterval(() => {
     const token = gapi.client.getToken();
     if (token && token.access_token) {
-      saveTokenWithBackup(token);
+      saveTokenRobustly(token);
     }
   }, 2 * 60 * 1000); // Every 2 minutes
+  
+  // Handle sleep/wake aggressively
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      console.log("Fire Tablet woke up - checking token...");
+      setTimeout(checkAndRestoreToken, 500);
+    }
+  });
+  
+  // Save token before page unload
+  window.addEventListener('beforeunload', function() {
+    const token = gapi.client.getToken();
+    if (token && token.access_token) {
+      saveTokenRobustly(token);
+    }
+  });
+}
+
+// 8. Enhanced token check and restore
+async function checkAndRestoreToken() {
+  const activeToken = gapi.client.getToken();
+  
+  if (activeToken && activeToken.access_token) {
+    // We have an active token, just save it
+    saveTokenRobustly(activeToken);
+    return true;
+  }
+  
+  // No active token, try to restore
+  const restoredToken = await restoreTokenFromAllSources();
+  if (restoredToken) {
+    gapi.client.setToken(restoredToken);
+    updateAuthUI(true);
+    
+    // Refresh events if we restored a token
+    if (document.getElementById("events").innerHTML === "") {
+      loadCalendarEvents();
+    }
+    
+    return true;
+  }
+  
+  return false;
 }
 
 // ===== GOOGLE AUTH =====
@@ -819,30 +867,28 @@ function initGoogleIdentity() {
       callback: (tokenResponse) => {
         console.log("Authentication callback");
         
-      // Try to extract and save email
-      if (tokenResponse.id_token) {
-        try {
-          const payload = JSON.parse(atob(tokenResponse.id_token.split('.')[1]));
-          if (payload.email) saveUserEmail(payload.email);
-        } catch (e) {
-          console.log("Could not extract email from token");
+        if (tokenResponse && tokenResponse.access_token) {
+          // Save with robust system
+          saveTokenRobustly(tokenResponse);          
+
+          gapi.client.setToken(tokenResponse);
+          updateAuthUI(true);
+          loadCalendarEvents();
+          startAutoRefresh();
+          // Setup Fire Tablet specific maintenance
+          if (isFireTablet()) {
+            setupFireTabletTokenMaintenance();
+          }
+          } else {
+          console.log("Authentication cancelled or failed");
+          document.getElementById("auth-status").textContent = "Sign-in cancelled";
         }
+      },
+      error_callback: (error) => {
+        console.error("Authentication error:", error);
+        document.getElementById("auth-status").textContent = "Sign-in error occurred";
       }
-      
-      gapi.client.setToken(tokenResponse);
-      updateAuthUI(true);
-      loadCalendarEvents();
-      startAutoRefresh();
-    } else {
-      console.log("Authentication failed or cancelled");
-      document.getElementById("auth-status").textContent = "Sign-in cancelled";
-    }
-  },
-  error_callback: (error) => {
-    console.error("Authentication error:", error);
-    document.getElementById("auth-status").textContent = "Sign-in error occurred";
-  }
-});
+    });
     
     console.log("Google Identity Services initialized");
     setupAuthButton();
@@ -963,8 +1009,32 @@ function refreshGoogleToken() {
   tokenClient.requestAccessToken({ prompt: '' });
 }
 
-// Call this every 30 minutes
-setInterval(checkAndRefreshToken, 30 * 60 * 1000);
+setInterval(async () => {
+  console.log("Token maintenance check...");
+  
+  // Check current token
+  const token = gapi.client.getToken();
+  
+  if (token && token.access_token) {
+    // Save it regularly
+    saveTokenRobustly(token);
+    
+    // Check if about to expire
+    const now = Date.now();
+    const expiresAt = token.expires_at || (token.issue_time + (token.expires_in * 1000));
+    
+    if (expiresAt - now < 10 * 60 * 1000) { // 10 minutes before expiry
+      console.log("Token expiring soon, attempting silent refresh...");
+      if (tokenClient) {
+        tokenClient.requestAccessToken({ prompt: '' });
+      }
+    }
+  } else {
+    // No active token, try to restore
+    await checkAndRestoreToken();
+  }
+}, 5 * 60 * 1000); // Check every 5 minutes (more frequent for tablets)
+  
 // ===== CALENDAR EVENTS =====
 async function loadCalendarEvents() {
   console.log("Loading calendar events...");
@@ -1628,21 +1698,24 @@ function initTradingViewWidget() {
 }
 
 // ===== INITIALIZATION =====
-  window.addEventListener('load', () => {
+window.addEventListener('load', () => {
   console.log("Page loaded, initializing...");
   
   loadWeather();
   setInterval(loadWeather, 60 * 60 * 1000);
   
+// Setup Fire Tablet maintenance immediately
+  if (isFireTablet()) {
+    console.log("Fire Tablet detected");
+    setupFireTabletTokenMaintenance();
+  }
+  
   // Try to restore token first
-  setTimeout(() => {
-    if (validateAndRefreshToken()) {
-      // Token restored, load events
-      console.log("Token restored on load, loading events...");
-      loadCalendarEvents();
-      startAutoRefresh();
-    } else {
-      // No token, check for cached events
+  setTimeout(async () => {
+    const restored = await checkAndRestoreToken();
+    
+    if (!restored) {
+      // No token restored, check for cached events
       const savedEvents = localStorage.getItem('calendarEvents');
       const lastUpdated = localStorage.getItem('eventsLastUpdated');
       
@@ -1657,7 +1730,7 @@ function initTradingViewWidget() {
       console.log("No valid token found, showing sign-in button");
     }
   }, 1000);
-  
+    
   // Initialize TradingView widget
   initTradingViewWidget();
   
@@ -1690,20 +1763,3 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
