@@ -1405,6 +1405,9 @@ function initTradingViewWidget() {
     "chartType": "area",
     "gridLineColor": "rgba(255, 255, 255, 0.06)",
     "timeHoursFormat": "12-hours"
+    "hideSymbolLogo": true, // <-- Hide logo to save space
+    "showSymbolLogo": false, // <-- Alternative way to hide logo
+    "widthAdjustment": -10 // <-- Makes chart area slightly larger
   });
   
   container.appendChild(script);
@@ -1504,3 +1507,4 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
