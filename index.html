@@ -563,7 +563,8 @@ const TOKEN_STORAGE_KEYS = {
 function isFireTablet() {
   const ua = navigator.userAgent;
   return /Kindle|Silk.*Mobile Safari|Android.*Fire/.test(ua) || 
-         /KF[A-Z]{2,4}/.test(ua); // Detect Kindle Fire models
+         /KF[A-Z]{2,4}/.test(ua); 
+// Detect Kindle Fire models
 }
 
 // 2. Enhanced token saving with multiple storage locations
@@ -1763,3 +1764,4 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
