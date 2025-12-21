@@ -42,23 +42,35 @@ body {
 }
 /* RIGHT COLUMN */
 .right-panel {
-  flex: 3;
-  display: flex;
-  flex-direction: column; /* weather above, stock below */
-  gap: 16px;
-  margin-left: 16px;
-  min-height: 0;
+    flex: 3 !important; /* Keep original 30% width */
+    min-width: 300px !important; /* Add minimum width */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    margin-left: 16px !important;
+    min-height: 0 !important;
 }
 /* Weather ~60%, stock ~40% of right column */
 #weather-panel {
-  flex: 3 1 0;
+  flex: 4 1 0;
   min-height: 180px;
   max-height: 1060px;
   overflow-y: auto;
 }
+#youtube-panel {
+  flex: 4 1 0 !important;
+    min-height: 200px !important;
+    max-height: 500px !important;
+    overflow: hidden !important;
+    position: relative !important; /* Contain the iframe */
+}
 #stock-panel {
   flex: 2 1 0;
   min-height: 140px;
+}
+/* Ensure YouTube panel doesn't push other panels */
+#weather-panel, #stock-panel {
+    flex-shrink: 0 !important;
 }
 .panel {
   background: rgba(0, 0, 0, 0.45);
@@ -285,6 +297,247 @@ body {
   border-bottom: none;
 }
 
+/* YOUTUBE WIDGET - COMPLETE VERSION */
+#youtube-panel {
+    flex: 3 1 0;
+    min-height: 200px;
+    max-height: 500px;
+    overflow: hidden;
+}
+
+#youtube-widget-container {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* Search Section */
+#youtube-search-section {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+}
+
+#youtube-search-input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 4px 0 0 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 14px;
+    border-right: none;
+}
+
+#youtube-search-btn {
+    padding: 0 20px;
+    background: #ff0000;
+    color: white;
+    border: 1px solid #ff0000;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+}
+
+#youtube-search-btn:hover {
+    background: #cc0000;
+}
+
+/* Player Area */
+#youtube-player-area {
+    flex-shrink: 0 !important; /* Prevent shrinking */
+    flex-grow: 0 !important; /* Prevent growing */
+    height: 180px !important; /* Fixed height */
+    width: 100% !important;
+    position: relative !important;
+    margin-bottom: 10px !important;
+}
+
+#youtube-player {
+    width: 100% !important;
+    height: 100% !important; /* Fill the fixed container */
+    position: absolute !important; /* Take exact space */
+    top: 0 !important;
+    left: 0 !important;
+    background: #000 !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+}
+
+#youtube-video-info {
+    padding: 8px 0;
+}
+
+#youtube-video-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#youtube-video-channel {
+    font-size: 12px;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Quick Buttons */
+#youtube-quick-buttons {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.youtube-section-title {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.youtube-button-group {
+    display: flex;
+    gap: 8px;
+}
+
+.youtube-btn {
+    flex: 1;
+    padding: 8px 5px;
+    background: rgba(255, 0, 0, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.youtube-btn:hover {
+    background: rgba(255, 0, 0, 0.25);
+    transform: translateY(-1px);
+}
+
+.youtube-btn-icon {
+    font-size: 16px;
+}
+
+/* Search Results */
+#youtube-results-container {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.2);
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    max-height: 300px;
+    overflow: hidden;
+}
+
+#youtube-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255,0,0,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+#youtube-results-header span {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+#youtube-close-results {
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+#youtube-close-results:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+#youtube-results-list {
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 5px;
+}
+
+.youtube-result-item {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.youtube-result-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.youtube-result-thumb {
+    width: 80px;
+    height: 60px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.youtube-result-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.youtube-result-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.youtube-result-channel {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Force iframe to stay within bounds */
+#youtube-player iframe {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    border: none !important;
+}
+
 /* ===== FIX 4: TRADINGVIEW CUSTOM STYLING ===== */
 .tradingview-widget-copyright {
   font-size: 9px !important;
@@ -508,6 +761,54 @@ body {
       <div id="weather-forecast"></div>
       <div id="weather-hourly-detail"></div>
     </div>
+
+<div class="panel" id="youtube-panel">
+    <div id="youtube-widget-container">
+        <!-- Search Bar -->
+        <div id="youtube-search-section">
+            <input type="text" id="youtube-search-input" placeholder="Search YouTube videos...">
+            <button id="youtube-search-btn">🔍 Search</button>
+        </div>
+        
+        <!-- Video Player Area -->
+        <div id="youtube-player-area">
+            <div id="youtube-player"></div>
+            <div id="youtube-video-info">
+                <div id="youtube-video-title">Select a video to play</div>
+                <div id="youtube-video-channel">Use search or quick buttons</div>
+            </div>
+        </div>
+        
+        <!-- Quick Play Buttons -->
+        <div id="youtube-quick-buttons">
+            <div class="youtube-section-title">Quick Music:</div>
+            <div class="youtube-button-group">
+                <button class="youtube-btn" data-id="jfKfPfyJRdk" data-title="Lofi Girl Radio" data-channel="Lofi Girl">
+                    <span class="youtube-btn-icon">🎵</span> Lofi
+                </button>
+                <button class="youtube-btn" data-id="5qap5aO4i9A" data-title="Synthwave Radio" data-channel="Synthwave">
+                    <span class="youtube-btn-icon">🌌</span> Synth
+                </button>
+                <button class="youtube-btn" data-id="MCkTebktHVc" data-title="Coffee Jazz" data-channel="Coffee Shop">
+                    <span class="youtube-btn-icon">☕</span> Jazz
+                </button>
+                <button class="youtube-btn" data-id="kgx4WGK0oNU" data-title="Classical Music" data-channel="Classical">
+                    <span class="youtube-btn-icon">🎻</span> Classical
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search Results (Hidden initially) -->
+        <div id="youtube-results-container" style="display: none;">
+            <div id="youtube-results-header">
+                <span>Search Results</span>
+                <button id="youtube-close-results">✕ Close</button>
+            </div>
+            <div id="youtube-results-list"></div>
+        </div>
+    </div>
+</div>
+
     <div class="panel" id="stock-panel">
       <div id="tradingview-widget" style="width:100%;height:100%;"></div>
     </div>
@@ -551,6 +852,218 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+// ===== YOUTUBE INTEGRATION - USING OFFICIAL API =====
+// Add your YouTube API Key here
+const YOUTUBE_API_KEY = 'AIzaSyD_Nb4qiALrzYQWp7cQPMdOZV7pCz2UbcM'; // ← Replace with your actual key
+// ===== YOUTUBE INTEGRATION - COMPLETE WITH SEARCH =====
+
+let currentYouTubeVideo = null;
+
+function initYouTube() {
+    console.log("Initializing YouTube with API search...");
+    
+    // Setup search button onclick handler
+    document.getElementById('youtube-search-btn').onclick = performYouTubeSearch;
+    
+    // Setup Enter key in search input
+    document.getElementById('youtube-search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performYouTubeSearch();
+        }
+    });
+    
+    // Setup quick play buttons
+    document.querySelectorAll('.youtube-btn').forEach(button => {
+        button.onclick = function() {
+            const videoId = this.getAttribute('data-id');
+            const title = this.getAttribute('data-title');
+            const channel = this.getAttribute('data-channel');
+            playYouTubeVideo(videoId, title, channel);
+        };
+    });
+    
+    // Setup close results button
+    document.getElementById('youtube-close-results').onclick = function() {
+        document.getElementById('youtube-results-container').style.display = 'none';
+    };
+    
+    // Load default video
+    playYouTubeVideo('jfKfPfyJRdk', 'Lofi Girl Radio', 'Lofi Girl • 24/7 Live Stream');
+}
+
+// MAIN SEARCH FUNCTION - This is what you asked about
+async function performYouTubeSearch() {
+    const query = document.getElementById('youtube-search-input').value.trim();
+    if (!query) {
+        alert('Please enter a search term');
+        return;
+    }
+    
+    console.log("Searching YouTube for:", query);
+    
+    // Show loading state
+    const resultsList = document.getElementById('youtube-results-list');
+    const resultsContainer = document.getElementById('youtube-results-container');
+    
+    resultsList.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.7;">Searching YouTube...</div>';
+    resultsContainer.style.display = 'block';
+    
+    try {
+        // YouTube Data API v3 search request
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?` +
+            `part=snippet&` +
+            `maxResults=8&` +  // Get 8 results
+            `q=${encodeURIComponent(query)}&` +
+            `type=video&` +
+            `videoEmbeddable=true&` +  // Only get embeddable videos
+            `key=${YOUTUBE_API_KEY}`
+        );
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`YouTube API error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.items || data.items.length === 0) {
+            resultsList.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.7;">No videos found for "' + query + '"</div>';
+            return;
+        }
+        
+        // Display search results
+        displaySearchResults(data.items);
+        
+    } catch (error) {
+        console.error("Search failed:", error);
+        resultsList.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #ff4444;">
+                <div>Search failed</div>
+                <small>${error.message}</small>
+            </div>
+        `;
+    }
+}
+
+// DISPLAY SEARCH RESULTS IN WIDGET
+function displaySearchResults(videos) {
+    const resultsList = document.getElementById('youtube-results-list');
+    let html = '';
+    
+    videos.forEach(video => {
+        const videoId = video.id.videoId;
+        const title = video.snippet.title;
+        const channel = video.snippet.channelTitle;
+        const thumbnail = video.snippet.thumbnails.default.url;
+        const published = new Date(video.snippet.publishedAt).toLocaleDateString();
+        
+        // Clean up title for HTML
+        const cleanTitle = title.replace(/['"<>]/g, '');
+        const cleanChannel = channel.replace(/['"<>]/g, '');
+        
+        html += `
+            <div class="youtube-result-item" onclick="selectSearchResult('${videoId}', '${cleanTitle}', '${cleanChannel}')">
+                <img class="youtube-result-thumb" src="${thumbnail}" alt="${cleanTitle}">
+                <div class="youtube-result-info">
+                    <div class="youtube-result-title">${cleanTitle}</div>
+                    <div class="youtube-result-channel">${cleanChannel}</div>
+                    <div style="font-size: 10px; opacity: 0.6;">${published}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    resultsList.innerHTML = html;
+}
+
+// HANDLE CLICK ON SEARCH RESULT
+function selectSearchResult(videoId, title, channel) {
+    console.log("Selected from search:", videoId);
+    
+    // Play the selected video
+    playYouTubeVideo(videoId, title, channel);
+    
+    // Hide search results
+    document.getElementById('youtube-results-container').style.display = 'none';
+    
+    // Clear search input
+    document.getElementById('youtube-search-input').value = '';
+}
+
+// PLAY VIDEO IN WIDGET
+function playYouTubeVideo(videoId, title, channel) {
+    console.log("Playing video:", videoId);
+    
+    currentYouTubeVideo = { id: videoId, title: title, channel: channel };
+    
+    // Update video info display
+    updateVideoInfo(title, channel);
+    
+    // Load YouTube iframe player
+    const playerDiv = document.getElementById('youtube-player');
+    
+    // IMPORTANT: Use the embed URL WITHOUT autoplay initially
+    // This avoids error 153
+    playerDiv.innerHTML = `
+        <iframe
+            width="100%"
+            height="100%"
+            src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+        </iframe>
+    `;
+    
+    // After a delay, try to enable autoplay
+    // This works because there was user interaction (clicking the search result)
+    setTimeout(() => {
+        const iframe = playerDiv.querySelector('iframe');
+        if (iframe) {
+            // Update with autoplay - should work now
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1`;
+        }
+    }, 500);
+}
+
+// UPDATE VIDEO INFO DISPLAY
+function updateVideoInfo(title, channel) {
+    document.getElementById('youtube-video-title').textContent = title;
+    document.getElementById('youtube-video-channel').textContent = channel;
+}
+
+// HELPER: EXTRACT VIDEO ID FROM URL
+function extractVideoId(url) {
+    if (!url) return null;
+    
+    // Direct video ID
+    if (url.match(/^[a-zA-Z0-9_-]{11}$/)) {
+        return url;
+    }
+    
+    // YouTube URL patterns
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /v=([a-zA-Z0-9_-]{11})/
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    
+    return null;
+}
+
+// Initialize YouTube
+window.addEventListener('load', () => {
+    // ... your other initializations ...
+    initYouTube();
+});
 
 // ===== GOOGLE AUTH =====
 function initGoogleApi() {
@@ -1475,6 +1988,9 @@ window.addEventListener('load', () => {
   }
   }
   
+ // Initialize YouTube
+  initYouTube();
+
   // Initialize TradingView widget
   initTradingViewWidget();
   
@@ -1507,5 +2023,3 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
-
-
