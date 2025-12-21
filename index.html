@@ -297,6 +297,62 @@ body {
   border-bottom: none;
 }
 
+/* ===== ALWAYS-LISTENING VOICE ASSISTANT ===== */
+#voice-assistant {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    z-index: 9998;
+}
+
+#voice-visualizer {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 0, 0, 0.1);
+    border: 2px solid rgba(255, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    animation: pulse-slow 2s infinite;
+}
+
+@keyframes pulse-slow {
+    0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.1); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+}
+
+#voice-visualizer.listening {
+    background: rgba(0, 255, 0, 0.2);
+    border-color: rgba(0, 255, 0, 0.5);
+    animation: pulse-fast 0.5s infinite;
+}
+
+@keyframes pulse-fast {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(0, 255, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+}
+
+#wake-word-status {
+    position: absolute;
+    top: -25px;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    display: none;
+}
+
+#voice-assistant:hover #wake-word-status {
+    display: block;
+}
 /* YOUTUBE WIDGET - COMPLETE VERSION */
 #youtube-panel {
     flex: 3 1 0;
@@ -873,6 +929,12 @@ body {
       <div id="weather-hourly-detail"></div>
     </div>
 
+    <!-- Voice Assistant (hidden visualizer only) -->
+<div id="voice-assistant">
+    <div id="voice-visualizer"></div>
+    <div id="wake-word-status">Say "Hey Dashboard"</div>
+</div>
+    
 <div class="panel" id="youtube-panel">
     <div id="youtube-widget-container">
         <!-- Search Bar -->
@@ -1150,7 +1212,288 @@ function extractVideoId(url) {
     
     return null;
 }
+// ===== ALWAYS-LISTENING VOICE ASSISTANT =====
+let voiceAssistant = null;
+let isAwake = false;
+let silenceTimer = null;
 
+function setupVoiceAssistant() {
+    if (!('webkitSpeechRecognition' in window)) {
+        console.log("Voice recognition not supported");
+        return;
+    }
+    
+    const SpeechRecognition = window.webkitSpeechRecognition;
+    voiceAssistant = new SpeechRecognition();
+    
+    // Configure for always listening
+    voiceAssistant.continuous = true;
+    voiceAssistant.interimResults = true;
+    voiceAssistant.lang = 'en-US';
+    voiceAssistant.maxAlternatives = 3;
+    
+    voiceAssistant.onstart = function() {
+        console.log("Voice assistant: Always listening...");
+        updateVisualizer('waiting');
+    };
+    
+    voiceAssistant.onresult = function(event) {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        // Process what was said
+        processSpeech(finalTranscript, interimTranscript);
+    };
+    
+    voiceAssistant.onerror = function(event) {
+        console.log("Voice assistant error:", event.error);
+        if (event.error === 'no-speech' || event.error === 'audio-capture') {
+            // Auto-restart on expected errors
+            setTimeout(restartVoiceAssistant, 1000);
+        }
+    };
+    
+    voiceAssistant.onend = function() {
+        console.log("Voice assistant ended, restarting...");
+        restartVoiceAssistant();
+    };
+    
+    // Start listening
+    startVoiceAssistant();
+}
+
+function startVoiceAssistant() {
+    try {
+        voiceAssistant.start();
+        console.log("Voice assistant started");
+    } catch (e) {
+        console.log("Failed to start:", e);
+        setTimeout(startVoiceAssistant, 1000);
+    }
+}
+
+function restartVoiceAssistant() {
+    if (voiceAssistant) {
+        setTimeout(startVoiceAssistant, 500);
+    }
+}
+
+function processSpeech(final, interim) {
+    const fullText = (final || interim).toLowerCase().trim();
+    
+    if (!fullText) return;
+    
+    // DEBUG: Uncomment to see what's being heard
+    // console.log("Heard:", fullText);
+    
+    // Check for wake word
+    if (!isAwake) {
+        if (fullText.includes('hey bob') || 
+            fullText.includes('hi bob') || 
+            fullText.includes('bob')) {
+            
+            wakeAssistant();
+            return;
+        }
+    } else {
+        // We're awake, process command
+        processCommand(fullText);
+        
+        // Reset awake state after processing
+        clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+            sleepAssistant();
+        }, 5000); // Go back to sleep after 5 seconds of silence
+    }
+}
+
+function wakeAssistant() {
+    isAwake = true;
+    updateVisualizer('listening');
+    showVoiceFeedback('🎤 Listening...', 'green');
+    console.log("Assistant: WOKE UP");
+}
+
+function sleepAssistant() {
+    isAwake = false;
+    updateVisualizer('waiting');
+    console.log("Assistant: SLEEPING");
+}
+
+function updateVisualizer(state) {
+    const viz = document.getElementById('voice-visualizer');
+    if (!viz) return;
+    
+    viz.textContent = state === 'listening' ? '●' : '○';
+    viz.className = state === 'listening' ? 'listening' : '';
+}
+
+function processCommand(command) {
+    console.log("Processing command:", command);
+    
+    // YouTube Controls
+    if (command.includes('play') || command.includes('start') || command.includes('resume')) {
+        playYouTube();
+        showVoiceFeedback('▶️ Playing', 'green');
+        return;
+    }
+    
+    if (command.includes('pause') || command.includes('stop')) {
+        pauseYouTube();
+        showVoiceFeedback('⏸️ Paused', 'yellow');
+        return;
+    }
+    
+    if (command.includes('next') || command.includes('skip')) {
+        // Implement next video if you have playlist
+        showVoiceFeedback('⏭️ Next', 'blue');
+        return;
+    }
+    
+    if (command.includes('previous') || command.includes('back')) {
+        showVoiceFeedback('⏮️ Previous', 'blue');
+        return;
+    }
+    
+    if (command.includes('volume up') || command.includes('louder')) {
+        changeYouTubeVolume(10);
+        showVoiceFeedback('🔊 Volume +', 'blue');
+        return;
+    }
+    
+    if (command.includes('volume down') || command.includes('quieter')) {
+        changeYouTubeVolume(-10);
+        showVoiceFeedback('🔉 Volume -', 'blue');
+        return;
+    }
+    
+    if (command.includes('mute')) {
+        muteYouTube();
+        showVoiceFeedback('🔇 Muted', 'yellow');
+        return;
+    }
+    
+    if (command.includes('unmute')) {
+        unmuteYouTube();
+        showVoiceFeedback('🔊 Unmuted', 'green');
+        return;
+    }
+    
+    // Search commands
+    const searchMatch = command.match(/(?:search for|find|play) (.+)/);
+    if (searchMatch) {
+        const query = searchMatch[1].trim();
+        if (query && query.length > 2) {
+            document.getElementById('youtube-search-input').value = query;
+            setTimeout(() => performYouTubeSearch(), 300);
+            showVoiceFeedback(`🔍 Searching: ${query}`, 'blue');
+            return;
+        }
+    }
+    
+    // If no command matched
+    if (command.length > 5) {
+        showVoiceFeedback(`❓ "${command}"`, 'yellow');
+    }
+}
+
+function showVoiceFeedback(message, color = 'green') {
+    // Create or update feedback element
+    let feedback = document.getElementById('voice-feedback');
+    if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.id = 'voice-feedback';
+        feedback.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid ${color};
+            text-align: center;
+            max-width: 300px;
+            animation: voiceFeedbackFade 2s ease-in-out;
+        `;
+        document.body.appendChild(feedback);
+    }
+    
+    feedback.textContent = message;
+    feedback.style.borderColor = color;
+    feedback.style.animation = 'none';
+    setTimeout(() => {
+        feedback.style.animation = 'voiceFeedbackFade 2s ease-in-out';
+    }, 10);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+        if (feedback && feedback.parentNode) {
+            feedback.parentNode.removeChild(feedback);
+        }
+    }, 2000);
+}
+
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes voiceFeedbackFade {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    }
+`;
+document.head.appendChild(style);
+
+// YouTube control functions (ensure these exist)
+function playYouTube() {
+    const iframe = document.querySelector('#youtube-player iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+    }
+}
+
+function pauseYouTube() {
+    const iframe = document.querySelector('#youtube-player iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+    }
+}
+
+function changeYouTubeVolume(change) {
+    const iframe = document.querySelector('#youtube-player iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage(`{"event":"command","func":"setVolume","args":[${Math.max(0, Math.min(100, change))}]}`, '*');
+    }
+}
+
+function muteYouTube() {
+    const iframe = document.querySelector('#youtube-player iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
+    }
+}
+
+function unmuteYouTube() {
+    const iframe = document.querySelector('#youtube-player iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+    }
+}
 // Initialize YouTube
 window.addEventListener('load', () => {
     // ... your other initializations ...
@@ -2079,7 +2422,9 @@ window.addEventListener('load', () => {
     }
   }
   }
-  
+
+ // Initialize voice assistant
+ setTimeout(setupVoiceAssistant, 3000); // Start after 3 seconds
  // Initialize YouTube
   initYouTube();
 
@@ -2115,6 +2460,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
