@@ -318,6 +318,7 @@ body {
     display: flex;
     gap: 0;
     margin-bottom: 12px;
+    width: 100%; /* Ensure full width */
 }
 
 #youtube-search-input {
@@ -329,6 +330,7 @@ body {
     color: white;
     font-size: 14px;
     border-right: none;
+    min-width: 150px; /* Reduced minimum width */
 }
 
 #youtube-search-btn {
@@ -340,10 +342,12 @@ body {
     cursor: pointer;
     font-size: 16px;
     font-weight: 600;
-    display: flex;
+    display: flex !important; /* Force display */
     align-items: center;
     justify-content: center;
-    min-width: 80px;
+    min-width: 44px; /* Minimum touch target size */
+    visibility: visible !important; /* Force visible */
+    opacity: 1 !important; /* Force full opacity */  
 }
 
 #youtube-search-btn:hover {
@@ -635,6 +639,17 @@ body {
   #youtube-player-area {
     height: 160px !important; /* Smaller on tablet */
   }
+
+    /* YouTube Tablet Fixes */
+  #youtube-search-section {
+    gap: 0;
+  }
+  
+  #youtube-search-input {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-width: 120px; /* Smaller on tablet */
+  }
   
   #youtube-search-btn {
     display: flex;
@@ -642,6 +657,7 @@ body {
     justify-content: center;
     font-size: 15px; /* Slightly larger icon */
     padding: 0 15px; /* Adjust padding for icon */
+    min-width: 40px; /* Smaller but still visible */
   }
   
   .youtube-button-group {
@@ -700,21 +716,22 @@ body {
   }
   
   #youtube-search-input {
-    padding: 8px 10px;
-    font-size: 13px;
+    padding: 7px 9px;
+    font-size: 12px;
   }
   
   #youtube-search-btn {
-        display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px; /* Slightly larger icon */
-    padding: 0 12px; /* Adjust padding for icon */
+    padding: 0 10px;
+    font-size: 15px;
   }
   
   .youtube-btn {
     padding: 5px 3px;
     font-size: 10px;
+  }
+  
+  #youtube-player-area {
+    height: 150px !important;
   }
 }
 
@@ -784,23 +801,28 @@ body {
   }
   
   #youtube-search-section {
-    flex-direction: column;
     gap: 8px;
+    flex-direction: row !important; /* Keep horizontal on small tablets */
+    gap: 0 !important;    
   }
   
   #youtube-search-input {
-    border-radius: 4px;
-    border-right: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px 0 0 4px !important;
+    border-right: none !important;
+    font-size: 12px;
+    padding: 6px 8px;    
   }
   
   #youtube-search-btn {
-        display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px; /* Slightly larger icon */
-    padding: 0 12px; /* Adjust padding for icon */
+    border-radius: 0 4px 4px 0 !important;
+    padding: 0 10px;
+    font-size: 14px;
+    min-width: 36px;    
   }
-  
+
+  #youtube-player-area {
+    height: 140px !important;
+  }
   .youtube-button-group {
     gap: 4px;
   }
@@ -855,7 +877,7 @@ body {
     <div id="youtube-widget-container">
         <!-- Search Bar -->
         <div id="youtube-search-section">
-            <input type="text" id="youtube-search-input" placeholder="Search YouTube videos...">
+            <input type="text" id="youtube-search-input" placeholder="Search Videos">
             <button id="youtube-search-btn" title="Search YouTube">🔍</button>
         </div>
         
@@ -2093,6 +2115,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
