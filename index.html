@@ -332,7 +332,7 @@ body {
 }
 
 #youtube-search-btn {
-    padding: 0 20px;
+    padding: 0 15px; /* Adjust padding for icon */
     background: #ff0000;
     color: white;
     border: 1px solid #ff0000;
@@ -637,8 +637,11 @@ body {
   }
   
   #youtube-search-btn {
-    padding: 0 15px;
-    min-width: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px; /* Slightly larger icon */
+    padding: 0 15px; /* Adjust padding for icon */
   }
   
   .youtube-button-group {
@@ -702,8 +705,11 @@ body {
   }
   
   #youtube-search-btn {
-    padding: 0 12px;
-    font-size: 14px;
+        display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px; /* Slightly larger icon */
+    padding: 0 12px; /* Adjust padding for icon */
   }
   
   .youtube-btn {
@@ -788,9 +794,11 @@ body {
   }
   
   #youtube-search-btn {
-    border-radius: 4px;
-    width: 100%;
+        display: flex;
+    align-items: center;
     justify-content: center;
+    font-size: 15px; /* Slightly larger icon */
+    padding: 0 12px; /* Adjust padding for icon */
   }
   
   .youtube-button-group {
@@ -848,7 +856,7 @@ body {
         <!-- Search Bar -->
         <div id="youtube-search-section">
             <input type="text" id="youtube-search-input" placeholder="Search YouTube videos...">
-            <button id="youtube-search-btn">🔍</button>
+            <button id="youtube-search-btn" title="Search YouTube">🔍</button>
         </div>
         
         <!-- Video Player Area -->
@@ -2085,6 +2093,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
