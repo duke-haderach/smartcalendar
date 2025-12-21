@@ -35,14 +35,14 @@ body {
 }
 /* LEFT COLUMN */
 .left-panel {
-  flex: 8;
+  flex: 7;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 /* RIGHT COLUMN */
 .right-panel {
-    flex: 2 !important; /* Keep original 30% width */
+    flex: 3 !important; /* Keep original 30% width */
     min-width: 300px !important; /* Add minimum width */
     display: flex !important;
     flex-direction: column !important;
@@ -553,14 +553,15 @@ body {
     padding: 10px;
   }
   
-  /* Maintain 70/30 split but adjust margins */
+  /* CORRECTED: Maintain 70/30 split */
   .left-panel {
     flex: 7; /* 70% */
   }
   
   .right-panel {
-    flex: 3; /* 30% */
-    margin-left: 12px;
+    flex: 3 !important; /* 30% */
+    margin-left: 12px !important;
+    min-width: 250px !important; /* Reduced for tablet */
   }
   
   /* Adjust panel padding */
@@ -579,29 +580,26 @@ body {
   
   /* Compact event layout for tablet */
   .event-time-container {
-    min-width: 25%; /* Slightly smaller on tablet */
+    min-width: 25%;
     margin-right: 8px;
   }
   
   .event-time {
     font-size: 14px;
-    white-space: nowrap;
   }
 
-   .event-end-time {
+  .event-end-time {
     font-size: 10px;
-    white-space: nowrap;
   }
   
   .event-title {
     font-size: 14px;
-    line-height: 1.3;
-    min-width: 60%; /* Adjusted for tablet */
+    min-width: 60%;
   }
   
   .event-location {
     font-size: 11px;
-    margin-left: 0.5%; /* Match time container width */
+    margin-left: 0.5%;
   }
   
   /* Adjust weather for tablet */
@@ -626,11 +624,34 @@ body {
   }
   
   .weather-temp {
-    margin-left: 10px; /* Slightly less space on tablet */
+    margin-left: 10px;
   }
   
   .weather-desc {
-    margin-left: 10px; /* Slightly less space on tablet */
+    margin-left: 10px;
+  }
+  
+  /* Adjust YouTube for tablet */
+  #youtube-player-area {
+    height: 160px !important; /* Smaller on tablet */
+  }
+  
+  #youtube-search-btn {
+    padding: 0 15px;
+    min-width: 70px;
+  }
+  
+  .youtube-button-group {
+    gap: 6px;
+  }
+  
+  .youtube-btn {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+  
+  .youtube-btn-icon {
+    font-size: 14px;
   }
   
   /* Smaller buttons */
@@ -640,30 +661,54 @@ body {
   }
 }
 
-/* ===== SMALL TABLET / LARGE PHONE (768px-1024px) ===== Fire Tablet */
+/* ===== SMALL TABLET / LARGE PHONE (768px-1024px) - Fire Tablet ===== */
 @media (max-width: 900px) and (min-width: 769px) {
-  /* Even more compact for smaller tablets */
+  /* Even more compact for Fire Tablet */
+  .right-panel {
+    min-width: 220px !important; /* Even smaller for Fire Tablet */
+  }
+  
   .event-time-container {
-    min-width: 30%; /* Give more space to time on smaller screens */
+    min-width: 30%;
   }
   
   .event-title {
-    min-width: 60%; /* Less space for title */
+    min-width: 60%;
     font-size: 13px;
   }
   
   .event-location {
     font-size: 10px;
-    margin-left: 0.5%; /* Match time container */
+    margin-left: 0.5%;
   }
   
-  /* Hide weather description on very small tablets */
+  /* Hide weather description on Fire Tablet */
   .weather-desc {
     display: none;
   }
   
   .weather-temp {
     margin-right: 5px;
+  }
+  
+  /* Adjust YouTube for Fire Tablet */
+  #youtube-player-area {
+    height: 150px !important;
+  }
+  
+  #youtube-search-input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  #youtube-search-btn {
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  
+  .youtube-btn {
+    padding: 5px 3px;
+    font-size: 10px;
   }
 }
 
@@ -675,12 +720,13 @@ body {
   }
   
   .left-panel {
-    flex: 7; /* 60% on very small tablets */
+    flex: 7; /* 70% */
   }
   
   .right-panel {
-    flex: 3; /* 40% on very small tablets */
-    margin-left: 8px;
+    flex: 3 !important; /* 30% */
+    margin-left: 8px !important;
+    min-width: 200px !important; /* Minimum for 3 panels */
   }
   
   /* Very compact events */
@@ -726,6 +772,41 @@ body {
     font-size: 11px;
   }
   
+  /* Adjust YouTube for very small tablets */
+  #youtube-player-area {
+    height: 140px !important;
+  }
+  
+  #youtube-search-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  #youtube-search-input {
+    border-radius: 4px;
+    border-right: 1px solid rgba(255,255,255,0.3);
+  }
+  
+  #youtube-search-btn {
+    border-radius: 4px;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .youtube-button-group {
+    gap: 4px;
+  }
+  
+  .youtube-btn {
+    padding: 4px 2px;
+    font-size: 9px;
+    min-height: 40px;
+  }
+  
+  .youtube-btn-icon {
+    font-size: 12px;
+  }
+  
   /* Even smaller clock */
   #clock {
     font-size: 24px;
@@ -734,7 +815,7 @@ body {
   #date {
     font-size: 14px;
   }
-}
+}  
 </style>
 </head>
 <body>
@@ -767,7 +848,7 @@ body {
         <!-- Search Bar -->
         <div id="youtube-search-section">
             <input type="text" id="youtube-search-input" placeholder="Search YouTube videos...">
-            <button id="youtube-search-btn">🔍/button>
+            <button id="youtube-search-btn">🔍</button>
         </div>
         
         <!-- Video Player Area -->
@@ -2004,6 +2085,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
