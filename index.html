@@ -1217,60 +1217,132 @@ let voiceAssistant = null;
 let isAwake = false;
 let silenceTimer = null;
 
+// Microphone permission handler for Fire Tablet
+function requestMicrophonePermission() {
+    return new Promise((resolve, reject) => {
+        // First try to get permission through getUserMedia
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(stream => {
+                console.log("Microphone permission granted");
+                // Stop the stream immediately (we don't need the audio, just permission)
+                stream.getTracks().forEach(track => track.stop());
+                resolve(true);
+            })
+            .catch(error => {
+                console.log("Microphone permission denied or error:", error);
+                
+                // If permission was previously denied, we need to guide the user
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    showPermissionInstructions();
+                    reject(error);
+                } else {
+                    // Other errors might be temporary
+                    console.log("Will retry in 2 seconds...");
+                    setTimeout(() => {
+                        requestMicrophonePermission().then(resolve).catch(reject);
+                    }, 2000);
+                }
+            });
+    });
+}
+
+function showPermissionInstructions() {
+    const instructions = document.createElement('div');
+    instructions.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+            text-align: center;
+        ">
+            <h2>🎤 Microphone Permission Needed</h2>
+            <p style="margin: 20px 0; font-size: 16px;">
+                Your Fire Tablet needs microphone access for voice control.
+            </p>
+            <div style="background: rgba(255,0,0,0.2); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <strong>Fix steps:</strong>
+                <ol style="text-align: left; margin: 10px 0; padding-left: 20px;">
+                    <li>Close ALL other apps (swipe up from bottom and close)</li>
+                    <li>Refresh this page</li>
+                    <li>When prompted, click <strong>ALLOW</strong> for microphone</li>
+                    <li>If no prompt appears, go to Settings → Apps → Browser → Permissions → Enable Microphone</li>
+                </ol>
+            </div>
+            <button onclick="location.reload()" style="
+                background: #ff0000;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 16px;
+                margin: 10px;
+                cursor: pointer;
+            ">Refresh & Try Again</button>
+            <button onclick="this.parentNode.remove()" style="
+                background: rgba(255,255,255,0.1);
+                color: white;
+                border: 1px solid rgba(255,255,255,0.3);
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 16px;
+                margin: 10px;
+                cursor: pointer;
+            ">Skip Voice Control</button>
+        </div>
+    `;
+    document.body.appendChild(instructions);
+}
+
 function setupVoiceAssistant() {
     if (!('webkitSpeechRecognition' in window)) {
         console.log("Voice recognition not supported");
+        showUnsupportedMessage();
         return;
     }
     
+    // First request microphone permission
+    requestMicrophonePermission()
+        .then(() => {
+            // Permission granted, start voice assistant
+            startVoiceRecognition();
+        })
+        .catch(error => {
+            console.log("Could not get microphone permission, voice control disabled");
+            // Don't show error if user intentionally denied
+            if (error.name !== 'NotAllowedError' && error.name !== 'PermissionDeniedError') {
+                showPermissionInstructions();
+            }
+        });
+}
+
+function startVoiceRecognition() {
     const SpeechRecognition = window.webkitSpeechRecognition;
     voiceAssistant = new SpeechRecognition();
     
-    // Configure for always listening
     voiceAssistant.continuous = true;
     voiceAssistant.interimResults = true;
     voiceAssistant.lang = 'en-US';
-    voiceAssistant.maxAlternatives = 3;
     
     voiceAssistant.onstart = function() {
         console.log("Voice assistant: Always listening...");
         updateVisualizer('waiting');
+        // Hide any permission instructions
+        const instructions = document.querySelector('[style*="Microphone Permission Needed"]');
+        if (instructions) instructions.remove();
     };
     
-    voiceAssistant.onresult = function(event) {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += transcript;
-            } else {
-                interimTranscript += transcript;
-            }
-        }
-        
-        // Process what was said
-        processSpeech(finalTranscript, interimTranscript);
-    };
-    
-    voiceAssistant.onerror = function(event) {
-        console.log("Voice assistant error:", event.error);
-        if (event.error === 'no-speech' || event.error === 'audio-capture') {
-            // Auto-restart on expected errors
-            setTimeout(restartVoiceAssistant, 1000);
-        }
-    };
-    
-    voiceAssistant.onend = function() {
-        console.log("Voice assistant ended, restarting...");
-        restartVoiceAssistant();
-    };
-    
-    // Start listening
-    startVoiceAssistant();
+    // ... rest of your existing voice assistant code ...
 }
-
 function startVoiceAssistant() {
     try {
         voiceAssistant.start();
@@ -2423,8 +2495,19 @@ window.addEventListener('load', () => {
   }
   }
 
- // Initialize voice assistant
- setTimeout(setupVoiceAssistant, 3000); // Start after 3 seconds
+ // Initialize voice assistant with delay
+    setTimeout(() => {
+        // First check if we're on HTTPS or localhost (required for microphone)
+        if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+            setupVoiceAssistant();
+        } else {
+            console.log("Microphone requires HTTPS or localhost. Running on:", window.location.protocol);
+            // Fallback to button-triggered if not secure context
+            setupButtonTriggeredVoice();
+        }
+    }, 5000); // Wait 5 seconds for everything else to load first
+});
+  
  // Initialize YouTube
   initYouTube();
 
@@ -2460,6 +2543,7 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
 
 
