@@ -1154,12 +1154,12 @@ const CARD_UPDATE_TIME_KEY = 'cardsLastUpdated';
 
 // Default cards (simple version)
 const DEFAULT_CARDS_SIMPLE = [
-  { issuer: "Chase", balance: 0.00 },
-  { issuer: "Robinhood", balance: 0.00 },
-  { issuer: "CITI Custom Cash", balance: 0.00 },
-  { issuer: "CITI Costco", balance: 0.00 },
-  { issuer: "Bank of America", balance: 0.00 },
-  { issuer: "Discover", balance: 0.00 },
+  { issuer: "Chase(Prime5%)", balance: 0.00 },
+  { issuer: "Robinhood(anything3%)", balance: 0.00 },
+  { issuer: "CITI Custom Cash(grocery 5%)", balance: 0.00 },
+  { issuer: "CITI Costco(Gas4%)", balance: 0.00 },
+  { issuer: "Bank of America(Dine6%)", balance: 0.00 },
+  { issuer: "Discover(NaN)", balance: 0.00 },
 ];
 
 function initCreditCards() {
@@ -2443,4 +2443,5 @@ setInterval(cleanupOldReminders, 60 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
