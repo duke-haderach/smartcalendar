@@ -32,130 +32,532 @@ body {
   flex-direction: row;
   padding: 16px;
   box-sizing: border-box;
+  gap: 16px;
 }
-/* LEFT COLUMN */
+
+/* ===== LEFT COLUMN - TWO ROW LAYOUT ===== */
 .left-panel {
-  flex: 7;
+  flex: 7; /* 70% of screen width */
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px; /* Gap between the two rows */
+  height: 100%;
 }
-/* RIGHT COLUMN */
-.right-panel {
-    flex: 3 !important; /* Keep original 30% width */
-    min-width: 300px !important; /* Add minimum width */
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-    margin-left: 16px !important;
-    min-height: 0 !important;
+
+/* Row 1: Clock + Transactions */
+.row-1 {
+  flex: 0 0 auto; /* Don't grow, don't shrink */
+  display: flex;
+  gap: 12px;
+  height: 30%; /* Approximately 30% of left panel */
+  min-height: 200px;
 }
-/* Weather ~60%, stock ~40% of right column */
-#weather-panel {
-  flex: 4 1 0;
-  min-height: 180px;
-  max-height: 1060px;
-  overflow-y: auto;
-}
-#youtube-panel {
-  flex: 3 1 0 !important;
-    min-height: 200px !important;
-    max-height: 500px !important;
-    overflow: hidden !important;
-    position: relative !important; /* Contain the iframe */
-}
-#stock-panel {
-  flex: 3 1 0;
-  min-height: 140px;
-}
-/* Ensure YouTube panel doesn't push other panels */
-#weather-panel, #stock-panel {
-    flex-shrink: 0 !important;
-}
-.panel {
+
+/* Clock Panel */
+.clock-panel {
+  flex: 1; /* Take half of row 1 */
   background: rgba(0, 0, 0, 0.45);
   border-radius: 8px;
-  padding: 12px 16px;
-  box-sizing: border-box;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
 }
-/* ===== FIX 3: CLOCK WIDGET - AM/PM FORMAT ===== */
+
+/* Transactions Panel */
+.transactions-panel {
+  flex: 1; /* Take half of row 1 */
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Row 2: Events */
+.events-panel {
+  flex: 1; /* Take remaining 70% of left panel */
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+/* ===== CLOCK STYLING ===== */
 #clock {
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  text-align: center;
 }
 #date {
   font-size: 18px;
   opacity: 0.8;
+  line-height: 1.2;
+  text-align: center;
 }
-#events-container {
-  max-height: 800px;
+
+/* ===== TRANSACTIONS PANEL STYLING ===== */
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transactions-title-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Add this to target the Credit Card Balances text */
+.transactions-title-container > div:first-child {
+  font-size: 10px; /* Reduced from default */
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+#last-updated {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Compact table styling */
+.cards-table-container {
+  flex: 1;
   overflow-y: auto;
+  max-height: calc(100% - 50px);
 }
+
+.cards-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cards-table th {
+  text-align: left;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cards-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cards-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cards-table .amount {
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.cards-table .total-row {
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cards-table .total-row td {
+  padding: 10px 10px;
+  font-size: 13px;
+}
+
+/* Sync button styling */
+#sync-sheets-btn {
+  padding: 8px 14px;
+  background: rgba(66, 133, 244, 0.3);
+  color: #4285F4;
+  border: 1px solid rgba(66, 133, 244, 0.7);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Styling for the total balance display */
+#total-balance {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border-left: 3px solid currentColor;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Make table header more compact */
+.cards-table th {
+  font-size: 11px !important;
+  padding: 6px 10px !important;
+  opacity: 0.8;
+}
+
+/* Make table rows more compact */
+.cards-table td {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+/* Highlight the amount column */
+.cards-table .amount {
+  font-family: 'Courier New', monospace !important;
+  font-weight: 600 !important;
+}
+
+/* Optional: Add subtle hover effect on total */
+#total-balance:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s;
+}
+
+#sync-sheets-btn:hover {
+  background: rgba(66, 133, 244, 0.4);
+  box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
+}
+
+/* ===== EVENTS PANEL STYLING ===== */
+#auth-status {
+  font-size: 14px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#events-container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
 #events {
   flex: 1;
   overflow-y: auto;
-  font-size: 16px;
-  max-height: 100%;
+  font-size: 14px;
 }
+
 .event-day {
-  margin-top: 10px;
+  margin-top: 12px;
+  margin-bottom: 6px;
   font-weight: 600;
   font-size: 15px;
   opacity: 0.9;
+  color: #4CAF50;
 }
-/* ===== FIX 1 & 2: EVENT LAYOUT FIX ===== */
+
 .event-item {
-  margin-top: 4px;
-  padding: 6px 8px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
   background: rgba(0, 255, 0, 0.05);
-  border-radius: 4px;
+  border-radius: 6px;
   color: #f7f5f5;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: bold;
   display: flex;
-  flex-wrap: wrap;
+  border-left: 3px solid #4CAF50;
 }
+
 .event-time-container {
   display: flex;
   flex-direction: column;
   min-width: 25%;
-  margin-right: 10px;
+  margin-right: 12px;
 }
+
 .event-time {
   font-weight: 600;
   white-space: nowrap;
+  font-size: 14px;
 }
+
 .event-end-time {
-  font-size: 10px;
+  font-size: 11px;
   color: #e3dede;
   margin-top: 2px;
   white-space: nowrap;
 }
+
 .event-title {
   flex: 1;
   min-width: 60%;
-  line-height: 1.4;
+  line-height: 1.3;
+  font-size: 14px;
 }
+
 .event-location {
   display: block;
   font-size: 12px;
   color: #e3dede;
   margin-top: 4px;
   width: 100%;
-  margin-left: 25%; /* Aligns with event title */
+  margin-left: 0.5%;
 }
-/* Right column wrapper */
+
 .event-right {
   flex: 1;
   min-width: 60%;
   display: flex;
   flex-direction: column;
-}  
-/* WEATHER: portrait list */
+}
+
+/* Auth buttons */
+#sign-in, #enable-voice {
+  padding: 8px 16px;
+  margin-top: 6px;
+  margin-right: 10px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ffffff;
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-block;
+}
+
+#sign-in:hover, #enable-voice:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* Add smooth transitions for sign-in button */
+#sign-in, #auth-status {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* When hiding, smoothly fade out */
+#sign-in[style*="display: none"] {
+  opacity: 0;
+  transform: translateY(-10px);
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* When showing, smoothly fade in */
+#sign-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== RIGHT COLUMN ===== */
+.right-panel {
+    flex: 3 !important;
+    min-width: 300px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    min-height: 0 !important;
+}
+
+#weather-panel {
+  flex: 4 1 0;
+  min-height: 180px;
+  max-height: 1060px;
+  overflow-y: auto;
+}
+
+#youtube-panel {
+  flex: 3 1 0 !important;
+    min-height: 200px !important;
+    max-height: 500px !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+#stock-panel {
+  flex: 3 1 0;
+  min-height: 140px;
+}
+
+/* Ensure YouTube panel doesn't push other panels */
+#weather-panel, #stock-panel {
+    flex-shrink: 0 !important;
+}
+
+.panel {
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Hide the old inline results */
+#youtube-results-container {
+  display: none !important;
+}
+
+/* Loading spinner for popup */
+.youtube-loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* YouTube Search Results Popup */
+#youtube-results-popup {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 80% !important;
+  max-width: 600px !important;
+  max-height: 80vh !important;
+  background: rgba(0, 0, 0, 0.95) !important;
+  border-radius: 12px !important;
+  border: 2px solid rgba(255, 0, 0, 0.5) !important;
+  z-index: 10000 !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.7) !important;
+  overflow: hidden !important;
+  display: none !important;
+}
+
+#youtube-results-popup-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 15px 20px !important;
+  background: rgba(255,0,0,0.15) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+}
+
+#youtube-results-popup-header span {
+  font-weight: 600 !important;
+  font-size: 16px !important;
+}
+
+#youtube-close-popup {
+  padding: 6px 14px !important;
+  background: rgba(255,255,255,0.1) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  transition: all 0.2s !important;
+}
+
+#youtube-close-popup:hover {
+  background: rgba(255,255,255,0.2) !important;
+}
+
+#youtube-results-popup-list {
+  max-height: calc(80vh - 70px) !important;
+  overflow-y: auto !important;
+  padding: 10px !important;
+}
+
+/* Popup result items */
+.youtube-popup-result-item {
+  padding: 12px 15px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  gap: 15px !important;
+  align-items: flex-start !important;
+  transition: all 0.2s !important;
+  border-radius: 6px !important;
+  margin-bottom: 5px !important;
+}
+
+.youtube-popup-result-item:hover {
+  background: rgba(255,255,255,0.05) !important;
+  transform: translateX(3px) !important;
+}
+
+.youtube-popup-result-thumb {
+  width: 100px !important;
+  height: 75px !important;
+  border-radius: 6px !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+}
+
+.youtube-popup-result-info {
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+.youtube-popup-result-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin-bottom: 6px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  line-height: 1.3 !important;
+}
+
+.youtube-popup-result-channel {
+  font-size: 12px !important;
+  opacity: 0.8 !important;
+  margin-bottom: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.youtube-popup-result-duration {
+  font-size: 11px !important;
+  opacity: 0.6 !important;
+  color: #ff4444 !important;
+}
+
+/* Popup overlay background */
+#youtube-popup-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(5px) !important;
+  z-index: 9999 !important;
+  display: none !important;
+}
+
+/* Make sure iframe stays below popup */
+#youtube-player iframe {
+  z-index: 1 !important;
+}
+
+/* ===== WEATHER STYLING ===== */
 #weather-current {
   font-size: 22px;
   font-weight: 600;
 }
+
 #weather-forecast {
   margin-top: 8px;
   display: flex;
@@ -163,108 +565,86 @@ body {
   gap: 6px;
   font-size: 14px;
 }
+
 .weather-day {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 6px;
+  padding: 6px 8px;
   background: rgba(255,255,255,0.07);
   border-radius: 4px;
+  cursor: pointer;
 }
+
 .weather-icon {
   width: 38px;
   height: 38px;
   margin-right: 8px;
 }
+
 .weather-name {
   width: 80px;
   font-weight: 600;
+  font-size: 13px;
 }
-/* ===== FIX 3: MORE SPACE IN WEATHER WIDGET ===== */
+
 .weather-temp {
   font-weight: 600;
   margin-right: 10px;
-  margin-left: 15px; /* Added more space after date */
+  margin-left: 15px;
+  font-size: 13px;
 }
+
 .weather-desc {
   opacity: 0.9;
   flex: 1;
   text-align: right;
-  margin-left: 15px; /* Added more space after temperature */
+  margin-left: 15px;
+  font-size: 12px;
 }
-/* Enable‑voice button */
-#enable-voice {
-  padding: 6px 10px;
-  margin-top: 6px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ffffff;
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-  cursor: pointer;
-  display: inline-block;
-}
-#enable-voice:hover {
-  background: rgba(255,255,255,0.25);
-}
-/* Sign-in button */
-#sign-in {
-  padding: 8px 16px;
-  margin-top: 6px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ffffff;
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-  cursor: pointer;
-  display: inline-block;
-}
-#sign-in:hover {
-  background: rgba(255,255,255,0.25);
-}
+
 #weather-hourly-detail {
   margin-top: 8px;
   font-size: 12px;
   background: rgba(255,255,255,0.05);
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   max-height: 400px;
   overflow-y: auto;
 }
 
 .weather-hourly-title {
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 13px;
 }
 
 .weather-hourly-row {
   display: flex;
   justify-content: space-between;
-  padding: 2px 0;
+  padding: 3px 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 12px;
 }
 
 .weather-hourly-row:last-child {
   border-bottom: none;
 }
 
-.weather-day {
-  cursor: pointer;              /* make rows feel clickable */
+.weather-day.selected {
+  background: rgba(255,255,255,0.15);
 }
 
-.weather-day.selected {
-  background: rgba(255,255,255,0.15);  /* highlight selected day */
-}
 .weather-hourly-header {
   display: flex;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 #weather-back-btn {
-  margin-right: 8px;
-  padding: 2px 8px;
-  font-size: 11px;
+  margin-right: 10px;
+  padding: 4px 10px;
+  font-size: 12px;
   border-radius: 4px;
   border: 1px solid #ffffff;
   background: rgba(255,255,255,0.1);
@@ -276,35 +656,13 @@ body {
   background: rgba(255,255,255,0.25);
 }
 
-.weather-hourly-title {
-  font-weight: 600;
-}
-
 .weather-hourly-list {
-  font-size: 12px;
+  font-size: 13px;
   max-height: 400px;
   overflow-y: auto;
 }
 
-.weather-hourly-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.weather-hourly-row:last-child {
-  border-bottom: none;
-}
-
-/* YOUTUBE WIDGET - COMPLETE VERSION */
-#youtube-panel {
-    flex: 3 1 0;
-    min-height: 200px;
-    max-height: 500px;
-    overflow: hidden;
-}
-
+/* ===== YOUTUBE STYLING ===== */
 #youtube-widget-container {
     width: 100% !important;
     height: 100% !important;
@@ -313,12 +671,11 @@ body {
     overflow: hidden !important;
 }
 
-/* Search Section */
 #youtube-search-section {
     display: flex;
     gap: 0;
     margin-bottom: 12px;
-    width: 100%; /* Ensure full width */
+    width: 100%;
 }
 
 #youtube-search-input {
@@ -330,11 +687,11 @@ body {
     color: white;
     font-size: 14px;
     border-right: none;
-    min-width: 150px; /* Reduced minimum width */
+    min-width: 150px;
 }
 
 #youtube-search-btn {
-    padding: 0 15px; /* Adjust padding for icon */
+    padding: 0 15px;
     background: #ff0000;
     color: white;
     border: 1px solid #ff0000;
@@ -342,23 +699,22 @@ body {
     cursor: pointer;
     font-size: 16px;
     font-weight: 600;
-    display: flex !important; /* Force display */
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    min-width: 44px; /* Minimum touch target size */
-    visibility: visible !important; /* Force visible */
-    opacity: 1 !important; /* Force full opacity */  
+    min-width: 44px;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 #youtube-search-btn:hover {
     background: #cc0000;
 }
 
-/* Player Area */
 #youtube-player-area {
-    flex-shrink: 0 !important; /* Prevent shrinking */
-    flex-grow: 0 !important; /* Prevent growing */
-    height: 180px !important; /* Fixed height */
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    height: 180px !important;
     width: 100% !important;
     position: relative !important;
     margin-bottom: 10px !important;
@@ -366,8 +722,8 @@ body {
 
 #youtube-player {
     width: 100% !important;
-    height: 100% !important; /* Fill the fixed container */
-    position: absolute !important; /* Take exact space */
+    height: 100% !important;
+    position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     background: #000 !important;
@@ -396,15 +752,8 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Quick Buttons */
-#youtube-quick-buttons {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
 .youtube-section-title {
-    font-size: 12px;
+    font-size: 13px;
     opacity: 0.8;
     margin-bottom: 8px;
     font-weight: 600;
@@ -440,7 +789,6 @@ body {
     font-size: 16px;
 }
 
-/* Search Results */
 #youtube-results-container {
     position: absolute;
     top: 50px;
@@ -534,7 +882,6 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Force iframe to stay within bounds */
 #youtube-player iframe {
     width: 100% !important;
     height: 100% !important;
@@ -542,62 +889,60 @@ body {
     border: none !important;
 }
 
-/* ===== FIX 4: TRADINGVIEW CUSTOM STYLING ===== */
+/* ===== TRADINGVIEW STYLING ===== */
 .tradingview-widget-copyright {
   font-size: 9px !important;
   opacity: 0.6 !important;
 }
+
 .tradingview-widget-container .logo {
   transform: scale(0.7) !important;
 }
-/* ===== TABLET RESPONSIVE (KEEP 70/30 HORIZONTAL) ===== */
+
+/* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1024px) {
-  /* Keep horizontal layout, adjust spacing */
   .overlay {
-    padding: 10px;
+    padding: 12px;
+    gap: 12px;
   }
   
-  /* CORRECTED: Maintain 70/30 split */
   .left-panel {
-    flex: 7; /* 70% */
+    flex: 7;
   }
   
   .right-panel {
-    flex: 3 !important; /* 30% */
-    margin-left: 12px !important;
-    min-width: 250px !important; /* Reduced for tablet */
+    flex: 3 !important;
+    min-width: 250px !important;
   }
   
-  /* Adjust panel padding */
-  .panel {
-    padding: 10px 12px;
+  .row-1 {
+    height: 35%;
+    min-height: 180px;
   }
   
-  /* Adjust clock size */
   #clock {
-    font-size: 28px;
+    font-size: 32px;
   }
   
   #date {
     font-size: 16px;
   }
   
-  /* Compact event layout for tablet */
   .event-time-container {
-    min-width: 25%;
-    margin-right: 8px;
+    min-width: 28%;
+    margin-right: 10px;
   }
   
   .event-time {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .event-end-time {
-    font-size: 10px;
+    font-size: 11px;
   }
   
   .event-title {
-    font-size: 14px;
+    font-size: 13px;
     min-width: 60%;
   }
   
@@ -606,20 +951,19 @@ body {
     margin-left: 0.5%;
   }
   
-  /* Adjust weather for tablet */
   .weather-day {
-    padding: 3px 4px;
-    font-size: 12px;
+    padding: 5px 6px;
+    font-size: 13px;
   }
   
   .weather-icon {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     margin-right: 6px;
   }
   
   .weather-name {
-    width: 70px;
+    width: 75px;
     font-size: 12px;
   }
   
@@ -627,37 +971,20 @@ body {
     font-size: 12px;
   }
   
-  .weather-temp {
-    margin-left: 10px;
-  }
-  
-  .weather-desc {
-    margin-left: 10px;
-  }
-  
-  /* Adjust YouTube for tablet */
   #youtube-player-area {
-    height: 160px !important; /* Smaller on tablet */
-  }
-
-    /* YouTube Tablet Fixes */
-  #youtube-search-section {
-    gap: 0;
+    height: 160px !important;
   }
   
   #youtube-search-input {
-    padding: 8px 10px;
+    padding: 9px 11px;
     font-size: 13px;
-    min-width: 120px; /* Smaller on tablet */
+    min-width: 130px;
   }
   
   #youtube-search-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px; /* Slightly larger icon */
-    padding: 0 15px; /* Adjust padding for icon */
-    min-width: 40px; /* Smaller but still visible */
+    font-size: 15px;
+    padding: 0 12px;
+    min-width: 40px;
   }
   
   .youtube-button-group {
@@ -665,7 +992,7 @@ body {
   }
   
   .youtube-btn {
-    padding: 6px 4px;
+    padding: 7px 4px;
     font-size: 11px;
   }
   
@@ -673,106 +1000,43 @@ body {
     font-size: 14px;
   }
   
-  /* Smaller buttons */
   #sign-in, #enable-voice {
-    padding: 5px 10px;
-    font-size: 13px;
-  }
-}
-
-/* ===== SMALL TABLET / LARGE PHONE (768px-1024px) - Fire Tablet ===== */
-@media (max-width: 900px) and (min-width: 769px) {
-  /* Even more compact for Fire Tablet */
-  .right-panel {
-    min-width: 220px !important; /* Even smaller for Fire Tablet */
-  }
-  
-  .event-time-container {
-    min-width: 30%;
-  }
-  
-  .event-title {
-    min-width: 60%;
+    padding: 7px 14px;
     font-size: 13px;
   }
   
-  .event-location {
-    font-size: 10px;
-    margin-left: 0.5%;
-  }
-  
-  /* Hide weather description on Fire Tablet */
-  .weather-desc {
-    display: none;
-  }
-  
-  .weather-temp {
-    margin-right: 5px;
-  }
-  
-  /* Adjust YouTube for Fire Tablet */
-  #youtube-player-area {
-    height: 150px !important;
-  }
-  
-  #youtube-search-input {
-    padding: 7px 9px;
+  .cards-table th,
+  .cards-table td {
+    padding: 6px 8px;
     font-size: 12px;
   }
   
-  #youtube-search-btn {
-    padding: 0 10px;
-    font-size: 15px;
-  }
-  
-  .youtube-btn {
-    padding: 5px 3px;
-    font-size: 10px;
-  }
-  
-  #youtube-player-area {
-    height: 150px !important;
+  .cards-table .amount {
+    font-size: 12px;
   }
 }
 
-/* ===== VERY SMALL TABLETS (600px-768px) ===== */
 @media (max-width: 768px) and (min-width: 601px) {
-  /* Keep horizontal but adjust proportions */
   .overlay {
-    padding: 8px;
-  }
-  
-  .left-panel {
-    flex: 7; /* 70% */
+    padding: 10px;
+    gap: 10px;
   }
   
   .right-panel {
-    flex: 3 !important; /* 30% */
-    margin-left: 8px !important;
-    min-width: 200px !important; /* Minimum for 3 panels */
+    min-width: 220px !important;
   }
   
-  /* Very compact events */
-  .event-item {
-    padding: 4px 5px;
+  .row-1 {
+    height: 40%;
+    min-height: 160px;
   }
   
   .event-time-container {
-    min-width: 35%;
-    margin-right: 5px;
-  }
-  
-  .event-time {
-    font-size: 14px;
-  }
-  
-  .event-end-time {
-    font-size: 10px;
+    min-width: 32%;
   }
   
   .event-title {
-    font-size: 13px;
-    min-width: 60%;
+    font-size: 12px;
   }
   
   .event-location {
@@ -780,83 +1044,179 @@ body {
     margin-left: 0.5%;
   }
   
-  /* Hide weather description, show only temp */
   .weather-desc {
     display: none;
   }
   
-  .weather-name {
-    width: 60px;
-    font-size: 11px;
-  }
-  
   .weather-temp {
-    margin-left: 5px;
-    font-size: 11px;
+    margin-right: 8px;
   }
   
-  /* Adjust YouTube for very small tablets */
   #youtube-player-area {
     height: 140px !important;
-  }
-  
-  #youtube-search-section {
-    gap: 8px;
-    flex-direction: row !important; /* Keep horizontal on small tablets */
-    gap: 0 !important;    
   }
   
   #youtube-search-input {
-    border-radius: 4px 0 0 4px !important;
-    border-right: none !important;
+    padding: 8px 10px;
     font-size: 12px;
-    padding: 6px 8px;    
   }
   
   #youtube-search-btn {
-    border-radius: 0 4px 4px 0 !important;
     padding: 0 10px;
     font-size: 14px;
-    min-width: 36px;    
-  }
-
-  #youtube-player-area {
-    height: 140px !important;
-  }
-  .youtube-button-group {
-    gap: 4px;
   }
   
   .youtube-btn {
-    padding: 4px 2px;
-    font-size: 9px;
-    min-height: 40px;
+    padding: 6px 3px;
+    font-size: 10px;
   }
   
-  .youtube-btn-icon {
-    font-size: 12px;
+  .cards-table th,
+  .cards-table td {
+    padding: 5px 7px;
+    font-size: 11px;
   }
   
-  /* Even smaller clock */
+  #last-updated {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .overlay {
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
+    overflow-y: auto;
+  }
+  
+  .left-panel, .right-panel {
+    width: 100% !important;
+    flex: none !important;
+    min-width: 100% !important;
+  }
+  
+  .right-panel {
+    margin-left: 0 !important;
+  }
+  
+  .row-1 {
+    flex-direction: column;
+    height: auto;
+    min-height: auto;
+    gap: 10px;
+  }
+  
+  .clock-panel, .transactions-panel {
+    width: 100%;
+    min-height: 120px;
+  }
+  
   #clock {
-    font-size: 24px;
+    font-size: 28px;
   }
   
   #date {
-    font-size: 14px;
+    font-size: 15px;
   }
-}  
+  
+  .events-panel {
+    min-height: 300px;
+  }
+  
+  .event-item {
+    padding: 6px 8px;
+    flex-direction: column;
+  }
+  
+  .event-time-container {
+    min-width: 100%;
+    margin-right: 0;
+    margin-bottom: 6px;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .event-time, .event-end-time {
+    font-size: 12px;
+  }
+  
+  .event-title {
+    min-width: 100%;
+    font-size: 13px;
+  }
+  
+  .event-location {
+    margin-left: 0.5%;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+  
+  .cards-table th,
+  .cards-table td {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+  
+  .cards-table .amount {
+    font-size: 11px;
+  }
+  
+  #last-updated {
+    font-size: 9px;
+  }
+  
+  #youtube-panel {
+    display: none;
+  }
+  
+  #weather-panel, #stock-panel {
+    min-height: 150px;
+  }
+}
 </style>
 </head>
 <body>
 <div class="overlay">
-  <!-- LEFT column: clock + events -->
+  <!-- LEFT column: row 1 (clock + transactions) + row 2 (events) -->
   <div class="left-panel">
-    <div class="panel">
-      <div id="clock">--:-- --</div> <!-- AM/PM will be added -->
-      <div id="date">Loading date…</div>
+    <!-- Row 1: Clock + Transactions -->
+    <div class="row-1">
+      <!-- Clock Panel -->
+      <div class="panel clock-panel">
+        <div id="clock">--:-- --</div>
+        <div id="date">Loading date…</div>
+      </div>
+      
+      <!-- Transactions Panel -->
+      <div class="panel transactions-panel">
+<div class="transactions-header">
+  <div class="transactions-title-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+      <div id="total-balance" style="font-weight: bold; font-size: 16px; color: #4CAF50;">Total: $0.00</div>
     </div>
-    <div class="panel" id="events-panel">
+    <div id="last-updated">Last updated: --</div>
+  </div>
+  <button id="sync-sheets-btn">🔄Sync</button>
+</div>
+        <div class="cards-table-container">
+          <table class="cards-table" id="cards-table">
+            <thead>
+              <tr>
+                <th>Card Issuer</th>
+                <th style="text-align: right;">Open Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Cards will be loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Row 2: Events -->
+    <div class="panel events-panel">
       <div id="auth-status">Initializing...</div>
       <button id="sign-in" disabled>Loading Google Sign-in...</button>
       <button id="enable-voice">Enable voice alerts</button>
@@ -865,7 +1225,8 @@ body {
       </div>
     </div>
   </div>
-  <!-- RIGHT column: weather + stock -->
+  
+  <!-- RIGHT column: weather + youtube + stock -->
   <div class="right-panel">
     <div class="panel" id="weather-panel">
       <div id="weather-current">Loading weather…</div>
@@ -873,38 +1234,57 @@ body {
       <div id="weather-hourly-detail"></div>
     </div>
 
-<div class="panel" id="youtube-panel">
-    <div id="youtube-widget-container">
-        <!-- Search Bar -->
-        <div id="youtube-search-section">
-            <input type="text" id="youtube-search-input" placeholder="Search Videos">
-            <button id="youtube-search-btn" title="Search YouTube">🔍</button>
-        </div>
-        
-        <!-- Video Player Area -->
-        <div id="youtube-player-area">
-            <div id="youtube-player"></div>
-            <div id="youtube-video-info">
-                <div id="youtube-video-title">Select a video to play</div>
-                <div id="youtube-video-channel">Use search or quick buttons</div>
+    <div class="panel" id="youtube-panel">
+        <div id="youtube-widget-container">
+            <!-- Search Bar -->
+            <div id="youtube-search-section">
+                <input type="text" id="youtube-search-input" placeholder="Search Videos">
+                <button id="youtube-search-btn" title="Search YouTube">🔍</button>
             </div>
-        </div>
-              
-        <!-- Search Results (Hidden initially) -->
-        <div id="youtube-results-container" style="display: none;">
-            <div id="youtube-results-header">
-                <span>Search Results</span>
-                <button id="youtube-close-results">✕ Close</button>
+            
+            <!-- Video Player Area -->
+            <div id="youtube-player-area">
+                <div id="youtube-player"></div>
+                <div id="youtube-video-info">
+                    <div id="youtube-video-title">Select a video to play</div>
+                    <div id="youtube-video-channel">Use search or quick buttons</div>
+                </div>
             </div>
-            <div id="youtube-results-list"></div>
+                  
+            <!-- Search Results (Hidden initially) -->
+            <div id="youtube-results-container" style="display: none;">
+                <div id="youtube-results-header">
+                    <span>Search Results</span>
+                    <button id="youtube-close-results">✕ Close</button>
+                </div>
+                <div id="youtube-results-list"></div>
+            </div>
         </div>
     </div>
-</div>
 
     <div class="panel" id="stock-panel">
       <div id="tradingview-widget" style="width:100%;height:100%;"></div>
     </div>
   </div>
+</div>
+
+<!-- YouTube Search Results Popup (add this anywhere in body) -->
+<div id="youtube-popup-overlay"></div>
+<div id="youtube-results-popup">
+  <div id="youtube-results-popup-header">
+    <span>🎬 YouTube Search Results</span>
+    <button id="youtube-close-popup">✕ Close</button>
+  </div>
+  <div id="youtube-results-popup-list"></div>
+</div>
+<!-- ADD THIS POPUP HTML RIGHT HERE (before closing body tag) -->
+<div id="youtube-popup-overlay"></div>
+<div id="youtube-results-popup">
+  <div id="youtube-results-popup-header">
+    <span>🎬 YouTube Search Results</span>
+    <button id="youtube-close-popup">✕ Close</button>
+  </div>
+  <div id="youtube-results-popup-list"></div>
 </div>
 
 <script>
@@ -913,6 +1293,13 @@ const CLIENT_ID = "703875968822-6ma5u7st5qm3eqgb1ktt9p52vs8knrb3.apps.googleuser
 const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
 const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
+const YOUTUBE_API_KEY = 'AIzaSyD_Nb4qiALrzYQWp7cQPMdOZV7pCz2UbcM'; // ← Replace with your actual key
+
+const GOOGLE_SHEET_ID = '1tpGuEgRMghxo9vP1nvQ1wQkjw0zJqtcP1XLTUlLZmXY'; // From sheet URL: docs.google.com/spreadsheets/d/[THIS_IS_THE_ID]/edit
+const SHEET_API_KEY = 'AIzaSyAX_u3NAIVdCBgaf9_b0kXly723b5DaIfo'; // Get from Google Cloud Console
+const SHEET_NAME = 'Card Balances';
+const SHEET_RANGE = 'A:E';
+const SHEETS_SYNC_INTERVAL = 120 * 60 * 1000; // 2 minutes
 
 // ===== GLOBAL VARIABLES =====
 let tokenClient = null;
@@ -921,21 +1308,19 @@ let reminderCheckInterval = null;
 let spokenEvents = new Set();
 let voiceEnabled = false;
 let voiceEnabledDate = null;
-let weatherDailyData = null;     // store last daily data
+let weatherDailyData = null;
 let weatherCurrentView = "daily";
 let weatherSelectedDate = null;
-  
-// ===== FIX 3: CLOCK - AM/PM FORMAT =====
+let currentYouTubeVideo = null;
+
+// ===== CLOCK =====
 function updateClock() {
   const now = new Date();
-  
-  // Digital clock with AM/PM
   document.getElementById("clock").textContent = now.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: true  // This adds AM/PM
+    hour12: true
   });
-  
   document.getElementById("date").textContent = now.toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
@@ -945,27 +1330,369 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ===== YOUTUBE INTEGRATION - USING OFFICIAL API =====
-// Add your YouTube API Key here
-const YOUTUBE_API_KEY = 'AIzaSyD_Nb4qiALrzYQWp7cQPMdOZV7pCz2UbcM'; // ← Replace with your actual key
-// ===== YOUTUBE INTEGRATION - COMPLETE WITH SEARCH =====
+// ===== GOOGLE SHEETS CREDIT CARD MANAGEMENT =====
+async function initCreditCardsSheets() {
+  console.log("Initializing Google Sheets credit cards...");
+  
+  try {
+    const sheetCards = await loadCardsFromSheets();
+    
+    if (sheetCards && sheetCards.length > 0) {
+      const latestCards = getLatestCards(sheetCards);
+      displayCardsTable(latestCards);
+      updateLastUpdatedDisplay();
+    } else {
+      console.log("No data in Google Sheet, using defaults");
+      displayCardsTable(DEFAULT_CARDS_SIMPLE);
+      updateLastUpdatedDisplay();
+    }
+    
+  } catch (error) {
+    console.error("Google Sheets init failed:", error);
+    const savedCards = localStorage.getItem('cardsLocalFallback');
+    let cards = savedCards ? JSON.parse(savedCards) : DEFAULT_CARDS_SIMPLE;
+    
+    if (cards.length < 6) {
+      cards = cards.concat(DEFAULT_CARDS_SIMPLE.slice(cards.length, 6));
+    }
+    
+    displayCardsTable(cards);
+    updateLastUpdatedDisplay();
+  }
+  
+  setupSyncButton();
+  addSyncStatusIndicator();
+  startAutoSyncSheets();
+}
 
-let currentYouTubeVideo = null;
+function setupSyncButton() {
+  const syncBtn = document.getElementById('sync-sheets-btn');
+  if (!syncBtn) {
+    console.error("Sync button not found!");
+    return;
+  }
+  
+  syncBtn.onclick = async () => {
+    const originalText = syncBtn.innerHTML;
+    syncBtn.innerHTML = '🔄 Syncing...';
+    syncBtn.disabled = true;
+    
+    try {
+      const cards = await loadCardsFromSheets(true);
+      
+      if (!cards || cards.length === 0) {
+        return;
+      }
+      
+      const latestCards = getLatestCards(cards);
+      displayCardsTable(latestCards);
+      updateLastUpdatedDisplay();
+      
+    } catch (error) {
+      console.error("Sync failed:", error);
+      
+      const cached = getCachedCards();
+      if (cached) {
+        const latestCards = getLatestCards(cached);
+        displayCardsTable(latestCards);
+      }
+    } finally {
+      syncBtn.innerHTML = originalText;
+      syncBtn.disabled = false;
+    }
+  };
+}
 
+async function loadCardsFromSheets(forceRefresh = false) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${SHEET_NAME}!${SHEET_RANGE}?key=${SHEET_API_KEY}`;
+  
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Google Sheets API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.values || data.values.length < 2) {
+      return null;
+    }
+    
+    const headers = data.values[0];
+    const rows = data.values.slice(1);
+    
+    const cards = rows.map(row => {
+      const card = {};
+      headers.forEach((header, index) => {
+        const key = header.toLowerCase().replace(/ /g, '_');
+        card[key] = row[index] || '';
+      });
+      
+      card.balance = parseFloat(card.balance) || 0;
+      
+      return card;
+    });
+    
+    cacheCards(cards);
+    localStorage.setItem('cardsLastSync', Date.now().toString());
+    
+    return cards;
+    
+  } catch (error) {
+    console.error("Failed to load from Google Sheets:", error);
+    
+    const cached = getCachedCards();
+    if (cached) {
+      console.log("Using cached card data");
+      return cached;
+    }
+    
+    throw error;
+  }
+}
+
+function getLatestCards(allCards) {
+  const cardMap = new Map();
+  
+  allCards.forEach(card => {
+    const issuerKey = (card.card_issuer || card.issuer || '').toLowerCase().trim();
+    if (!issuerKey) {
+      console.warn("Card missing issuer:", card);
+      return;
+    }
+    
+    let currentTime = 0;
+    if (card.last_updated) {
+      currentTime = new Date(card.last_updated).getTime();
+    } else if (card.timestamp) {
+      currentTime = new Date(card.timestamp).getTime();
+    } else {
+      currentTime = Date.now();
+    }
+    
+    const existing = cardMap.get(issuerKey);
+    const existingTime = existing ? (new Date(existing.last_updated || existing.timestamp || 0).getTime()) : 0;
+    
+    if (!existing || currentTime > existingTime) {
+      cardMap.set(issuerKey, {
+        issuer: card.card_issuer || card.issuer || issuerKey,
+        balance: card.balance || 0,
+        last_updated: card.last_updated || new Date(currentTime).toISOString()
+      });
+    }
+  });
+  
+  const latestCards = Array.from(cardMap.values())
+    .sort((a, b) => a.issuer.localeCompare(b.issuer));
+  
+  return latestCards;
+}
+
+function displayCardsTable(cards) {
+  const tableBody = document.querySelector('#cards-table tbody');
+  let html = '';
+  let total = 0;
+  
+  // Calculate total first
+  cards.forEach(card => {
+    total += card.balance || 0;
+  });
+  
+  // Update the total display at the top
+  const formattedTotal = total.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  });
+  
+  // Determine color for total (green if zero, yellow if low, red if high)
+  let totalColor = '#4CAF50'; // green for zero
+  if (total > 0) {
+    totalColor = total < 1000 ? '#FF9800' : '#F44336'; // yellow for <1000, red for >=1000
+  }
+  
+  document.getElementById('total-balance').innerHTML = 
+    `<span style="color: ${totalColor}; font-weight: 700;">Total: ${formattedTotal}</span>`;
+  
+  // Now create the table rows
+  cards.forEach(card => {
+    const issuer = card.card_issuer || card.issuer || 'Unknown Card';
+    const balance = card.balance || 0;
+    
+    // Format individual balance
+    const formattedBalance = balance.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    });
+    
+    // Determine color for individual balance
+    const balanceColor = balance === 0 ? '#4CAF50' : (balance < 1000 ? '#FF9800' : '#F44336');
+    
+    html += `
+      <tr>
+        <td>${issuer}</td>
+        <td class="amount" style="color: ${balanceColor}; font-weight: ${balance > 0 ? '600' : 'normal'}">
+          ${formattedBalance}
+        </td>
+      </tr>
+    `;
+  });
+  
+  // Remove the total row since we're showing it at the top
+  tableBody.innerHTML = html;
+}
+
+function cacheCards(cards) {
+  localStorage.setItem('cardsSheetsCache', JSON.stringify({
+    data: cards,
+    timestamp: Date.now()
+  }));
+}
+
+function getCachedCards() {
+  const cached = localStorage.getItem('cardsSheetsCache');
+  if (!cached) return null;
+  
+  try {
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < 2 * 60 * 60 * 1000) {
+      return data;
+    }
+  } catch (e) {
+    console.error("Error reading cache:", e);
+  }
+  
+  return null;
+}
+
+function updateLastUpdatedDisplay() {
+  const lastUpdatedEl = document.getElementById('last-updated');
+  if (!lastUpdatedEl) return;
+  
+  const lastSync = localStorage.getItem('cardsLastSync');
+  
+  if (lastSync) {
+    const syncTime = new Date(parseInt(lastSync));
+    const now = new Date();
+    const diffMs = now - syncTime;
+    
+    let timeString;
+    if (diffMs < 60000) {
+      timeString = "just now";
+    } else if (diffMs < 3600000) {
+      const mins = Math.floor(diffMs / 60000);
+      timeString = `${mins}m ago`;
+    } else if (diffMs < 86400000) {
+      const hours = Math.floor(diffMs / 3600000);
+      timeString = `${hours}h ago`;
+    } else {
+      const days = Math.floor(diffMs / 86400000);
+      timeString = `${days}d ago`;
+    }
+    
+    const formattedTime = syncTime.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    lastUpdatedEl.innerHTML = `
+      <div style="font-size: 9px; display: flex; align-items: center; gap: 4px;">
+        <span style="color: #34A853;">✅ Synced with Google Sheets</span>
+        <span style="opacity: 0.7; font-size: 8px;">${formattedTime} (${timeString})</span>
+      </div>
+    `;
+  } else {
+    const localUpdate = localStorage.getItem('cardsLocalFallbackTime');
+    if (localUpdate) {
+      const updateTime = new Date(parseInt(localUpdate));
+      lastUpdatedEl.innerHTML = `
+        <div style="font-size: 11px; display: flex; align-items: center; gap: 4px;">
+          <span style="color: #FBBC05;">⚠ Local data only</span>
+          <span style="opacity: 0.7; font-size: 10px;">
+            ${updateTime.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            })}
+          </span>
+        </div>
+      `;
+    } else {
+      lastUpdatedEl.textContent = "Last updated: Never";
+    }
+  }
+}
+
+function addSyncStatusIndicator() {
+  const header = document.querySelector('.transactions-header');
+  if (!header) return;
+  
+  if (header.querySelector('#auto-sync-indicator')) {
+    return;
+  }
+  
+  const indicator = document.createElement('div');
+  indicator.id = 'auto-sync-indicator';
+  indicator.innerHTML = '🔄Auto-sync';
+  indicator.style.cssText = `
+    font-size: 7px;
+    color: #34A853;
+    opacity: 0.7;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  `;
+  
+  const titleContainer = document.querySelector('.transactions-title-container');
+  if (titleContainer) {
+    titleContainer.appendChild(indicator);
+  }
+}
+
+function startAutoSyncSheets() {
+  console.log(`Starting Google Sheets auto-sync`);
+  
+  autoSyncSheets();
+  const autoSyncInterval = setInterval(autoSyncSheets, SHEETS_SYNC_INTERVAL);
+  window.sheetsAutoSyncInterval = autoSyncInterval;
+  
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      autoSyncSheets();
+    }
+  });
+}
+
+async function autoSyncSheets() {
+  try {
+    const cards = await loadCardsFromSheets();
+    
+    if (cards && cards.length > 0) {
+      const latestCards = getLatestCards(cards);
+      displayCardsTable(latestCards);
+      updateLastUpdatedDisplay();
+    }
+  } catch (error) {
+    console.log("Auto-sync failed:", error.message);
+  }
+}
+
+// ===== YOUTUBE INTEGRATION =====
 function initYouTube() {
     console.log("Initializing YouTube with API search...");
     
-    // Setup search button onclick handler
     document.getElementById('youtube-search-btn').onclick = performYouTubeSearch;
     
-    // Setup Enter key in search input
     document.getElementById('youtube-search-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             performYouTubeSearch();
         }
     });
     
-    // Setup quick play buttons
     document.querySelectorAll('.youtube-btn').forEach(button => {
         button.onclick = function() {
             const videoId = this.getAttribute('data-id');
@@ -975,129 +1702,351 @@ function initYouTube() {
         };
     });
     
-    // Setup close results button
     document.getElementById('youtube-close-results').onclick = function() {
         document.getElementById('youtube-results-container').style.display = 'none';
     };
     
-    // Load default video
     playYouTubeVideo('7wtfhZwyrcc', 'Imagine Dragons', 'Believer');
 }
 
-// MAIN SEARCH FUNCTION - This is what you asked about
 async function performYouTubeSearch() {
-    const query = document.getElementById('youtube-search-input').value.trim();
-    if (!query) {
-        alert('Please enter a search term');
-        return;
+  const query = document.getElementById('youtube-search-input').value.trim();
+  if (!query) {
+    alert('Please enter a search term');
+    return;
+  }
+  
+  console.log("Searching YouTube for:", query);
+  
+  // 1. CREATE SIMPLE POPUP DYNAMICALLY
+  let popup = document.getElementById('youtube-simple-popup');
+  let overlay = document.getElementById('youtube-simple-overlay');
+  
+  // Remove any existing popups first
+  if (popup) popup.remove();
+  if (overlay) overlay.remove();
+  
+  // Create overlay
+  overlay = document.createElement('div');
+  overlay.id = 'youtube-simple-overlay';
+  overlay.style.cssText = `
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0,0,0,0.9) !important;
+    z-index: 9998 !important;
+    display: block !important;
+  `;
+  
+  // Create popup container
+  popup = document.createElement('div');
+  popup.id = 'youtube-simple-popup';
+  popup.style.cssText = `
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 700px !important;
+    height: 80vh !important;
+    background: #111 !important;
+    border: 3px solid #ff0000 !important;
+    border-radius: 15px !important;
+    z-index: 9999 !important;
+    display: block !important;
+    overflow: hidden !important;
+    box-shadow: 0 0 50px rgba(255,0,0,0.3) !important;
+  `;
+  
+  // Create popup content
+  popup.innerHTML = `
+    <div style="
+      background: #222;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #ff0000;
+    ">
+      <div style="font-size: 18px; font-weight: bold; color: white;">
+        🔍 Search Results for: <span style="color: #ff4444;">"${query}"</span>
+      </div>
+      <button id="youtube-simple-close" style="
+        background: #ff0000;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      ">✕ Close</button>
+    </div>
+    <div id="youtube-simple-results" style="
+      padding: 20px;
+      height: calc(80vh - 70px);
+      overflow-y: auto;
+    ">
+      <div style="text-align: center; padding: 40px; color: white; font-size: 16px;">
+        ⏳ Searching YouTube...
+      </div>
+    </div>
+  `;
+  
+  // Add to page
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+  
+  // Add close functionality
+  document.getElementById('youtube-simple-close').onclick = function() {
+    overlay.remove();
+    popup.remove();
+  };
+  
+  // Close when clicking overlay
+  overlay.onclick = function() {
+    overlay.remove();
+    popup.remove();
+  };
+  
+  // Close with Escape key
+  const closeOnEscape = function(e) {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      popup.remove();
+      document.removeEventListener('keydown', closeOnEscape);
+    }
+  };
+  document.addEventListener('keydown', closeOnEscape);
+  
+  // 2. PERFORM THE SEARCH
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?` +
+      `part=snippet&` +
+      `maxResults=12&` +
+      `q=${encodeURIComponent(query)}&` +
+      `type=video&` +
+      `videoEmbeddable=true&` +
+      `key=${YOUTUBE_API_KEY}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
     }
     
-    console.log("Searching YouTube for:", query);
+    const data = await response.json();
+    const resultsDiv = document.getElementById('youtube-simple-results');
     
-    // Show loading state
-    const resultsList = document.getElementById('youtube-results-list');
-    const resultsContainer = document.getElementById('youtube-results-container');
-    
-    resultsList.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.7;">Searching YouTube...</div>';
-    resultsContainer.style.display = 'block';
-    
-    try {
-        // YouTube Data API v3 search request
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?` +
-            `part=snippet&` +
-            `maxResults=8&` +  // Get 8 results
-            `q=${encodeURIComponent(query)}&` +
-            `type=video&` +
-            `videoEmbeddable=true&` +  // Only get embeddable videos
-            `key=${YOUTUBE_API_KEY}`
-        );
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`YouTube API error: ${response.status} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.items || data.items.length === 0) {
-            resultsList.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.7;">No videos found for "' + query + '"</div>';
-            return;
-        }
-        
-        // Display search results
-        displaySearchResults(data.items);
-        
-    } catch (error) {
-        console.error("Search failed:", error);
-        resultsList.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: #ff4444;">
-                <div>Search failed</div>
-                <small>${error.message}</small>
-            </div>
-        `;
+    if (!data.items || data.items.length === 0) {
+      resultsDiv.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: white;">
+          <div style="font-size: 18px; margin-bottom: 20px;">❌ No videos found for "${query}"</div>
+          <button onclick="document.getElementById('youtube-simple-overlay')?.remove(); document.getElementById('youtube-simple-popup')?.remove();" style="
+            padding: 10px 20px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+          ">Close</button>
+        </div>
+      `;
+      return;
     }
-}
-
-// DISPLAY SEARCH RESULTS IN WIDGET
-function displaySearchResults(videos) {
-    const resultsList = document.getElementById('youtube-results-list');
-    let html = '';
     
-    videos.forEach(video => {
-        const videoId = video.id.videoId;
-        const title = video.snippet.title;
-        const channel = video.snippet.channelTitle;
-        const thumbnail = video.snippet.thumbnails.default.url;
-        const published = new Date(video.snippet.publishedAt).toLocaleDateString();
-        
-        // Clean up title for HTML
-        const cleanTitle = title.replace(/['"<>]/g, '');
-        const cleanChannel = channel.replace(/['"<>]/g, '');
-        
-        html += `
-            <div class="youtube-result-item" onclick="selectSearchResult('${videoId}', '${cleanTitle}', '${cleanChannel}')">
-                <img class="youtube-result-thumb" src="${thumbnail}" alt="${cleanTitle}">
-                <div class="youtube-result-info">
-                    <div class="youtube-result-title">${cleanTitle}</div>
-                    <div class="youtube-result-channel">${cleanChannel}</div>
-                    <div style="font-size: 10px; opacity: 0.6;">${published}</div>
-                </div>
+    // Display results
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">';
+    
+    data.items.forEach(video => {
+      const videoId = video.id.videoId;
+      const title = video.snippet.title;
+      const channel = video.snippet.channelTitle;
+      const thumbnail = video.snippet.thumbnails.medium ? 
+                        video.snippet.thumbnails.medium.url : 
+                        video.snippet.thumbnails.default.url;
+      
+      // Clean text for HTML
+      const cleanTitle = title.replace(/['"<>]/g, '').substring(0, 50);
+      const cleanChannel = channel.replace(/['"<>]/g, '');
+      
+      html += `
+        <div style="
+          width: 200px;
+          background: #222;
+          border-radius: 10px;
+          overflow: hidden;
+          cursor: pointer;
+          transition: transform 0.3s;
+          border: 1px solid #333;
+        " onclick="
+          playYouTubeVideo('${videoId}', '${cleanTitle}', '${cleanChannel}');
+          document.getElementById('youtube-simple-overlay')?.remove();
+          document.getElementById('youtube-simple-popup')?.remove();
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='#ff0000';"
+        onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='#333';">
+          <img src="${thumbnail}" style="width: 100%; height: 120px; object-fit: cover;">
+          <div style="padding: 12px;">
+            <div style="font-weight: bold; font-size: 13px; color: white; margin-bottom: 5px; height: 36px; overflow: hidden;">
+              ${cleanTitle}${title.length > 50 ? '...' : ''}
             </div>
-        `;
+            <div style="font-size: 11px; color: #aaa; margin-bottom: 8px;">
+              ${cleanChannel}
+            </div>
+            <div style="font-size: 10px; color: #ff4444; text-align: center; padding: 3px; background: rgba(255,0,0,0.1); border-radius: 3px;">
+              ▶️ Click to Play
+            </div>
+          </div>
+        </div>
+      `;
     });
     
-    resultsList.innerHTML = html;
+    html += '</div>';
+    resultsDiv.innerHTML = html;
+    
+  } catch (error) {
+    console.error("Search failed:", error);
+    const resultsDiv = document.getElementById('youtube-simple-results');
+    resultsDiv.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: white;">
+        <div style="font-size: 18px; margin-bottom: 10px; color: #ff4444;">❌ Search Failed</div>
+        <div style="font-size: 14px; margin-bottom: 20px; opacity: 0.8;">${error.message}</div>
+        <button onclick="document.getElementById('youtube-simple-overlay')?.remove(); document.getElementById('youtube-simple-popup')?.remove();" style="
+          padding: 10px 20px;
+          background: #ff0000;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-weight: bold;
+        ">Close</button>
+      </div>
+    `;
+  }
 }
 
-// HANDLE CLICK ON SEARCH RESULT
+function displaySearchResults(videos) {
+  const popupList = document.getElementById('youtube-results-popup-list');
+  let html = '';
+  
+  videos.forEach(video => {
+    const videoId = video.id.videoId;
+    const title = video.snippet.title;
+    const channel = video.snippet.channelTitle;
+    const thumbnail = video.snippet.thumbnails.medium ? 
+                      video.snippet.thumbnails.medium.url : 
+                      video.snippet.thumbnails.default.url;
+    const published = new Date(video.snippet.publishedAt).toLocaleDateString();
+    
+    // Clean up title for HTML
+    const cleanTitle = title.replace(/['"<>]/g, '');
+    const cleanChannel = channel.replace(/['"<>]/g, '');
+    
+    // Get video duration if available (requires additional API call)
+    const duration = video.contentDetails ? formatDuration(video.contentDetails.duration) : '';
+    
+    html += `
+      <div class="youtube-popup-result-item" onclick="selectPopupResult('${videoId}', '${cleanTitle}', '${cleanChannel}')">
+        <img class="youtube-popup-result-thumb" src="${thumbnail}" alt="${cleanTitle}">
+        <div class="youtube-popup-result-info">
+          <div class="youtube-popup-result-title">${cleanTitle}</div>
+          <div class="youtube-popup-result-channel">${channel}</div>
+          <div style="font-size: 11px; opacity: 0.6; margin-top: 2px;">Published: ${published}</div>
+          ${duration ? `<div class="youtube-popup-result-duration">⏱️ ${duration}</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  
+  popupList.innerHTML = html;
+  
+  // Show the popup
+  showYoutubePopup();
+}
+
+// Helper function to format duration (if you want to add duration)
+function formatDuration(duration) {
+  if (!duration) return '';
+  
+  // Convert ISO 8601 duration to readable format
+  const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  if (!match) return '';
+  
+  const hours = (match[1] || '').replace('H', '');
+  const minutes = (match[2] || '').replace('M', '');
+  const seconds = (match[3] || '').replace('S', '');
+  
+  let result = '';
+  if (hours) result += `${hours}:`;
+  if (minutes) result += `${minutes.padStart(2, '0')}:`;
+  if (seconds) result += `${seconds.padStart(2, '0')}`;
+  
+  return result;
+}
+
+// Popup control functions
+function showYoutubePopup() {
+  const overlay = document.getElementById('youtube-popup-overlay');
+  const popup = document.getElementById('youtube-results-popup');
+  
+  overlay.style.display = 'block';
+  popup.style.display = 'block';
+  
+  // Add close handlers
+  overlay.onclick = closeYoutubePopup;
+  document.getElementById('youtube-close-popup').onclick = closeYoutubePopup;
+  
+  // Close with Escape key
+  document.addEventListener('keydown', handlePopupEscape);
+}
+
+function closeYoutubePopup() {
+  const overlay = document.getElementById('youtube-popup-overlay');
+  const popup = document.getElementById('youtube-results-popup');
+  
+  overlay.style.display = 'none';
+  popup.style.display = 'none';
+  
+  // Remove event listener
+  document.removeEventListener('keydown', handlePopupEscape);
+}
+
+function handlePopupEscape(event) {
+  if (event.key === 'Escape') {
+    closeYoutubePopup();
+  }
+}
+
+function selectPopupResult(videoId, title, channel) {
+  console.log("Selected from popup:", videoId);
+  
+  playYouTubeVideo(videoId, title, channel);
+  closeYoutubePopup();
+  
+  // Clear search input
+  document.getElementById('youtube-search-input').value = '';
+}
+
 function selectSearchResult(videoId, title, channel) {
     console.log("Selected from search:", videoId);
     
-    // Play the selected video
     playYouTubeVideo(videoId, title, channel);
     
-    // Hide search results
     document.getElementById('youtube-results-container').style.display = 'none';
-    
-    // Clear search input
     document.getElementById('youtube-search-input').value = '';
 }
 
-// PLAY VIDEO IN WIDGET
 function playYouTubeVideo(videoId, title, channel) {
     console.log("Playing video:", videoId);
     
     currentYouTubeVideo = { id: videoId, title: title, channel: channel };
     
-    // Update video info display
     updateVideoInfo(title, channel);
     
-    // Load YouTube iframe player
     const playerDiv = document.getElementById('youtube-player');
     
-    // IMPORTANT: Use the embed URL WITHOUT autoplay initially
-    // This avoids error 153
     playerDiv.innerHTML = `
         <iframe
             width="100%"
@@ -1109,55 +2058,20 @@ function playYouTubeVideo(videoId, title, channel) {
         </iframe>
     `;
     
-    // After a delay, try to enable autoplay
-    // This works because there was user interaction (clicking the search result)
     setTimeout(() => {
         const iframe = playerDiv.querySelector('iframe');
         if (iframe) {
-            // Update with autoplay - should work now
             iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1`;
         }
     }, 500);
 }
 
-// UPDATE VIDEO INFO DISPLAY
 function updateVideoInfo(title, channel) {
     document.getElementById('youtube-video-title').textContent = title;
     document.getElementById('youtube-video-channel').textContent = channel;
 }
 
-// HELPER: EXTRACT VIDEO ID FROM URL
-function extractVideoId(url) {
-    if (!url) return null;
-    
-    // Direct video ID
-    if (url.match(/^[a-zA-Z0-9_-]{11}$/)) {
-        return url;
-    }
-    
-    // YouTube URL patterns
-    const patterns = [
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-        /v=([a-zA-Z0-9_-]{11})/
-    ];
-    
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-            return match[1];
-        }
-    }
-    
-    return null;
-}
-
-// Initialize YouTube
-window.addEventListener('load', () => {
-    // ... your other initializations ...
-    initYouTube();
-});
-
-// ===== GOOGLE AUTH =====
+// ===== GOOGLE CALENDAR AUTHENTICATION =====
 function initGoogleApi() {
   console.log("Initializing Google API...");
   
@@ -1203,10 +2117,9 @@ function initGoogleIdentity() {
           tokenResponse.issue_time = Date.now();
           gapi.client.setToken(tokenResponse);
 
-          // Save token to localStorage for persistence
           localStorage.setItem('googleToken', JSON.stringify(tokenResponse));
           localStorage.setItem('tokenSavedAt', Date.now());          
-          updateAuthUI(true);
+          updateAuthUI(true); // This will hide button and clear text
           loadCalendarEvents();
           startAutoRefresh();
         } else {
@@ -1231,18 +2144,22 @@ function initGoogleIdentity() {
 
 function setupAuthButton() {
   const signInBtn = document.getElementById("sign-in");
+  const authStatus = document.getElementById("auth-status");
+  
   const token = gapi.client.getToken();
   
   if (token && token.access_token) {
-    signInBtn.textContent = "Sign out";
-    signInBtn.disabled = false;
-    document.getElementById("auth-status").textContent = "Already signed in";
+    // Already signed in - hide button and status
+    signInBtn.style.display = "none";
+    authStatus.textContent = "";
     loadCalendarEvents();
     startAutoRefresh();
   } else {
+    // Not signed in - show button
+    signInBtn.style.display = "inline-block";
     signInBtn.textContent = "Sign in with Google";
     signInBtn.disabled = false;
-    document.getElementById("auth-status").textContent = "Ready to sign in";
+    authStatus.textContent = "Ready to sign in";
   }
   
   signInBtn.onclick = handleAuthClick;
@@ -1289,7 +2206,11 @@ function handleSignOut() {
   localStorage.removeItem('voiceEnabledDate');
   
   document.getElementById("events").innerHTML = "";
-  document.getElementById("sign-in").textContent = "Sign in with Google";
+  
+  // Show the sign-in button again
+  const signInBtn = document.getElementById("sign-in");
+  signInBtn.style.display = "inline-block";
+  signInBtn.textContent = "Sign in with Google";
   document.getElementById("auth-status").textContent = "Signed out. Click to sign in again.";
   document.getElementById("enable-voice").style.display = "inline-block";
   document.getElementById("enable-voice").textContent = "Enable voice alerts";
@@ -1301,14 +2222,23 @@ function handleSignOut() {
 
 function updateAuthUI(isSignedIn) {
   const signInBtn = document.getElementById("sign-in");
-  signInBtn.textContent = isSignedIn ? "Sign out" : "Sign in with Google";
-  document.getElementById("auth-status").textContent = isSignedIn ? "Signed in successfully!" : "Ready to sign in";
+  const authStatus = document.getElementById("auth-status");
+  
+  if (isSignedIn) {
+    // Hide the sign-in button and clear the auth status text
+    signInBtn.style.display = "none";
+    authStatus.textContent = ""; // Clear the text
+  } else {
+    // Show the sign-in button and status
+    signInBtn.style.display = "inline-block";
+    signInBtn.textContent = "Sign in with Google";
+    authStatus.textContent = "Ready to sign in";
+  }
 }
 
-// ===== SIMPLE TOKEN PERSISTENCE =====
+// ===== TOKEN PERSISTENCE =====
 const TOKEN_KEY = 'google_auth_token_simple';
 
-// Save token
 function saveTokenSimple(token) {
   if (token && token.access_token) {
     token.saved_at = Date.now();
@@ -1317,7 +2247,6 @@ function saveTokenSimple(token) {
   }
 }
 
-// Restore token
 function restoreTokenSimple() {
   const saved = localStorage.getItem(TOKEN_KEY);
   if (!saved) return null;
@@ -1326,7 +2255,6 @@ function restoreTokenSimple() {
     const token = JSON.parse(saved);
     const age = Date.now() - (token.saved_at || 0);
     
-    // Only restore if less than 50 minutes old
     if (age < 50 * 60 * 1000) {
       console.log("Token restored from storage");
       return token;
@@ -1337,7 +2265,6 @@ function restoreTokenSimple() {
   return null;
 }
 
-// Add this function to check and refresh token
 function checkAndRefreshToken() {
   const token = gapi.client.getToken();
   
@@ -1346,9 +2273,8 @@ function checkAndRefreshToken() {
     return false;
   }
   
-  // Check if token is about to expire (in next 5 minutes)
   const now = Date.now();
-  const expiresIn = token.expires_in * 1000; // Convert to milliseconds
+  const expiresIn = token.expires_in * 1000;
   const tokenAge = now - (token.issue_time || now);
   
   if (tokenAge > (expiresIn - 5 * 60 * 1000)) {
@@ -1360,19 +2286,17 @@ function checkAndRefreshToken() {
   return false;
 }
 
-// Add this function to refresh the token
 function refreshGoogleToken() {
   if (!tokenClient) {
     console.error("Token client not available");
     return;
   }
   
-  // Request a new token without user prompt
   tokenClient.requestAccessToken({ prompt: '' });
 }
 
-// Call this every 30 minutes
 setInterval(checkAndRefreshToken, 30 * 60 * 1000);
+
 // ===== CALENDAR EVENTS =====
 async function loadCalendarEvents() {
   console.log("Loading calendar events...");
@@ -1421,7 +2345,6 @@ async function loadCalendarEvents() {
   }
 }
 
-// ===== FIX 1 & 2: UPDATED EVENT RENDER FUNCTION =====
 function renderEvents(events) {
   const container = document.getElementById("events");
   container.innerHTML = "";
@@ -1454,16 +2377,13 @@ function renderEvents(events) {
           const eventItem = document.createElement("div");
           eventItem.className = "event-item";
 
-          // Parse times
           const isAllDay = !!event.start.date;
           const startTime = event.start.dateTime ? new Date(event.start.dateTime) : null;
           const endTime = event.end.dateTime ? new Date(event.end.dateTime) : null;
           
-          // Time container (left column)
           const timeContainer = document.createElement("div");
           timeContainer.className = "event-time-container";
           
-          // START TIME (was missing)
           const timeSpan = document.createElement("div");
           timeSpan.className = "event-time";
           
@@ -1481,7 +2401,6 @@ function renderEvents(events) {
           
           timeContainer.appendChild(timeSpan);
           
-          // END TIME (only if not all-day event)
           if (endTime && !isAllDay) {
             const endTimeSpan = document.createElement("div");
             endTimeSpan.className = "event-end-time";
@@ -1492,7 +2411,7 @@ function renderEvents(events) {
             });
             timeContainer.appendChild(endTimeSpan);
           }
-          // Right column: title, then end time + location on same line
+          
           const rightCol = document.createElement("div");
           rightCol.className = "event-right";
           
@@ -1501,7 +2420,6 @@ function renderEvents(events) {
           titleSpan.textContent = event.summary || "(No title)";
           rightCol.appendChild(titleSpan);
           
-          // Row with end time (if any) and location
           const metaRow = document.createElement("div");
           metaRow.className = "event-meta-row";
                    
@@ -1514,7 +2432,6 @@ function renderEvents(events) {
           
           rightCol.appendChild(metaRow);
           
-          // Add to event item (replace the old title+location append)
           eventItem.appendChild(timeContainer);
           eventItem.appendChild(rightCol);          
           container.appendChild(eventItem);
@@ -1522,7 +2439,7 @@ function renderEvents(events) {
     });
 }
   
-// ===== VOICE ALERTS SETUP =====
+// ===== VOICE ALERTS =====
 function setupVoiceAlertsButton() {
   const voiceBtn = document.getElementById("enable-voice");
   if (!voiceBtn) return;
@@ -1530,7 +2447,6 @@ function setupVoiceAlertsButton() {
   voiceBtn.onclick = function() {
     console.log("Enable voice alerts button clicked");
     
-    // Get events from localStorage
     const savedEvents = localStorage.getItem('calendarEvents');
     if (!savedEvents) {
       console.error("No events found in localStorage");
@@ -1714,7 +2630,7 @@ function loadWeather() {
 function renderWeather(data) {
   const current = data.current_weather;
   const daily = data.daily;
-  weatherDailyData = data;       // cache for "back"
+  weatherDailyData = data;
   weatherCurrentView = "daily";
   weatherSelectedDate = null;
   document.getElementById("weather-current").textContent = 
@@ -1736,8 +2652,8 @@ function renderWeather(data) {
 
     const row = document.createElement("div");
     row.className = "weather-day";
-    row.dataset.date = daily.time[i];        // ISO date string like "2025-12-17"
-    row.onclick = () => showHourlyView(daily.time[i]); // defined next section
+    row.dataset.date = daily.time[i];
+    row.onclick = () => showHourlyView(daily.time[i]);
     
     const icon = document.createElement("img");
     icon.className = "weather-icon";
@@ -1799,9 +2715,8 @@ const HOURLY_VARS = "temperature_2m,precipitation_probability,weathercode";
 let lastSelectedDayRow = null;
 
 function handleDayClick(row) {
-  const dateStr = row.dataset.date; // e.g., "2025-12-17"
+  const dateStr = row.dataset.date;
 
-  // Toggle: clicking same day hides detail
   if (lastSelectedDayRow === row) {
     row.classList.remove("selected");
     lastSelectedDayRow = null;
@@ -1822,7 +2737,6 @@ function fetchHourlyForDate(dateStr) {
   const detail = document.getElementById("weather-hourly-detail");
   detail.innerHTML = "Loading hourly forecast…";
 
-  // Open-Meteo: request 1-day hourly forecast for that date
   const url = `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${LAT}` +
     `&longitude=${LON}` +
@@ -1854,7 +2768,6 @@ function renderHourly(data, dateStr) {
   const probs = hourly.precipitation_probability || [];
   const codes = hourly.weathercode || [];
 
-  // Build a compact list: e.g., every 2 hours
   let html = "";
   html += `<div class="weather-hourly-title">Hourly forecast for ${
     new Date(dateStr).toLocaleDateString(undefined, {
@@ -1926,7 +2839,6 @@ function renderHourlyView(data, dateStr) {
 
   let html = "";
 
-  // Back + title bar
   html += `
     <div class="weather-hourly-header">
       <button id="weather-back-btn">◀</button>
@@ -1942,11 +2854,10 @@ function renderHourlyView(data, dateStr) {
 
   html += `<div class="weather-hourly-list">`;
 
-  // Example: every 2 hours
   for (let i = 0; i < times.length; i += 1) {
     const t = new Date(times[i]);
     const timeLabel = t.toLocaleTimeString([], {
-      hour: "2-digit",//"numeric",
+      hour: "2-digit",
       minute: "2-digit",
     });
     const temp = Math.round(temps[i]);
@@ -1974,18 +2885,16 @@ function renderHourlyView(data, dateStr) {
 function showDailyView() {
   if (!weatherDailyData) return;
   weatherCurrentView = "daily";
-  renderWeather(weatherDailyData);  // re-render original 7‑day list
+  renderWeather(weatherDailyData);
 }
   
-// ===== FIX 4: TRADINGVIEW WIDGET WITH REDUCED BRANDING =====
+// ===== TRADINGVIEW WIDGET =====
 function initTradingViewWidget() {
   const container = document.getElementById('tradingview-widget');
   if (!container) return;
   
-  // Clear previous content
   container.innerHTML = '';
   
-  // Create a new script element
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.async = true;
@@ -1999,7 +2908,7 @@ function initTradingViewWidget() {
     "colorTheme": "dark",
     "autosize": true,
     "showVolume": false,
-    "hideMarketStatus": true, // Hide market status to reduce clutter
+    "hideMarketStatus": true,
     "scalePosition": "right",
     "scaleMode": "Normal",
     "fontFamily": "Arial, sans-serif",
@@ -2010,14 +2919,13 @@ function initTradingViewWidget() {
     "chartType": "area",
     "gridLineColor": "rgba(255, 255, 255, 0.06)",
     "timeHoursFormat": "12-hours",
-    "hideSymbolLogo": true, // <-- Hide logo to save space
-    "showSymbolLogo": false, // <-- Alternative way to hide logo
-    "widthAdjustment": -10 // <-- Makes chart area slightly larger
+    "hideSymbolLogo": true,
+    "showSymbolLogo": false,
+    "widthAdjustment": -10
   });
   
   container.appendChild(script);
   
-  // Add CSS to reduce branding size
   setTimeout(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -2035,7 +2943,7 @@ function initTradingViewWidget() {
       }
     `;
     document.head.appendChild(style);
-  }, 1000); // Wait for widget to load
+  }, 1000);
 }
 
 // ===== INITIALIZATION =====
@@ -2053,40 +2961,38 @@ window.addEventListener('load', () => {
     renderEvents(events);
     
     checkVoiceEnabledForToday();
-    
-    // Setup voice button handler
     setupVoiceAlertsButton();
     
-    // Auto-enable if previously enabled today
     if (voiceEnabled) {
       scheduleVoiceReminders(events);
     }
-      // Check for saved Google token
-  const savedToken = localStorage.getItem('googleToken');
-  const tokenSavedAt = localStorage.getItem('tokenSavedAt');
-  
-  if (savedToken && tokenSavedAt && (Date.now() - tokenSavedAt < 50 * 60 * 1000)) {
-    // Token saved less than 50 minutes ago, try to use it
-    try {
-      const token = JSON.parse(savedToken);
-      gapi.client.setToken(token);
-      console.log("Restored saved token");
-      updateAuthUI(true);
-      loadCalendarEvents();
-      startAutoRefresh();
-    } catch (e) {
-      console.error("Failed to restore token:", e);
+    
+    const savedToken = localStorage.getItem('googleToken');
+    const tokenSavedAt = localStorage.getItem('tokenSavedAt');
+    
+    if (savedToken && tokenSavedAt && (Date.now() - tokenSavedAt < 50 * 60 * 1000)) {
+      try {
+        const token = JSON.parse(savedToken);
+        gapi.client.setToken(token);
+        console.log("Restored saved token");
+        updateAuthUI(true);
+        loadCalendarEvents();
+        startAutoRefresh();
+      } catch (e) {
+        console.error("Failed to restore token:", e);
+      }
     }
   }
-  }
   
- // Initialize YouTube
   initYouTube();
-
-  // Initialize TradingView widget
   initTradingViewWidget();
-  
   initGoogleApi();
+  
+  initCreditCardsSheets().catch(error => {
+    console.error("Google Sheets init failed:", error);
+  });
+  
+  setupVoiceAlertsButton();
 });
 
 // ===== CLEANUP =====
@@ -2112,6 +3018,17 @@ function cleanupOldReminders() {
 }
 
 setInterval(cleanupOldReminders, 60 * 60 * 1000);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (window.sheetsAutoSyncInterval) {
+    clearInterval(window.sheetsAutoSyncInterval);
+  }
+  stopAutoRefresh();
+  stopVoiceReminders();
+});
+
+console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
