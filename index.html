@@ -1016,6 +1016,7 @@ body {
   }
 }
 
+/* ===== SMALL TABLET / LARGE PHONE (768px-1024px) - Fire Tablet ===== */
 @media (max-width: 900px) and (min-width: 769px) {
   .overlay {
     padding: 10px;
@@ -1030,7 +1031,51 @@ body {
     height: 40%;
     min-height: 160px;
   }
+
+  .clock-panel {
+    flex: 0.3 !important; /* 30% */
+  }
   
+  .transactions-panel {
+    flex: 0.7 !important; /* 70% */
+  }
+  
+  /* Super compact clock */
+  #clock {
+    font-size: 22px !important;
+    margin-bottom: 0 !important;
+  }
+  
+  #date {
+    font-size: 11px !important;
+    opacity: 0.9 !important;
+  }
+  
+  .clock-panel {
+    padding: 10px !important;
+    justify-content: center !important;
+  }
+  
+  /* Maximize cards table space */
+  .cards-table-container {
+    max-height: calc(100% - 40px) !important;
+  }
+  
+  .transactions-header {
+    margin-bottom: 8px !important;
+    padding-bottom: 6px !important;
+  }
+  
+  .cards-table th {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .cards-table td {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+}
   .event-time-container {
     min-width: 32%;
   }
@@ -3032,4 +3077,5 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
