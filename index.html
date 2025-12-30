@@ -3134,21 +3134,12 @@ window.addEventListener('load', () => {
   loadWeather();
   setInterval(loadWeather, 60 * 60 * 1000);
   
-  const savedEvents = localStorage.getItem('calendarEvents');
-  const lastUpdated = localStorage.getItem('eventsLastUpdated');
+window.addEventListener('load', () => {
+  console.log("Page loaded, initializing...");
   
-  if (savedEvents && lastUpdated && (Date.now() - lastUpdated < 60 * 60 * 1000)) {
-    const events = JSON.parse(savedEvents);
-    renderEvents(events);
-    
-    checkVoiceEnabledForToday();
-    setupVoiceAlertsButton();
-    
-    if (voiceEnabled) {
-      scheduleVoiceReminders(events);
-    }
-    
-// Try to restore token BEFORE initializing Google API
+  // ... other initializations ...
+  
+  // Try to restore token BEFORE initializing Google API
   const savedToken = restoreTokenImproved();
   if (savedToken) {
     console.log("Attempting to restore saved session...");
@@ -3189,15 +3180,13 @@ window.addEventListener('load', () => {
   } else {
     // No saved token, normal initialization
     initGoogleApi();
-  }
-  
+  } 
   initYouTube();
   initTradingViewWidget();
   initGoogleApi();
-  
   initCreditCardsSheets().catch(error => {
     console.error("Google Sheets init failed:", error);
- 
+  });
   setupVoiceAlertsButton();
 });
 
@@ -3238,6 +3227,7 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
 
 
