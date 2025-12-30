@@ -2212,6 +2212,21 @@ function initGoogleIdentity() {
   }
 });
 
+function stopAutoRefresh() {
+  if (calendarRefreshInterval) {
+    clearInterval(calendarRefreshInterval);
+    calendarRefreshInterval = null;
+    console.log("Stopped auto-refresh");
+  }
+  
+  // Also stop the token monitor if it exists
+  if (window.tokenMonitorInterval) {
+    clearInterval(window.tokenMonitorInterval);
+    window.tokenMonitorInterval = null;
+    console.log("Stopped token monitor");
+  }
+}
+
 function setupAuthButton() {
   const signInBtn = document.getElementById("sign-in");
   const authStatus = document.getElementById("auth-status");
@@ -2268,12 +2283,13 @@ function handleSignOut() {
   }
   
   gapi.client.setToken(null);
-  stopAutoRefresh();
-  stopTokenMonitor(); // Stop monitoring
+  
+  // STOP ALL INTERVALS
+  stopAutoRefresh(); // This will now work
   stopVoiceReminders();
   
   // Clear ALL token storage
-  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('google_auth_token_improved');
   localStorage.removeItem('googleToken');
   localStorage.removeItem('tokenSavedAt');
   localStorage.removeItem('calendarEvents');
@@ -2293,29 +2309,8 @@ function handleSignOut() {
   spokenEvents.clear();
   voiceEnabled = false;
   voiceEnabledDate = null;
-}
   
-  gapi.client.setToken(null);
-  stopAutoRefresh();
-  stopVoiceReminders();
-  
-  localStorage.removeItem('calendarEvents');
-  localStorage.removeItem('eventsLastUpdated');
-  localStorage.removeItem('voiceEnabledDate');
-  
-  document.getElementById("events").innerHTML = "";
-  
-  // Show the sign-in button again
-  const signInBtn = document.getElementById("sign-in");
-  signInBtn.style.display = "inline-block";
-  signInBtn.textContent = "Sign in with Google";
-  document.getElementById("auth-status").textContent = "Signed out. Click to sign in again.";
-  document.getElementById("enable-voice").style.display = "inline-block";
-  document.getElementById("enable-voice").textContent = "Enable voice alerts";
-  
-  spokenEvents.clear();
-  voiceEnabled = false;
-  voiceEnabledDate = null;
+  console.log("Sign-out complete");
 }
 
 function updateAuthUI(isSignedIn) {
@@ -2659,17 +2654,20 @@ function setupVoiceAlertsButton() {
 function startAutoRefresh() {
   console.log("Starting auto-refresh (every 30 minutes)");
   
-  if (calendarRefreshInterval) {
-    clearInterval(calendarRefreshInterval);
-  }
+  // Clear any existing interval first
+  stopAutoRefresh();
   
+  // Load events immediately
   loadCalendarEvents();
   
-  // Refresh every 30 minutes instead of 5
+  // Set up the interval
   calendarRefreshInterval = setInterval(() => {
     console.log("Auto-refreshing calendar events...");
     loadCalendarEvents();
-  }, 30 * 60 * 1000);
+  }, 30 * 60 * 1000); // 30 minutes
+  
+  // Also start token monitoring
+  startTokenMonitor();
 }
 
 // ===== VOICE REMINDERS =====
@@ -3222,6 +3220,7 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
 
 
