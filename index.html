@@ -2211,7 +2211,10 @@ function initGoogleIdentity() {
     }
   }
 });
-
+  console.log("Google Identity Services initialized");
+  setupAuthButton(); 
+} 
+  
 function stopAutoRefresh() {
   if (calendarRefreshInterval) {
     clearInterval(calendarRefreshInterval);
@@ -3220,6 +3223,7 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
 
 
