@@ -3133,12 +3133,7 @@ window.addEventListener('load', () => {
   
   loadWeather();
   setInterval(loadWeather, 60 * 60 * 1000);
-  
-window.addEventListener('load', () => {
-  console.log("Page loaded, initializing...");
-  
-  // ... other initializations ...
-  
+ 
   // Try to restore token BEFORE initializing Google API
   const savedToken = restoreTokenImproved();
   if (savedToken) {
@@ -3227,6 +3222,7 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
 
 
