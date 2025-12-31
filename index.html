@@ -2117,7 +2117,11 @@ function updateVideoInfo(title, channel) {
 }
 
 // ===== GOOGLE CALENDAR AUTHENTICATION =====
-// ===== ROBUST GOOGLE CALENDAR AUTHENTICATION =====
+// ===== AUTH CONSTANTS =====
+const TOKEN_CHECK_INTERVAL = 120000; // 2 minutes
+const TOKEN_REFRESH_THRESHOLD = 300000; // 5 minutes before expiry
+
+// ===== GOOGLE CALENDAR AUTHENTICATION =====
 let tokenRefreshInProgress = false;
 let tokenMonitorInterval = null;
 
@@ -2127,11 +2131,13 @@ function initGoogleApi() {
   if (!window.gapi) {
     console.error("Google API library not loaded");
     setTimeout(() => {
-      if (!window.gapi) {
-        console.log("Retrying Google API load...");
+      if (window.gapi) {
         initGoogleApi();
+      } else {
+        console.log("Google API still not loaded, retrying...");
+        setTimeout(initGoogleApi, 2000);
       }
-    }, 2000);
+    }, 1000);
     return;
   }
   
@@ -2141,10 +2147,10 @@ function initGoogleApi() {
         apiKey: API_KEY,
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
       });
-      console.log("Google API client initialized");
+      console.log("✅ Google API client initialized");
       
-      // Check for saved token first
-      await attemptTokenRestore();
+      // Initialize Google Identity Services
+      initGoogleIdentity();
       
     } catch (error) {
       console.error("Failed to initialize Google API:", error);
@@ -2152,6 +2158,57 @@ function initGoogleApi() {
       setTimeout(initGoogleApi, 5000);
     }
   });
+}
+
+function initGoogleIdentity() {
+  console.log("Initializing Google Identity Services...");
+  
+  if (!window.google || !window.google.accounts) {
+    console.error("Google Identity Services not loaded");
+    document.getElementById("sign-in").textContent = "Loading Google Sign-in...";
+    document.getElementById("sign-in").disabled = true;
+    
+    // Retry after 2 seconds
+    setTimeout(initGoogleIdentity, 2000);
+    return;
+  }
+  
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      prompt: '',
+      callback: async (tokenResponse) => {
+        console.log("Token response received");
+        
+        if (tokenResponse && tokenResponse.access_token) {
+          await handleTokenResponse(tokenResponse);
+        } else if (tokenResponse && tokenResponse.error) {
+          console.error("Token error:", tokenResponse.error);
+          updateAuthUI(false);
+          document.getElementById("auth-status").textContent = "Sign-in failed. Click button to try again.";
+        }
+      },
+      error_callback: (error) => {
+        console.error("Token client error:", error);
+        updateAuthUI(false);
+        document.getElementById("auth-status").textContent = "Sign-in error";
+      }
+    });
+    
+    console.log("✅ Google Identity Services initialized");
+    setupAuthButton();
+    
+    // Try to restore existing token
+    setTimeout(() => {
+      attemptTokenRestore();
+    }, 500);
+    
+  } catch (error) {
+    console.error("Failed to initialize Google Identity:", error);
+    document.getElementById("sign-in").textContent = "Error loading sign-in";
+    document.getElementById("auth-status").textContent = "Error setting up Google Sign-in";
+  }
 }
 
 async function attemptTokenRestore() {
@@ -2180,123 +2237,15 @@ async function attemptTokenRestore() {
       } catch (apiError) {
         console.log("Saved token invalid:", apiError);
         clearSavedToken();
-        initGoogleIdentity();
+        gapi.client.setToken(null);
+        // Don't change UI here - let the button handle sign-in
       }
-    } else {
-      console.log("No saved token found");
-      initGoogleIdentity();
     }
   } catch (error) {
     console.error("Token restore error:", error);
-    initGoogleIdentity();
   }
   
   return false;
-}
-
-function initGoogleIdentity() {
-  console.log("Initializing Google Identity Services...");
-  
-  if (!window.google || !window.google.accounts) {
-    console.error("Google Identity Services not loaded");
-    document.getElementById("auth-status").textContent = "Google Sign-in loading...";
-    
-    // Retry after 2 seconds
-    setTimeout(initGoogleIdentity, 2000);
-    return;
-  }
-  
-  try {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      prompt: '',
-      callback: async (tokenResponse) => {
-        console.log("Token response received");
-        
-        if (tokenResponse && tokenResponse.access_token) {
-          await handleTokenResponse(tokenResponse);
-        } else if (tokenResponse && tokenResponse.error) {
-          console.error("Token error:", tokenResponse.error);
-          
-          // If we have a saved token, try to use it
-          const savedToken = getSavedToken();
-          if (savedToken) {
-            console.log("Falling back to saved token");
-            gapi.client.setToken(savedToken);
-            updateAuthUI(true);
-            loadCalendarEvents();
-            startAutoRefresh();
-          } else {
-            document.getElementById("auth-status").textContent = "Sign-in error";
-          }
-        }
-      },
-      error_callback: (error) => {
-        console.error("Token client error:", error);
-        
-        // Don't show error if we have a valid token
-        const currentToken = gapi.client.getToken();
-        if (!currentToken || !currentToken.access_token) {
-          document.getElementById("auth-status").textContent = "Sign-in error";
-        }
-      }
-    });
-    
-    console.log("Google Identity Services initialized");
-    setupAuthButton();
-    
-    // Try silent token acquisition
-    setTimeout(() => {
-      if (tokenClient) {
-        try {
-          tokenClient.requestAccessToken({ prompt: '' });
-        } catch (e) {
-          console.log("Silent token request failed (normal for first time):", e.message);
-        }
-      }
-    }, 1000);
-    
-  } catch (error) {
-    console.error("Failed to initialize Google Identity:", error);
-    document.getElementById("auth-status").textContent = "Error setting up Google Sign-in";
-  }
-}
-
-async function handleTokenResponse(tokenResponse) {
-  console.log("Processing token response...");
-  
-  try {
-    // Add issue time for tracking
-    tokenResponse.issue_time = Date.now();
-    
-    // Save token immediately
-    saveToken(tokenResponse);
-    
-    // Set token in gapi
-    gapi.client.setToken(tokenResponse);
-    
-    // Verify token works
-    await gapi.client.calendar.calendarList.list({ maxResults: 1 });
-    
-    console.log("✅ Token validated successfully");
-    
-    // Update UI and load data
-    updateAuthUI(true);
-    loadCalendarEvents();
-    startAutoRefresh();
-    startTokenMonitor();
-    
-  } catch (error) {
-    console.error("Token validation failed:", error);
-    
-    // If validation fails, clear token and retry
-    clearSavedToken();
-    gapi.client.setToken(null);
-    updateAuthUI(false);
-    
-    document.getElementById("auth-status").textContent = "Token validation failed";
-  }
 }
 
 // ===== TOKEN MANAGEMENT =====
@@ -2305,6 +2254,7 @@ function saveToken(token) {
     // Calculate expiry time
     const expiresAt = Date.now() + (token.expires_in * 1000);
     token.expires_at = expiresAt;
+    token.issue_time = Date.now();
     
     // Save to localStorage
     localStorage.setItem('google_calendar_token', JSON.stringify(token));
@@ -2347,253 +2297,98 @@ function clearSavedToken() {
   console.log("Saved token cleared");
 }
 
-// ===== TOKEN MONITORING =====
-function startTokenMonitor() {
-  console.log("Starting token monitor...");
-  
-  // Clear any existing monitor
-  if (tokenMonitorInterval) {
-    clearInterval(tokenMonitorInterval);
-  }
-  
-  // Check token status every 2 minutes
-  tokenMonitorInterval = setInterval(() => {
-    checkTokenStatus();
-  }, TOKEN_CHECK_INTERVAL);
-  
-  // Also check immediately
-  setTimeout(checkTokenStatus, 1000);
-}
-
-function stopTokenMonitor() {
-  if (tokenMonitorInterval) {
-    clearInterval(tokenMonitorInterval);
-    tokenMonitorInterval = null;
-    console.log("Token monitor stopped");
-  }
-}
-
-async function checkTokenStatus() {
-  if (tokenRefreshInProgress) {
-    console.log("Token refresh already in progress, skipping check");
-    return;
-  }
-  
-  const token = gapi.client.getToken();
-  
-  if (!token || !token.access_token) {
-    console.log("No active token, checking saved token...");
-    const savedToken = getSavedToken();
-    
-    if (savedToken) {
-      console.log("Restoring token from storage");
-      gapi.client.setToken(savedToken);
-      updateAuthUI(true);
-      loadCalendarEvents();
-    } else {
-      console.log("No valid token available");
-      updateAuthUI(false);
-    }
-    return;
-  }
-  
-  // Check if token is about to expire
-  const now = Date.now();
-  const tokenAge = now - (token.issue_time || now);
-  const expiresIn = token.expires_in * 1000;
-  const timeUntilExpiry = expiresIn - tokenAge;
-  
-  console.log(`Token expires in ${Math.round(timeUntilExpiry / 60000)} minutes`);
-  
-  if (timeUntilExpiry < TOKEN_REFRESH_THRESHOLD) {
-    console.log("Token needs refresh");
-    await refreshToken();
-  }
-}
-
-async function refreshToken() {
-  if (tokenRefreshInProgress || !tokenClient) {
-    return;
-  }
-  
-  tokenRefreshInProgress = true;
-  console.log("Attempting token refresh...");
-  
+// ===== CALENDAR EVENTS LOADING =====
+async function loadCalendarEvents() {
   try {
-    // Request new token without user prompt
-    tokenClient.requestAccessToken({ prompt: '' });
+    const response = await gapi.client.calendar.events.list({
+      calendarId: CALENDAR_ID,
+      timeMin: new Date().toISOString(),
+      timeMax: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      showDeleted: false,
+      singleEvents: true,
+      maxResults: 25,
+      orderBy: 'startTime'
+    });
     
-    // Set timeout to reset refresh flag
-    setTimeout(() => {
-      tokenRefreshInProgress = false;
-    }, 10000);
+    const events = response.result.items;
+    renderEvents(events);
+    
+    // Cache events
+    localStorage.setItem('calendarEvents', JSON.stringify(events));
+    localStorage.setItem('eventsLastUpdated', Date.now());
     
   } catch (error) {
-    console.error("Token refresh error:", error);
-    tokenRefreshInProgress = false;
+    console.error("Error loading calendar events:", error);
     
-    // If refresh fails, try to use saved token
-    const savedToken = getSavedToken();
-    if (savedToken) {
-      gapi.client.setToken(savedToken);
+    // Try to use cached events
+    const savedEvents = localStorage.getItem('calendarEvents');
+    if (savedEvents) {
+      try {
+        const events = JSON.parse(savedEvents);
+        renderEvents(events);
+      } catch (e) {
+        console.error("Error loading cached events:", e);
+        document.getElementById("events").innerHTML = "<div>Error loading events</div>";
+      }
     }
   }
 }
 
-// ===== AUTH UI FUNCTIONS =====
-function setupAuthButton() {
-  const signInBtn = document.getElementById("sign-in");
-  const authStatus = document.getElementById("auth-status");
+function renderEvents(events) {
+  const container = document.getElementById("events");
+  if (!container) return;
   
-  if (!signInBtn) return;
-  
-  const token = gapi.client.getToken();
-  
-  if (token && token.access_token) {
-    // Already signed in
-    signInBtn.style.display = "none";
-    authStatus.textContent = "";
-    signInBtn.onclick = handleAuthClick;
-  } else {
-    // Not signed in
-    signInBtn.style.display = "inline-block";
-    signInBtn.textContent = "Sign in with Google";
-    signInBtn.disabled = false;
-    authStatus.textContent = "Ready to sign in";
-    signInBtn.onclick = handleAuthClick;
-  }
-}
-
-function handleAuthClick() {
-  const token = gapi.client.getToken();
-  
-  if (token && token.access_token) {
-    handleSignOut();
-  } else {
-    handleSignIn();
-  }
-}
-
-function handleSignIn() {
-  console.log("Starting sign in...");
-  
-  if (!tokenClient) {
-    console.error("Token client not available");
-    initGoogleIdentity();
-    setTimeout(handleSignIn, 1000);
+  if (!events || events.length === 0) {
+    container.innerHTML = "<div>No upcoming events</div>";
     return;
   }
   
-  document.getElementById("auth-status").textContent = "Opening Google sign-in...";
+  let html = "";
+  let lastDate = "";
   
-  try {
-    tokenClient.requestAccessToken();
-  } catch (error) {
-    console.error("Sign-in error:", error);
-    document.getElementById("auth-status").textContent = "Sign-in error, please try again";
-  }
-}
-
-function handleSignOut() {
-  console.log("Signing out...");
-  
-  const token = gapi.client.getToken();
-  
-  // Revoke token if available
-  if (token && token.access_token && window.google && window.google.accounts) {
-    try {
-      google.accounts.oauth2.revoke(token.access_token, () => {
-        console.log("Token revoked");
-      });
-    } catch (e) {
-      console.log("Token revoke error (may be normal):", e);
+  events.forEach(event => {
+    const start = new Date(event.start.dateTime || event.start.date);
+    const end = new Date(event.end.dateTime || event.end.date);
+    
+    const dateStr = start.toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric'
+    });
+    
+    const timeStr = start.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    const endTimeStr = end.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    if (dateStr !== lastDate) {
+      html += `<div class="event-day">${dateStr}</div>`;
+      lastDate = dateStr;
     }
-  }
+    
+    html += `
+      <div class="event-item">
+        <div class="event-time-container">
+          <div class="event-time">${timeStr}</div>
+          <div class="event-end-time">until ${endTimeStr}</div>
+        </div>
+        <div class="event-right">
+          <div class="event-title">${event.summary || 'No title'}</div>
+          ${event.location ? `<div class="event-location">📍 ${event.location}</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
   
-  // Clear everything
-  gapi.client.setToken(null);
-  clearSavedToken();
-  
-  // Stop all intervals
-  stopAutoRefresh();
-  stopTokenMonitor();
-  stopVoiceReminders();
-  
-  // Clear stored data
-  localStorage.removeItem('calendarEvents');
-  localStorage.removeItem('eventsLastUpdated');
-  localStorage.removeItem('voiceEnabledDate');
-  
-  // Reset UI
-  document.getElementById("events").innerHTML = "";
-  
-  const signInBtn = document.getElementById("sign-in");
-  signInBtn.style.display = "inline-block";
-  signInBtn.textContent = "Sign in with Google";
-  document.getElementById("auth-status").textContent = "Signed out. Click to sign in again.";
-  document.getElementById("enable-voice").style.display = "inline-block";
-  document.getElementById("enable-voice").textContent = "Enable voice alerts";
-  
-  // Reset voice state
-  spokenEvents.clear();
-  voiceEnabled = false;
-  voiceEnabledDate = null;
-  
-  console.log("Sign-out complete");
+  container.innerHTML = html;
 }
-
-function updateAuthUI(isSignedIn) {
-  const signInBtn = document.getElementById("sign-in");
-  const authStatus = document.getElementById("auth-status");
-  
-  if (isSignedIn) {
-    signInBtn.style.display = "none";
-    authStatus.textContent = "";
-  } else {
-    signInBtn.style.display = "inline-block";
-    signInBtn.textContent = "Sign in with Google";
-    authStatus.textContent = "Ready to sign in";
-  }
-}
-
-// ===== AUTO REFRESH =====
-function startAutoRefresh() {
-  console.log("Starting auto-refresh (every 30 minutes)");
-  
-  stopAutoRefresh();
-  
-  // Load immediately
-  loadCalendarEvents();
-  
-  // Set interval
-  calendarRefreshInterval = setInterval(() => {
-    console.log("Auto-refreshing calendar events...");
-    loadCalendarEvents();
-  }, 30 * 60 * 1000); // 30 minutes
-}
-
-function stopAutoRefresh() {
-  if (calendarRefreshInterval) {
-    clearInterval(calendarRefreshInterval);
-    calendarRefreshInterval = null;
-    console.log("Stopped auto-refresh");
-  }
-}
-
-// ===== VOICE REMINDERS =====
-function stopVoiceReminders() {
-  if (reminderCheckInterval) {
-    clearInterval(reminderCheckInterval);
-    reminderCheckInterval = null;
-    spokenEvents.clear();
-    console.log("Stopped voice reminders");
-  }
-  
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-  }
-}
-
 // ===== WEATHER =====
 const LAT = 38.81;
 const LON = -90.72;
@@ -2962,10 +2757,8 @@ window.addEventListener('load', () => {
     }
   }
   
-  // Initialize Google API last (after everything else is ready)
-  setTimeout(() => {
-    initGoogleApi();
-  }, 1000);
+  // Initialize Google API immediately
+  initGoogleApi();
 });
   
 // ===== CLEANUP =====
@@ -3007,6 +2800,7 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
 
 
