@@ -2120,35 +2120,90 @@ function updateVideoInfo(title, channel) {
 function initGoogleApi() {
   console.log("Initializing Google API...");
   
-  // Set initial button state
-  const signInBtn = document.getElementById("sign-in");
-  const authStatus = document.getElementById("auth-status");
+  if (!window.gapi) {
+    console.error("Google API library not loaded");
+    document.getElementById("auth-status").textContent = "Error: Google API failed to load";
+    return;
+  }
   
-  signInBtn.textContent = "Initializing...";
-  signInBtn.disabled = true;
-  authStatus.textContent = "Initializing Google API...";
-  
-  // Load the API client
   gapi.load('client', async () => {
     try {
       await gapi.client.init({
         apiKey: API_KEY,
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
       });
-      console.log("✅ Google API client initialized");
+      console.log("Google API client initialized");
       
-      // Now initialize Google Identity
-      initGoogleIdentity();
+      // First, try to restore any saved session before initializing identity
+      const restored = await tryRestoreSession();
+      if (!restored) {
+        initGoogleIdentity();
+      }
       
     } catch (error) {
       console.error("Failed to initialize Google API:", error);
-      signInBtn.textContent = "Sign in with Google";
-      signInBtn.disabled = false;
-      signInBtn.style.display = "inline-block";
-      authStatus.textContent = "API initialization failed. Click to retry.";
-      signInBtn.onclick = initGoogleApi;
+      document.getElementById("auth-status").textContent = "Error initializing Google API";
     }
   });
+}
+
+async function tryRestoreSession() {
+  console.log("Attempting to restore session...");
+  
+  // First check localStorage for saved token
+  const savedToken = localStorage.getItem('google_auth_token_improved');
+  if (!savedToken) {
+    console.log("No saved token found");
+    return false;
+  }
+  
+  try {
+    const token = JSON.parse(savedToken);
+    const now = Date.now();
+    
+    // Check if token is expired or will expire soon
+    if (token.expires_at && now > token.expires_at) {
+      console.log("Saved token expired");
+      localStorage.removeItem('google_auth_token_improved');
+      return false;
+    }
+    
+    // If token expires in less than 5 minutes, don't restore (force fresh login)
+    const timeUntilExpiry = token.expires_at - now;
+    if (timeUntilExpiry < 5 * 60 * 1000) {
+      console.log("Token expires soon, not restoring");
+      localStorage.removeItem('google_auth_token_improved');
+      return false;
+    }
+    
+    // Set the token in gapi
+    gapi.client.setToken(token);
+    
+    // Verify the token is still valid by making a simple API call
+    try {
+      await gapi.client.calendar.calendarList.list({
+        maxResults: 1
+      });
+      
+      console.log("✅ Session restored successfully!");
+      updateAuthUI(true);
+      loadCalendarEvents();
+      startAutoRefresh();
+      
+      return true;
+      
+    } catch (apiError) {
+      console.log("Token validation failed:", apiError);
+      localStorage.removeItem('google_auth_token_improved');
+      gapi.client.setToken(null);
+      return false;
+    }
+    
+  } catch (e) {
+    console.error("Failed to restore session:", e);
+    localStorage.removeItem('google_auth_token_improved');
+    return false;
+  }
 }
 
 function initGoogleIdentity() {
@@ -2156,164 +2211,94 @@ function initGoogleIdentity() {
   
   if (!window.google || !window.google.accounts) {
     console.error("Google Identity Services not loaded");
-    setTimeout(initGoogleIdentity, 1000);
+    document.getElementById("auth-status").textContent = "Error: Google Sign-in failed to load";
     return;
   }
   
-  try {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      prompt: '',
-      callback: async (tokenResponse) => {
-        console.log("Token response received");
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      console.log("Authentication callback received");
+      
+      if (tokenResponse && tokenResponse.access_token) {
+        console.log("Access token received, expiry:", tokenResponse.expires_in, "seconds");
         
-        if (tokenResponse && tokenResponse.access_token) {
-          await handleTokenResponse(tokenResponse);
-        } else if (tokenResponse && tokenResponse.error) {
-          console.error("Token error:", tokenResponse.error);
-          updateAuthUI(false, "Sign-in failed. Click button to try again.");
-        }
+        // Save token with improved persistence
+        saveTokenImproved(tokenResponse);
+        
+        // Set token in gapi with issue time
+        tokenResponse.issue_time = Date.now();
+        gapi.client.setToken(tokenResponse);
+        
+        // Update UI and load events
+        updateAuthUI(true);
+        loadCalendarEvents();
+        startAutoRefresh();
+        
+        console.log("Sign-in successful, token saved");
+      } else if (tokenResponse && tokenResponse.error) {
+        console.error("Authentication error:", tokenResponse.error);
+        document.getElementById("auth-status").textContent = "Sign-in error: " + tokenResponse.error;
+      } else {
+        console.log("Authentication cancelled");
+        document.getElementById("auth-status").textContent = "Sign-in cancelled";
       }
-    });
-    
-    console.log("✅ Google Identity Services initialized");
-    
-    // Try to restore existing session
-    checkExistingSession();
-    
-  } catch (error) {
-    console.error("Failed to initialize Google Identity:", error);
-    updateAuthUI(false, "Error setting up sign-in");
+    },
+    error_callback: (error) => {
+      console.error("Authentication error callback:", error);
+      document.getElementById("auth-status").textContent = "Sign-in error occurred";
+    }
+  });
+  
+  console.log("Google Identity Services initialized");
+  setupAuthButton(); 
+}
+
+function stopAutoRefresh() {
+  if (calendarRefreshInterval) {
+    clearInterval(calendarRefreshInterval);
+    calendarRefreshInterval = null;
+    console.log("Stopped auto-refresh");
+  }
+  
+  // Also stop the token monitor if it exists
+  if (window.tokenMonitorInterval) {
+    clearInterval(window.tokenMonitorInterval);
+    window.tokenMonitorInterval = null;
+    console.log("Stopped token monitor");
   }
 }
 
-async function checkExistingSession() {
+function setupAuthButton() {
   const signInBtn = document.getElementById("sign-in");
   const authStatus = document.getElementById("auth-status");
   
-  // First, try to get token from gapi
-  let token = gapi.client.getToken();
+  const token = gapi.client.getToken();
   
   if (token && token.access_token) {
-    console.log("Found active token in gapi");
-    await validateAndUseToken(token);
-    return;
-  }
-  
-  // Try to get token from localStorage
-  const savedToken = getSavedToken();
-  if (savedToken) {
-    console.log("Found saved token, attempting to restore...");
-    gapi.client.setToken(savedToken);
-    await validateAndUseToken(savedToken);
-    return;
-  }
-  
-  // No valid token found, show sign-in button
-  console.log("No valid session found");
-  updateAuthUI(false, "Ready to sign in");
-}
-
-async function validateAndUseToken(token) {
-  try {
-    // Test the token
-    await gapi.client.calendar.calendarList.list({
-      maxResults: 1
-    });
-    
-    console.log("✅ Token validated successfully");
-    
-    // Save the validated token
-    saveToken(token);
-    
-    // Update UI and load data
-    updateAuthUI(true, "");
-    loadCalendarEvents();
-    
-    // Start auto-refresh
-    if (calendarRefreshInterval) {
-      clearInterval(calendarRefreshInterval);
-    }
-    calendarRefreshInterval = setInterval(loadCalendarEvents, 30 * 60 * 1000);
-    
-  } catch (error) {
-    console.error("Token validation failed:", error);
-    clearSavedToken();
-    gapi.client.setToken(null);
-    updateAuthUI(false, "Session expired. Please sign in again.");
-  }
-}
-
-async function handleTokenResponse(tokenResponse) {
-  console.log("Processing token response...");
-  
-  // Add issue time for tracking
-  tokenResponse.issue_time = Date.now();
-  
-  // Set token in gapi
-  gapi.client.setToken(tokenResponse);
-  
-  // Validate and use the token
-  await validateAndUseToken(tokenResponse);
-}
-
-function getSavedToken() {
-  try {
-    const saved = localStorage.getItem('google_calendar_token');
-    if (!saved) return null;
-    
-    const token = JSON.parse(saved);
-    
-    // Check if token is expired
-    if (token.expires_at && Date.now() > token.expires_at) {
-      console.log("Saved token expired");
-      clearSavedToken();
-      return null;
-    }
-    
-    return token;
-  } catch (error) {
-    console.error("Error reading saved token:", error);
-    return null;
-  }
-}
-
-function saveToken(token) {
-  if (token && token.access_token) {
-    // Calculate expiry time
-    const expiresAt = Date.now() + (token.expires_in * 1000);
-    token.expires_at = expiresAt;
-    
-    // Save to localStorage
-    localStorage.setItem('google_calendar_token', JSON.stringify(token));
-    localStorage.setItem('google_token_saved_at', Date.now().toString());
-    
-    console.log("Token saved, expires at:", new Date(expiresAt).toLocaleTimeString());
-  }
-}
-
-function clearSavedToken() {
-  localStorage.removeItem('google_calendar_token');
-  localStorage.removeItem('google_token_saved_at');
-  console.log("Saved token cleared");
-}
-
-function updateAuthUI(isSignedIn, message = "") {
-  const signInBtn = document.getElementById("sign-in");
-  const authStatus = document.getElementById("auth-status");
-  
-  if (isSignedIn) {
+    // Already signed in - hide button and status
     signInBtn.style.display = "none";
-    signInBtn.textContent = "Sign in with Google";
-    signInBtn.disabled = false;
-    authStatus.textContent = message;
+    authStatus.textContent = "";
+    // Don't load events here - they're already loaded by tryRestoreSession
   } else {
+    // Not signed in - show button
     signInBtn.style.display = "inline-block";
     signInBtn.textContent = "Sign in with Google";
     signInBtn.disabled = false;
-    signInBtn.onclick = handleSignIn;
-    authStatus.textContent = message;
+    authStatus.textContent = "Ready to sign in";
+  }
+  
+  signInBtn.onclick = handleAuthClick;
+}
+
+function handleAuthClick() {
+  const token = gapi.client.getToken();
+  
+  if (token && token.access_token) {
+    handleSignOut();
+  } else {
+    handleSignIn();
   }
 }
 
@@ -2321,160 +2306,497 @@ function handleSignIn() {
   console.log("Starting sign in...");
   
   if (!tokenClient) {
-    console.error("Token client not available");
-    updateAuthUI(false, "Sign-in not ready. Please wait...");
-    setTimeout(initGoogleIdentity, 1000);
+    document.getElementById("auth-status").textContent = "Sign-in not ready. Please refresh.";
     return;
   }
   
   document.getElementById("auth-status").textContent = "Opening Google sign-in...";
-  
-  try {
-    tokenClient.requestAccessToken();
-  } catch (error) {
-    console.error("Sign-in error:", error);
-    updateAuthUI(false, "Sign-in error. Click to try again.");
-  }
+  tokenClient.requestAccessToken();
 }
 
 function handleSignOut() {
   console.log("Signing out...");
   
   const token = gapi.client.getToken();
-  
-  // Revoke token if available
-  if (token && token.access_token && window.google && window.google.accounts) {
+  if (token) {
     try {
       google.accounts.oauth2.revoke(token.access_token, () => {
-        console.log("Token revoked");
+        console.log("Access token revoked");
       });
     } catch (e) {
       console.log("Token revoke error:", e);
     }
   }
   
-  // Clear everything
   gapi.client.setToken(null);
-  clearSavedToken();
   
-  // Stop auto-refresh
-  if (calendarRefreshInterval) {
-    clearInterval(calendarRefreshInterval);
-    calendarRefreshInterval = null;
-  }
+  // STOP ALL INTERVALS
+  stopAutoRefresh();
+  stopVoiceReminders();
   
-  // Clear events
+  // Clear ALL token storage
+  localStorage.removeItem('google_auth_token_improved');
+  localStorage.removeItem('googleToken');
+  localStorage.removeItem('tokenSavedAt');
+  localStorage.removeItem('calendarEvents');
+  localStorage.removeItem('eventsLastUpdated');
+  localStorage.removeItem('voiceEnabledDate');
+  
   document.getElementById("events").innerHTML = "";
   
-  // Update UI
-  updateAuthUI(false, "Signed out. Click button to sign in.");
+  // Show the sign-in button again
+  const signInBtn = document.getElementById("sign-in");
+  signInBtn.style.display = "inline-block";
+  signInBtn.textContent = "Sign in with Google";
+  document.getElementById("auth-status").textContent = "Signed out. Click to sign in again.";
+  document.getElementById("enable-voice").style.display = "inline-block";
+  document.getElementById("enable-voice").textContent = "Enable voice alerts";
   
-  // Reset voice alerts
-  const voiceBtn = document.getElementById("enable-voice");
-  if (voiceBtn) {
-    voiceBtn.style.display = "inline-block";
-    voiceBtn.textContent = "Enable voice alerts";
-  }
+  spokenEvents.clear();
+  voiceEnabled = false;
+  voiceEnabledDate = null;
   
   console.log("Sign-out complete");
 }
 
-// ===== CALENDAR EVENTS LOADING =====
+function updateAuthUI(isSignedIn) {
+  const signInBtn = document.getElementById("sign-in");
+  const authStatus = document.getElementById("auth-status");
+  
+  if (isSignedIn) {
+    // Hide the sign-in button and clear the auth status text
+    signInBtn.style.display = "none";
+    authStatus.textContent = ""; // Clear the text
+  } else {
+    // Show the sign-in button and status
+    signInBtn.style.display = "inline-block";
+    signInBtn.textContent = "Sign in with Google";
+    authStatus.textContent = "Ready to sign in";
+  }
+}
+
+// ===== IMPROVED TOKEN PERSISTENCE =====
+const TOKEN_KEY = 'google_auth_token_improved';
+
+function saveTokenImproved(token) {
+  if (token && token.access_token) {
+    token.saved_at = Date.now();
+    token.expires_at = Date.now() + (token.expires_in * 1000);
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(token));
+    console.log("Token saved with expiry:", new Date(token.expires_at).toLocaleTimeString());
+  }
+}
+
+// ===== CALENDAR EVENTS =====
 async function loadCalendarEvents() {
+  console.log("Loading calendar events...");
+  
   try {
-    console.log("Loading calendar events...");
-    
+    const now = new Date();
+    const timeMin = now.toISOString();
+    const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
     const response = await gapi.client.calendar.events.list({
       calendarId: CALENDAR_ID,
-      timeMin: new Date().toISOString(),
-      timeMax: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      timeMin,
+      timeMax,
       showDeleted: false,
       singleEvents: true,
-      maxResults: 25,
-      orderBy: 'startTime'
+      orderBy: "startTime",
+      maxResults: 100,
     });
     
-    const events = response.result.items;
+    const events = response.result.items || [];
     console.log(`Loaded ${events.length} events`);
+    
+    if (events.length === 0) {
+      document.getElementById("events").textContent = "No upcoming events found.";
+      return;
+    }
+    
     renderEvents(events);
     
-    // Cache events
     localStorage.setItem('calendarEvents', JSON.stringify(events));
     localStorage.setItem('eventsLastUpdated', Date.now());
     
-  } catch (error) {
-    console.error("Error loading calendar events:", error);
+    checkVoiceEnabledForToday();
     
-    // Try to use cached events
-    const savedEvents = localStorage.getItem('calendarEvents');
-    if (savedEvents) {
-      try {
-        const events = JSON.parse(savedEvents);
-        renderEvents(events);
-      } catch (e) {
-        console.error("Error loading cached events:", e);
-        document.getElementById("events").innerHTML = "<div>Error loading events</div>";
+    if (voiceEnabled) {
+      scheduleVoiceReminders(events);
+    }
+    
+  } catch (error) {
+    console.error("Error loading calendar:", error);
+    
+    // Handle token errors gracefully
+    if (error.status === 401 || error.status === 403) {
+      console.log("Token expired or invalid, signing out...");
+      
+      // Don't sign out immediately, try to use saved token first
+      const savedToken = localStorage.getItem(TOKEN_KEY);
+      if (savedToken) {
+        try {
+          const token = JSON.parse(savedToken);
+          const now = Date.now();
+          
+          // Check if saved token is still valid
+          if (token.expires_at && now < token.expires_at) {
+            console.log("Attempting to use saved token...");
+            gapi.client.setToken(token);
+            // Retry once
+            setTimeout(loadCalendarEvents, 1000);
+            return;
+          }
+        } catch (e) {
+          console.error("Error parsing saved token:", e);
+        }
       }
+      
+      // If we get here, we need to sign out
+      document.getElementById("auth-status").textContent = "Session expired. Please sign in again.";
+      setTimeout(() => {
+        updateAuthUI(false);
+      }, 2000);
     } else {
-      document.getElementById("events").innerHTML = "<div>No events loaded. Sign in to see events.</div>";
+      document.getElementById("auth-status").textContent = "Error loading calendar";
     }
   }
 }
 
 function renderEvents(events) {
   const container = document.getElementById("events");
-  if (!container) return;
+  container.innerHTML = "";
+
+  const eventsByDate = {};
   
-  if (!events || events.length === 0) {
-    container.innerHTML = "<div>No upcoming events</div>";
+  events.forEach(event => {
+    const start = event.start.dateTime || event.start.date;
+    const date = new Date(start);
+    const dateKey = date.toDateString();
+    
+    if (!eventsByDate[dateKey]) {
+      eventsByDate[dateKey] = [];
+    }
+    
+    eventsByDate[dateKey].push(event);
+  });
+
+  Object.keys(eventsByDate)
+    .sort((a, b) => new Date(a) - new Date(b))
+    .forEach(dateKey => {
+      const dayHeader = document.createElement("div");
+      dayHeader.className = "event-day";
+      dayHeader.textContent = dateKey;
+      container.appendChild(dayHeader);
+
+      eventsByDate[dateKey]
+        .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date))
+        .forEach(event => {
+          const eventItem = document.createElement("div");
+          eventItem.className = "event-item";
+
+          const isAllDay = !!event.start.date;
+          const startTime = event.start.dateTime ? new Date(event.start.dateTime) : null;
+          const endTime = event.end.dateTime ? new Date(event.end.dateTime) : null;
+          
+          const timeContainer = document.createElement("div");
+          timeContainer.className = "event-time-container";
+          
+          const timeSpan = document.createElement("div");
+          timeSpan.className = "event-time";
+          
+          if (isAllDay) {
+            timeSpan.textContent = "All day";
+          } else if (startTime) {
+            timeSpan.textContent = startTime.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+          } else {
+            timeSpan.textContent = "Time TBD";
+          }
+          
+          timeContainer.appendChild(timeSpan);
+          
+          if (endTime && !isAllDay) {
+            const endTimeSpan = document.createElement("div");
+            endTimeSpan.className = "event-end-time";
+            endTimeSpan.textContent = endTime.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+            timeContainer.appendChild(endTimeSpan);
+          }
+          
+          const rightCol = document.createElement("div");
+          rightCol.className = "event-right";
+          
+          const titleSpan = document.createElement("div");
+          titleSpan.className = "event-title";
+          titleSpan.textContent = event.summary || "(No title)";
+          rightCol.appendChild(titleSpan);
+          
+          const metaRow = document.createElement("div");
+          metaRow.className = "event-meta-row";
+                   
+          if (event.location) {
+            const locationDiv = document.createElement("div");
+            locationDiv.className = "event-location";
+            locationDiv.textContent = event.location;
+            metaRow.appendChild(locationDiv);
+          }
+          
+          rightCol.appendChild(metaRow);
+          
+          eventItem.appendChild(timeContainer);
+          eventItem.appendChild(rightCol);          
+          container.appendChild(eventItem);
+        });
+    });
+}
+
+// ===== AUTO REFRESH =====
+function startAutoRefresh() {
+  console.log("Starting auto-refresh (every 30 minutes)");
+  
+  // Clear any existing interval first
+  stopAutoRefresh();
+  
+  // Load events immediately
+  loadCalendarEvents();
+  
+  // Set up the interval
+  calendarRefreshInterval = setInterval(() => {
+    console.log("Auto-refreshing calendar events...");
+    loadCalendarEvents();
+  }, 30 * 60 * 1000); // 30 minutes
+  
+  // Start a gentle token monitor (only for page visibility changes)
+  startGentleTokenMonitor();
+}
+
+// ===== GENTLE TOKEN MONITOR =====
+function startGentleTokenMonitor() {
+  console.log("Starting gentle token monitor...");
+  
+  // Clear any existing monitor
+  if (window.tokenMonitorInterval) {
+    clearInterval(window.tokenMonitorInterval);
+  }
+  
+  // Only monitor on page visibility changes
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      console.log("Page became visible, checking token...");
+      checkTokenOnVisibility();
+    }
+  });
+  
+  // Also check every 2 hours (instead of every 5 minutes)
+  window.tokenMonitorInterval = setInterval(() => {
+    checkTokenQuietly();
+  }, 2 * 60 * 60 * 1000); // 2 hours
+}
+
+function checkTokenOnVisibility() {
+  const token = gapi.client.getToken();
+  
+  if (!token || !token.access_token) {
+    console.log("No active token, checking saved token...");
+    const savedToken = localStorage.getItem(TOKEN_KEY);
+    
+    if (savedToken) {
+      try {
+        const parsedToken = JSON.parse(savedToken);
+        const now = Date.now();
+        
+        // Only restore if token has more than 10 minutes left
+        if (parsedToken.expires_at && (parsedToken.expires_at - now) > 10 * 60 * 1000) {
+          console.log("Restoring token from storage");
+          gapi.client.setToken(parsedToken);
+        }
+      } catch (e) {
+        console.error("Error checking saved token:", e);
+      }
+    }
+  }
+}
+
+function checkTokenQuietly() {
+  const token = gapi.client.getToken();
+  
+  if (!token || !token.access_token) {
+    console.log("No active token in quiet check");
     return;
   }
   
-  let html = "";
-  let lastDate = "";
+  // Check if token will expire in the next 30 minutes
+  const now = Date.now();
+  const tokenAge = now - (token.issue_time || now);
+  const expiresIn = (token.expires_in || 3600) * 1000;
+  const timeUntilExpiry = expiresIn - tokenAge;
   
-  events.forEach(event => {
-    const start = new Date(event.start.dateTime || event.start.date);
-    const end = new Date(event.end.dateTime || event.end.date);
+  console.log(`Token expires in ${Math.round(timeUntilExpiry / 60000)} minutes`);
+  
+  // If token expires in less than 30 minutes, gently prompt user
+  if (timeUntilExpiry < 30 * 60 * 1000) {
+    console.log("Token expiring soon, showing gentle reminder");
+    document.getElementById("auth-status").textContent = "Session will expire soon. Please refresh the page.";
+  }
+}
+
+// ===== VOICE ALERTS =====
+function setupVoiceAlertsButton() {
+  const voiceBtn = document.getElementById("enable-voice");
+  if (!voiceBtn) return;
+  
+  voiceBtn.onclick = function() {
+    console.log("Enable voice alerts button clicked");
     
-    const dateStr = start.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric'
-    });
-    
-    const timeStr = start.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    const endTimeStr = end.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    if (dateStr !== lastDate) {
-      html += `<div class="event-day">${dateStr}</div>`;
-      lastDate = dateStr;
+    const savedEvents = localStorage.getItem('calendarEvents');
+    if (!savedEvents) {
+      console.error("No events found in localStorage");
+      document.getElementById("auth-status").textContent = "No events to enable alerts for";
+      return;
     }
     
-    html += `
-      <div class="event-item">
-        <div class="event-time-container">
-          <div class="event-time">${timeStr}</div>
-          <div class="event-end-time">until ${endTimeStr}</div>
-        </div>
-        <div class="event-right">
-          <div class="event-title">${event.summary || 'No title'}</div>
-          ${event.location ? `<div class="event-location">📍 ${event.location}</div>` : ''}
-        </div>
-      </div>
-    `;
-  });
+    try {
+      const events = JSON.parse(savedEvents);
+      console.log(`Enabling voice alerts for ${events.length} events`);
+      
+      scheduleVoiceReminders(events);
+      voiceBtn.style.display = "none";
+      document.getElementById("auth-status").textContent = "Voice alerts enabled!";
+      
+    } catch (error) {
+      console.error("Error parsing events:", error);
+      document.getElementById("auth-status").textContent = "Error enabling voice alerts";
+    }
+  };
   
-  container.innerHTML = html;
+  console.log("Voice alerts button setup complete");
+}
+
+// ===== VOICE REMINDERS =====
+function checkVoiceEnabledForToday() {
+  const savedDate = localStorage.getItem('voiceEnabledDate');
+  const today = new Date().toDateString();
+  
+  if (savedDate === today) {
+    voiceEnabled = true;
+    voiceEnabledDate = today;
+    document.getElementById("enable-voice").style.display = "none";
+    console.log("Voice alerts already enabled for today");
+  } else {
+    voiceEnabled = false;
+    voiceEnabledDate = null;
+    document.getElementById("enable-voice").style.display = "inline-block";
+    document.getElementById("enable-voice").textContent = "Enable voice alerts";
+  }
+}
+
+function scheduleVoiceReminders(events) {
+  console.log("Scheduling voice reminders for", events.length, "events");
+  
+  if (!("speechSynthesis" in window)) {
+    alert("Your browser doesn't support voice synthesis");
+    return;
+  }
+  
+  const today = new Date().toDateString();
+  localStorage.setItem('voiceEnabledDate', today);
+  voiceEnabled = true;
+  voiceEnabledDate = today;
+  
+  document.getElementById("enable-voice").style.display = "none";
+  
+  if (reminderCheckInterval) {
+    clearInterval(reminderCheckInterval);
+    spokenEvents.clear();
+  }
+  
+  reminderCheckInterval = setInterval(() => checkReminders(events), 10000);
+  checkReminders(events);
+}
+
+function checkReminders(events) {
+  const now = new Date();
+  const nowMs = now.getTime();
+  
+  events.forEach(event => {
+    if (!event.start || !event.start.dateTime) return;
+    
+    const eventStart = new Date(event.start.dateTime);
+    const eventStartMs = eventStart.getTime();
+    const eventId = event.id || event.summary;
+    const minutesUntilEvent = (eventStartMs - nowMs) / (60 * 1000);
+    
+    if (minutesUntilEvent <= 30 && minutesUntilEvent > 29.5) {
+      const reminderKey = `${eventId}_30min`;
+      if (!spokenEvents.has(reminderKey)) {
+        console.log(`Triggering 30-min reminder for: ${event.summary}`);
+        prespeakReminder(event, 30);
+        spokenEvents.add(reminderKey);
+      }
+    }
+    
+    if (minutesUntilEvent <= 15 && minutesUntilEvent > 14.5) {
+      const reminderKey = `${eventId}_15min`;
+      if (!spokenEvents.has(reminderKey)) {
+        console.log(`Triggering 15-min reminder for: ${event.summary}`);
+        prespeakReminder(event, 15);
+        spokenEvents.add(reminderKey);
+      }
+    }
+
+    if (minutesUntilEvent <= -15 && minutesUntilExpiry > -15.5) {
+      const reminderKey = `${eventId}_15min`;
+      if (!spokenEvents.has(reminderKey)) {
+        console.log(`Triggering 15-min post reminder for: ${event.summary}`);
+        postspeakReminder(event, 15);
+        spokenEvents.add(reminderKey);
+      }
+    }
+  });
+}
+
+function prespeakReminder(event, minutesBefore) {
+  console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
+  const message = `Hey Spade family you have got: "${event.summary || "Event"}" starts in ${minutesBefore} minutes.`;
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 0.8;
+  utterance.pitch = 0.9;
+  utterance.volume = 1.0;
+  
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+  }, 50);
+}
+
+function postspeakReminder(event, minutesBefore) {
+  console.log(`Speaking ${minutesBefore}-min reminder:`, event.summary);
+  const message = `Hey Spade family you missed: "${event.summary || "Event"}" happened ago ${minutesBefore} minutes.`;
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+  }, 50);
+}
+
+function stopVoiceReminders() {
+  if (reminderCheckInterval) {
+    clearInterval(reminderCheckInterval);
+    reminderCheckInterval = null;
+    spokenEvents.clear();
+    console.log("Stopped voice reminders");
+  }
 }
   
 // ===== WEATHER =====
@@ -2813,22 +3135,9 @@ function initTradingViewWidget() {
 }
 
 // ===== INITIALIZATION =====
+// ===== INITIALIZATION =====
 window.addEventListener('load', () => {
   console.log("Page loaded, initializing...");
-  
-  // Set initial button state
-  const signInBtn = document.getElementById("sign-in");
-  const authStatus = document.getElementById("auth-status");
-  
-  if (signInBtn) {
-    signInBtn.textContent = "Initializing...";
-    signInBtn.disabled = true;
-    signInBtn.style.display = "inline-block";
-  }
-  
-  if (authStatus) {
-    authStatus.textContent = "Loading dashboard...";
-  }
   
   // Initialize basic components
   loadWeather();
@@ -2853,6 +3162,7 @@ window.addEventListener('load', () => {
     try {
       const events = JSON.parse(savedEvents);
       renderEvents(events);
+      checkVoiceEnabledForToday();
     } catch (e) {
       console.error("Error loading cached events:", e);
     }
@@ -2913,6 +3223,7 @@ console.log("Dashboard fully loaded!");
 </script>
 </body>
 </html>
+
 
 
 
