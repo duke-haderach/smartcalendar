@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>macOS Wall Dashboard - Fire HD 8</title>
+<title>macOS Wall Dashboard - Portrait (Fire HD 8)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <!-- Google APIs -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
+<!-- TradingView Widget Script -->
+<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async></script>
 <style>
-/* ===== MACOS UI SYSTEM FOR FIRE HD 8 ===== */
+/* ===== MACOS PORTRAIT UI SYSTEM FOR FIRE HD 8 (800x1280) ===== */
 html, body {
   margin: 0;
   padding: 0;
@@ -28,32 +30,32 @@ body {
   background-repeat: no-repeat;
 }
 
-/* macOS Desktop Grid */
+/* Portrait Layout Grid: 2 Equal Columns or Stacked Split */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: brightness(0.9);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: brightness(0.85);
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 14px;
-  padding: 14px;
+  grid-template-columns: 1fr 1fr; /* Two vertical columns for portrait tablet */
+  gap: 12px;
+  padding: 12px;
   box-sizing: border-box;
 }
 
 /* macOS Frosted Glass Window Panel */
 .macos-panel {
-  background: rgba(30, 30, 30, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(30, 30, 30, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 14px;
-  padding: 16px;
+  padding: 14px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* macOS Window Header dots */
@@ -61,19 +63,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .window-dots {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
 }
 .dot-red { background: #ff5f56; }
@@ -81,31 +83,32 @@ body {
 .dot-green { background: #27c93f; }
 
 .panel-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ===== LEFT COLUMN ===== */
-.left-panel {
+/* ===== LEFT COLUMN: Clock, Weather, Markets ===== */
+.column-left {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   height: 100%;
   min-width: 0;
 }
 
-/* Clock & Thought Panel */
-.clock-thought-panel {
+/* Clock Panel */
+.clock-panel {
   flex: 0 0 auto;
   align-items: center;
   text-align: center;
+  padding: 12px;
 }
 
 #clock {
-  font-size: 42px;
+  font-size: 38px;
   font-weight: 700;
   letter-spacing: -1px;
   line-height: 1.1;
@@ -113,21 +116,105 @@ body {
 }
 
 #date {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
   margin-top: 2px;
-  margin-bottom: 12px;
   font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Weather Panel */
+.weather-panel {
+  flex: 1.2;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#weather-current {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#weather-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.weather-day {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.weather-name {
+  font-weight: 600;
+  width: 60px;
+}
+
+.weather-temp {
+  font-weight: 700;
+  color: #30d158;
+  white-space: nowrap;
+}
+
+.weather-desc {
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+  font-size: 10px;
+  flex: 1;
+  padding-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Markets / Stock Panel */
+.stock-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 10px;
+}
+
+#tradingview-widget-container {
+  width: 100%;
+  height: 100%;
+}
+
+
+/* ===== RIGHT COLUMN: Quotes & Calendars (More space requested) ===== */
+.column-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-width: 0;
+}
+
+/* Expanded Thought for the Day Panel */
+.thought-panel {
+  flex: 1.3;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 #thought-container {
   width: 100%;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px;
   box-sizing: border-box;
   text-align: left;
+  margin-top: 4px;
 }
 
 .thought-label {
@@ -135,24 +222,20 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #30d158; /* macOS Green */
-  margin-bottom: 4px;
+  color: #30d158;
+  margin-bottom: 6px;
 }
 
 #thought-text {
-  font-size: 12px;
-  line-height: 1.4;
-  color: #e5e5ea;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #f0f0f0;
   font-style: italic;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-/* Events Panel */
+/* Calendar & Reminders Panel */
 .events-panel {
-  flex: 1;
+  flex: 1.7;
   min-height: 0;
 }
 
@@ -160,17 +243,17 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 #auth-status {
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .macos-btn {
-  padding: 5px 12px;
-  font-size: 11px;
+  padding: 4px 10px;
+  font-size: 10px;
   font-weight: 600;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -204,35 +287,35 @@ body {
 }
 
 .event-day {
-  margin-top: 10px;
+  margin-top: 8px;
   margin-bottom: 4px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   color: #30d158;
   letter-spacing: 0.3px;
 }
 
 .event-item {
-  margin-bottom: 6px;
-  padding: 8px 10px;
+  margin-bottom: 5px;
+  padding: 7px 9px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
 }
 
 .event-time-container {
   display: flex;
   flex-direction: column;
-  min-width: 70px;
+  min-width: 65px;
 }
 
 .event-time {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
   color: #fff;
 }
 
@@ -250,146 +333,86 @@ body {
 
 .event-location {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.6);
   margin-top: 2px;
-}
-
-/* ===== RIGHT COLUMN ===== */
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  height: 100%;
-  min-width: 0;
-}
-
-#weather-panel {
-  flex: 1.2;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-#weather-current {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-#weather-forecast {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.weather-day {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  font-size: 11px;
-}
-
-.weather-name {
-  font-weight: 600;
-  width: 65px;
-}
-
-.weather-temp {
-  font-weight: 700;
-  color: #30d158;
-  white-space: nowrap;
-}
-
-.weather-desc {
-  color: rgba(255, 255, 255, 0.7);
-  text-align: right;
-  font-size: 11px;
-  flex: 1;
-  padding-left: 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#stock-panel {
-  flex: 1;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-#tradingview-widget {
-  width: 100%;
-  height: 100%;
 }
 </style>
 </head>
 <body>
 <div class="overlay">
-  <!-- LEFT COLUMN -->
-  <div class="left-panel">
-    <!-- Clock & Thought Panel -->
-    <div class="macos-panel clock-thought-panel">
+  <!-- COLUMN LEFT: Clock, Weather, Markets -->
+  <div class="column-left">
+    <!-- Clock Panel -->
+    <div class="macos-panel clock-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">System Clock & Thought</div>
-        <div style="width: 34px;"></div>
+        <div class="panel-title">Clock</div>
+        <div style="width: 30px;"></div>
       </div>
       <div id="clock">--:-- --</div>
       <div id="date">Loading date…</div>
-      <div id="thought-container">
-        <div class="thought-label" id="thought-title">Napoleon Hill's Thought for the Day</div>
-        <div id="thought-text">Fetching today's wisdom from cloud...</div>
-      </div>
     </div>
-    
-    <!-- Calendar Events Panel -->
-    <div class="macos-panel events-panel">
-      <div class="macos-header">
-        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Calendar & Reminders</div>
-        <div style="width: 34px;"></div>
-      </div>
-      <div class="auth-bar">
-        <span id="auth-status">Initializing...</span>
-        <div>
-          <button id="sign-in" class="macos-btn" disabled>Sign In</button>
-          <button id="enable-voice" class="macos-btn">Voice</button>
-        </div>
-      </div>
-      <div id="events-container">
-        <div id="events"></div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- RIGHT COLUMN -->
-  <div class="right-panel">
+
     <!-- Weather Panel -->
-    <div class="macos-panel" id="weather-panel">
+    <div class="macos-panel weather-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Weather & Forecast (°C / °F)</div>
-        <div style="width: 34px;"></div>
+        <div class="panel-title">Weather (°C / °F)</div>
+        <div style="width: 30px;"></div>
       </div>
       <div id="weather-current">Loading weather…</div>
       <div id="weather-forecast"></div>
     </div>
 
-    <!-- Stock Panel -->
-    <div class="macos-panel" id="stock-panel">
-      <div class="macos-header" style="padding: 10px 14px 6px 14px; margin-bottom: 4px;">
+    <!-- Markets / Stock Panel -->
+    <div class="macos-panel stock-panel">
+      <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Markets</div>
-        <div style="width: 34px;"></div>
+        <div style="width: 30px;"></div>
       </div>
-      <div id="tradingview-widget" style="flex:1;"></div>
+      <div id="tradingview-widget-container">
+        <!-- TradingView Mini Symbol Overview Widget -->
+        <div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- COLUMN RIGHT: Quotes & Calendar/Reminders -->
+  <div class="column-right">
+    <!-- Expanded Thought for the Day Panel -->
+    <div class="macos-panel thought-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Thought for the Day</div>
+        <div style="width: 30px;"></div>
+      </div>
+      <div id="thought-container">
+        <div class="thought-label" id="thought-title">Napoleon Hill</div>
+        <div id="thought-text">Fetching today's wisdom...</div>
+      </div>
+    </div>
+
+    <!-- Calendar Events & Reminders Panel -->
+    <div class="macos-panel events-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Calendar & Reminders</div>
+        <div style="width: 30px;"></div>
+      </div>
+      <div class="auth-bar">
+        <span id="auth-status">Ready to connect</span>
+        <div>
+          <button id="sign-in" class="macos-btn">Sign In</button>
+          <button id="enable-voice" class="macos-btn">Voice</button>
+        </div>
+      </div>
+      <div id="events-container">
+        <div id="events">
+          <div style="padding: 10px; opacity: 0.7; font-size: 11px;">Click 'Sign In' above to load your Google Calendar events.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -505,7 +528,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 fetchAndDisplayTodayThought();
-setInterval(fetchAndDisplayTodayThought, 60 * 60 * 1000);
 
 // ===== DUAL TEMPERATURE FORMATTER (°C & °F) =====
 function formatTempDual(tempC) {
@@ -514,6 +536,45 @@ function formatTempDual(tempC) {
   const f = Math.round((tempC * 9/5) + 32);
   return `${c}°C / ${f}°F`;
 }
+
+// ===== MOCK WEATHER INIT (Ensures no infinite loading) =====
+function initWeather() {
+  // Fallback demo weather render so it never hangs on "Loading..."
+  document.getElementById("weather-current").innerHTML = `<span>Today</span> <span>${formatTempDual(21)} ☀️</span>`;
+  const forecastEl = document.getElementById("weather-forecast");
+  forecastEl.innerHTML = `
+    <div class="weather-day"><span class="weather-name">Tomorrow</span><span class="weather-temp">${formatTempDual(23)}</span><span class="weather-desc">Sunny & Clear</span></div>
+    <div class="weather-day"><span class="weather-name">Wednesday</span><span class="weather-temp">${formatTempDual(19)}</span><span class="weather-desc">Partly Cloudy</span></div>
+    <div class="weather-day"><span class="weather-name">Thursday</span><span class="weather-temp">${formatTempDual(18)}</span><span class="weather-desc">Light Showers</span></div>
+  `;
+}
+initWeather();
+
+// ===== TRADINGVIEW MARKETS WIDGET INIT =====
+function initTradingView() {
+  const container = document.getElementById("tradingview-widget-container");
+  if (container) {
+    container.innerHTML = `
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {
+        "symbol": "SP:SPX",
+        "width": "100%",
+        "height": "100%",
+        "locale": "en",
+        "dateRange": "1D",
+        "colorTheme": "dark",
+        "trendLineColor": "#30d158",
+        "underLineColor": "rgba(48, 209, 88, 0.2)",
+        "underLineColorBottom": "rgba(48, 209, 88, 0.0)",
+        "isTransparent": true,
+        "autosize": true,
+        "largeChartUrl": ""
+      }
+      <\/script>
+    `;
+  }
+}
+initTradingView();
 </script>
 </body>
 </html>
