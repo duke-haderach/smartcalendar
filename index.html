@@ -4,9 +4,8 @@
 <meta charset="UTF-8" />
 <title>macOS Wall Dashboard - Portrait (Fire HD 8)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<!-- Google Identity Services (GSI) Client Library -->
+<!-- Google Identity Services & API Client Library -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- Google API Client Library -->
 <script src="https://apis.google.com/js/api.js"></script>
 <style>
 /* ===== MACOS PORTRAIT UI SYSTEM FOR FIRE HD 8 (800x1280) ===== */
@@ -33,7 +32,7 @@ body {
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: brightness(0.85);
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -44,7 +43,7 @@ body {
 
 /* macOS Frosted Glass Window Panel */
 .macos-panel {
-  background: rgba(30, 30, 30, 0.68);
+  background: rgba(30, 30, 30, 0.72);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -185,10 +184,10 @@ body {
 #weather-hourly {
   margin-top: 6px;
   font-size: 11px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 6px;
-  padding: 6px;
-  max-height: 180px;
+  padding: 8px;
+  max-height: 160px;
   overflow-y: auto;
   display: none;
 }
@@ -196,12 +195,12 @@ body {
 .hourly-row {
   display: flex;
   justify-content: space-between;
-  padding: 3px 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .hourly-row:last-child { border-bottom: none; }
 
-/* Markets / Stock Panel */
+/* Markets / Stock Panel (SPY Real-Time) */
 .stock-panel {
   flex: 1;
   min-height: 0;
@@ -214,7 +213,7 @@ body {
 }
 
 
-/* ===== RIGHT COLUMN: Expanded Quotes & Calendars ===== */
+/* ===== RIGHT COLUMN: Large Quotes & Clickable Calendars ===== */
 .column-right {
   display: flex;
   flex-direction: column;
@@ -223,9 +222,9 @@ body {
   min-width: 0;
 }
 
-/* Expanded Thought for the Day Panel (Made Big & Filling Tile) */
+/* Expanded Thought for the Day Panel (Large, Filling Tile) */
 .thought-panel {
-  flex: 1.4;
+  flex: 1.3;
   min-height: 0;
   overflow-y: auto;
 }
@@ -236,7 +235,7 @@ body {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 14px;
+  padding: 16px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -250,20 +249,20 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #30d158;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 #thought-text {
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.6;
   color: #ffffff;
   font-style: italic;
   font-weight: 400;
 }
 
-/* Calendar & Reminders Panel */
+/* Calendar & Reminders Panel (7-Day View & Clickable Details) */
 .events-panel {
-  flex: 1.6;
+  flex: 1.7;
   min-height: 0;
 }
 
@@ -302,6 +301,72 @@ body {
   padding-right: 2px;
 }
 
+/* Event Item (Larger Font & Clickable) */
+.event-item {
+  margin-bottom: 6px;
+  padding: 9px 11px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.event-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.event-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.event-time-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 75px;
+}
+
+.event-time {
+  font-weight: 600;
+  font-size: 12px;
+  color: #30d158;
+}
+
+.event-end-time {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.event-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.event-location {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 3px;
+}
+
+/* Clickable Details Drawer */
+#event-detail-drawer {
+  margin-top: 6px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  border-left: 3px solid #30d158;
+  display: none;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
@@ -312,58 +377,6 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.25);
   border-radius: 4px;
-}
-
-.event-day {
-  margin-top: 8px;
-  margin-bottom: 4px;
-  font-weight: 700;
-  font-size: 11px;
-  color: #30d158;
-  letter-spacing: 0.3px;
-}
-
-.event-item {
-  margin-bottom: 5px;
-  padding: 7px 9px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.event-time-container {
-  display: flex;
-  flex-direction: column;
-  min-width: 65px;
-}
-
-.event-time {
-  font-weight: 600;
-  font-size: 10px;
-  color: #fff;
-}
-
-.event-end-time {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.event-title {
-  flex: 1;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.event-location {
-  display: block;
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 2px;
 }
 </style>
 </head>
@@ -394,21 +407,21 @@ body {
       <div id="weather-hourly"></div>
     </div>
 
-    <!-- Markets / Stock Panel -->
+    <!-- Markets / Stock Panel (SPY Real-Time) -->
     <div class="macos-panel stock-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Markets</div>
+        <div class="panel-title">Markets (SPY Real-Time)</div>
         <div style="width: 30px;"></div>
       </div>
       <div id="tradingview-widget-container">
-        <!-- TradingView Widget Embed -->
-        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22SP%3ASPX%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
+        <!-- TradingView SPY Real-Time Embed Widget -->
+        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22AMEX%3ASPY%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
       </div>
     </div>
   </div>
   
-  <!-- COLUMN RIGHT: Expanded Quotes & Calendar/Reminders -->
+  <!-- COLUMN RIGHT: Large Quotes & Clickable 7-Day Calendar -->
   <div class="column-right">
     <!-- Expanded Thought for the Day Panel -->
     <div class="macos-panel thought-panel">
@@ -423,11 +436,11 @@ body {
       </div>
     </div>
 
-    <!-- Calendar Events & Reminders Panel -->
+    <!-- Calendar Events & Reminders Panel (7-Day View) -->
     <div class="macos-panel events-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Calendar & Reminders</div>
+        <div class="panel-title">Calendar & Reminders (7-Day View)</div>
         <div style="width: 30px;"></div>
       </div>
       <div class="auth-bar">
@@ -442,6 +455,7 @@ body {
           <div style="padding: 10px; opacity: 0.7; font-size: 11px;">Click 'Sign In' above to load your Google Calendar events.</div>
         </div>
       </div>
+      <div id="event-detail-drawer">Select an event above to view full details.</div>
     </div>
   </div>
 </div>
@@ -565,13 +579,30 @@ function formatTempDual(tempC) {
   return `${c}°C / ${f}°F`;
 }
 
-// ===== INTERACTIVE WEATHER WITH HOURLY FORECAST =====
+// ===== FULL 24-HOUR HOURLY WEATHER FORECAST (Starting from current hour) =====
 const mockForecastData = [
-  { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: [ {time: "Now", temp: 21}, {time: "1 PM", temp: 22}, {time: "2 PM", temp: 23}, {time: "3 PM", temp: 23}, {time: "4 PM", temp: 21}, {time: "5 PM", temp: 19}, {time: "6 PM", temp: 18} ] },
-  { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: [ {time: "8 AM", temp: 15}, {time: "10 AM", temp: 18}, {time: "12 PM", temp: 21}, {time: "2 PM", temp: 23}, {time: "4 PM", temp: 22}, {time: "6 PM", temp: 19} ] },
-  { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: [ {time: "8 AM", temp: 14}, {time: "10 AM", temp: 16}, {time: "12 PM", temp: 18}, {time: "2 PM", temp: 19}, {time: "4 PM", temp: 18}, {time: "6 PM", temp: 16} ] },
-  { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: [ {time: "8 AM", temp: 13}, {time: "10 AM", temp: 15}, {time: "12 PM", temp: 17}, {time: "2 PM", temp: 18}, {time: "4 PM", temp: 16}, {time: "6 PM", temp: 14} ] }
+  { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generate24HourHourly(21) },
+  { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generate24HourHourly(23) },
+  { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: generate24HourHourly(19) },
+  { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: generate24HourHourly(18) },
+  { name: "Friday", tempC: 20, desc: "Clear Skies", hourly: generate24HourHourly(20) },
+  { name: "Saturday", tempC: 22, desc: "Warm & Sunny", hourly: generate24HourHourly(22) },
+  { name: "Sunday", tempC: 17, desc: "Breezy", hourly: generate24HourHourly(17) }
 ];
+
+function generate24HourHourly(baseTemp) {
+  const hours = [];
+  const currentHour = new Date().getHours();
+  for (let i = 0; i < 24; i++) {
+    const hr = (currentHour + i) % 24;
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
+    // fluctuate temp slightly based on hour
+    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
+    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
+  }
+  return hours;
+}
 
 function initWeather() {
   document.getElementById("weather-current").innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
@@ -595,7 +626,7 @@ function showHourlyDetail(dayIndex) {
   const dayData = mockForecastData[dayIndex];
   const hourlyContainer = document.getElementById("weather-hourly");
   
-  let html = `<div style="font-weight:600; margin-bottom:4px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
+  let html = `<div style="font-weight:600; margin-bottom:6px; color:#30d158;">24-Hour Forecast for ${dayData.name} (starting from now):</div>`;
   dayData.hourly.forEach(h => {
     html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
   });
@@ -606,7 +637,7 @@ function showHourlyDetail(dayIndex) {
 
 initWeather();
 
-// ===== MODERN GOOGLE CALENDAR AUTH & FETCH (Using GIS token client) ==================
+// ===== GOOGLE CALENDAR AUTH & FETCH (7-Day View & Clickable Details) ==================
 let tokenClient;
 let gapiInited = false;
 let gsisInited = false;
@@ -628,7 +659,7 @@ function gisLoaded() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
-    callback: '', // defined later
+    callback: '',
   });
   gsisInited = true;
   maybeEnableSignIn();
@@ -660,12 +691,17 @@ document.getElementById('sign-in').onclick = () => {
 
 async function listUpcomingEvents() {
   try {
+    const now = new Date();
+    const sevenDaysLater = new Date();
+    sevenDaysLater.setDate(now.getDate() + 7);
+
     const response = await gapi.client.calendar.events.list({
       'calendarId': CALENDAR_ID,
-      'timeMin': (new Date()).toISOString(),
+      'timeMin': now.toISOString(),
+      'timeMax': sevenDaysLater.toISOString(),
       'showDeleted': false,
       'singleEvents': true,
-      'maxResults': 10,
+      'maxResults': 25,
       'orderBy': 'startTime',
     });
     const events = response.result.items;
@@ -673,7 +709,7 @@ async function listUpcomingEvents() {
     eventsEl.innerHTML = '';
     
     if (!events || events.length === 0) {
-      eventsEl.innerHTML = '<div style="padding:10px; font-size:11px; opacity:0.7;">No upcoming events found.</div>';
+      eventsEl.innerHTML = '<div style="padding:10px; font-size:11px; opacity:0.7;">No upcoming events in the next 7 days.</div>';
       return;
     }
     
@@ -682,16 +718,33 @@ async function listUpcomingEvents() {
       const startDate = new Date(start);
       const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      const location = event.location ? event.location : 'No location specified';
       
       const div = document.createElement('div');
       div.className = 'event-item';
       div.innerHTML = `
-        <div class="event-time-container">
-          <span class="event-time">${dayStr}</span>
-          <span class="event-end-time">${timeStr}</span>
+        <div class="event-header-row">
+          <div class="event-time-container">
+            <span class="event-time">${dayStr}</span>
+            <span class="event-end-time">${timeStr}</span>
+          </div>
+          <div class="event-title">${event.summary}</div>
         </div>
-        <div class="event-title">${event.summary}</div>
+        <div class="event-location">📍 ${location}</div>
       `;
+      
+      // Clickable cell to open details drawer below
+      div.onclick = () => {
+        const drawer = document.getElementById('event-detail-drawer');
+        drawer.style.display = 'block';
+        drawer.innerHTML = `
+          <strong style="color:#30d158; font-size:12px;">${event.summary}</strong><br>
+          <strong>Time:</strong> ${startDate.toLocaleString()}<br>
+          <strong>Location:</strong> ${location}<br>
+          <strong>Description:</strong> ${event.description || 'None provided'}
+        `;
+      };
+
       eventsEl.appendChild(div);
     });
   } catch (err) {
@@ -705,3 +758,4 @@ async function listUpcomingEvents() {
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
+
