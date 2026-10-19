@@ -4,11 +4,10 @@
 <meta charset="UTF-8" />
 <title>macOS Wall Dashboard - Portrait (Fire HD 8)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<!-- Google APIs -->
+<!-- Google Identity Services (GSI) Client Library -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Google API Client Library -->
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
-<!-- TradingView Widget Script -->
-<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async></script>
 <style>
 /* ===== MACOS PORTRAIT UI SYSTEM FOR FIRE HD 8 (800x1280) ===== */
 html, body {
@@ -30,14 +29,14 @@ body {
   background-repeat: no-repeat;
 }
 
-/* Portrait Layout Grid: 2 Equal Columns or Stacked Split */
+/* Portrait Layout Grid: 2 Vertical Columns */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   backdrop-filter: brightness(0.85);
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Two vertical columns for portrait tablet */
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 12px;
   box-sizing: border-box;
@@ -45,7 +44,7 @@ body {
 
 /* macOS Frosted Glass Window Panel */
 .macos-panel {
-  background: rgba(30, 30, 30, 0.65);
+  background: rgba(30, 30, 30, 0.68);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -108,7 +107,7 @@ body {
 }
 
 #clock {
-  font-size: 38px;
+  font-size: 40px;
   font-weight: 700;
   letter-spacing: -1px;
   line-height: 1.1;
@@ -118,7 +117,7 @@ body {
 #date {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
-  margin-top: 2px;
+  margin-top: 4px;
   font-weight: 500;
   text-transform: uppercase;
 }
@@ -131,7 +130,7 @@ body {
 }
 
 #weather-current {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   margin-bottom: 6px;
   display: flex;
@@ -149,10 +148,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 8px;
+  padding: 6px 8px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 6px;
   font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.weather-day:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .weather-name {
@@ -177,6 +182,25 @@ body {
   white-space: nowrap;
 }
 
+#weather-hourly {
+  margin-top: 6px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  display: none;
+}
+
+.hourly-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.hourly-row:last-child { border-bottom: none; }
+
 /* Markets / Stock Panel */
 .stock-panel {
   flex: 1;
@@ -190,7 +214,7 @@ body {
 }
 
 
-/* ===== RIGHT COLUMN: Quotes & Calendars (More space requested) ===== */
+/* ===== RIGHT COLUMN: Expanded Quotes & Calendars ===== */
 .column-right {
   display: flex;
   flex-direction: column;
@@ -199,43 +223,47 @@ body {
   min-width: 0;
 }
 
-/* Expanded Thought for the Day Panel */
+/* Expanded Thought for the Day Panel (Made Big & Filling Tile) */
 .thought-panel {
-  flex: 1.3;
+  flex: 1.4;
   min-height: 0;
   overflow-y: auto;
 }
 
 #thought-container {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  height: calc(100% - 24px);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 12px;
+  padding: 14px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   text-align: left;
-  margin-top: 4px;
 }
 
 .thought-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   color: #30d158;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 #thought-text {
-  font-size: 13px;
-  line-height: 1.5;
-  color: #f0f0f0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #ffffff;
   font-style: italic;
+  font-weight: 400;
 }
 
 /* Calendar & Reminders Panel */
 .events-panel {
-  flex: 1.7;
+  flex: 1.6;
   min-height: 0;
 }
 
@@ -363,6 +391,7 @@ body {
       </div>
       <div id="weather-current">Loading weather…</div>
       <div id="weather-forecast"></div>
+      <div id="weather-hourly"></div>
     </div>
 
     <!-- Markets / Stock Panel -->
@@ -373,13 +402,13 @@ body {
         <div style="width: 30px;"></div>
       </div>
       <div id="tradingview-widget-container">
-        <!-- TradingView Mini Symbol Overview Widget -->
-        <div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>
+        <!-- TradingView Widget Embed -->
+        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22SP%3ASPX%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
       </div>
     </div>
   </div>
   
-  <!-- COLUMN RIGHT: Quotes & Calendar/Reminders -->
+  <!-- COLUMN RIGHT: Expanded Quotes & Calendar/Reminders -->
   <div class="column-right">
     <!-- Expanded Thought for the Day Panel -->
     <div class="macos-panel thought-panel">
@@ -424,7 +453,6 @@ const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
 const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
 
-// Published Google Sheet CSV URL for Thoughts
 const QUOTES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREcumm4p5A9G-506IZdhpDsBHZtbeHLiVMVbZJHLGFs6kkl3QPamiaOGmx1U8MADueTO-45bipj-wv/pub?output=csv";
 
 // CSV Parser
@@ -537,44 +565,143 @@ function formatTempDual(tempC) {
   return `${c}°C / ${f}°F`;
 }
 
-// ===== MOCK WEATHER INIT (Ensures no infinite loading) =====
+// ===== INTERACTIVE WEATHER WITH HOURLY FORECAST =====
+const mockForecastData = [
+  { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: [ {time: "Now", temp: 21}, {time: "1 PM", temp: 22}, {time: "2 PM", temp: 23}, {time: "3 PM", temp: 23}, {time: "4 PM", temp: 21}, {time: "5 PM", temp: 19}, {time: "6 PM", temp: 18} ] },
+  { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: [ {time: "8 AM", temp: 15}, {time: "10 AM", temp: 18}, {time: "12 PM", temp: 21}, {time: "2 PM", temp: 23}, {time: "4 PM", temp: 22}, {time: "6 PM", temp: 19} ] },
+  { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: [ {time: "8 AM", temp: 14}, {time: "10 AM", temp: 16}, {time: "12 PM", temp: 18}, {time: "2 PM", temp: 19}, {time: "4 PM", temp: 18}, {time: "6 PM", temp: 16} ] },
+  { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: [ {time: "8 AM", temp: 13}, {time: "10 AM", temp: 15}, {time: "12 PM", temp: 17}, {time: "2 PM", temp: 18}, {time: "4 PM", temp: 16}, {time: "6 PM", temp: 14} ] }
+];
+
 function initWeather() {
-  // Fallback demo weather render so it never hangs on "Loading..."
-  document.getElementById("weather-current").innerHTML = `<span>Today</span> <span>${formatTempDual(21)} ☀️</span>`;
-  const forecastEl = document.getElementById("weather-forecast");
-  forecastEl.innerHTML = `
-    <div class="weather-day"><span class="weather-name">Tomorrow</span><span class="weather-temp">${formatTempDual(23)}</span><span class="weather-desc">Sunny & Clear</span></div>
-    <div class="weather-day"><span class="weather-name">Wednesday</span><span class="weather-temp">${formatTempDual(19)}</span><span class="weather-desc">Partly Cloudy</span></div>
-    <div class="weather-day"><span class="weather-name">Thursday</span><span class="weather-temp">${formatTempDual(18)}</span><span class="weather-desc">Light Showers</span></div>
-  `;
+  document.getElementById("weather-current").innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
+  const forecastContainer = document.getElementById("weather-forecast");
+  forecastContainer.innerHTML = "";
+  
+  mockForecastData.forEach((day, index) => {
+    const dayDiv = document.createElement("div");
+    dayDiv.className = "weather-day";
+    dayDiv.innerHTML = `
+      <span class="weather-name">${day.name}</span>
+      <span class="weather-temp">${formatTempDual(day.tempC)}</span>
+      <span class="weather-desc">${day.desc}</span>
+    `;
+    dayDiv.onclick = () => showHourlyDetail(index);
+    forecastContainer.appendChild(dayDiv);
+  });
 }
+
+function showHourlyDetail(dayIndex) {
+  const dayData = mockForecastData[dayIndex];
+  const hourlyContainer = document.getElementById("weather-hourly");
+  
+  let html = `<div style="font-weight:600; margin-bottom:4px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
+  dayData.hourly.forEach(h => {
+    html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
+  });
+  
+  hourlyContainer.innerHTML = html;
+  hourlyContainer.style.display = "block";
+}
+
 initWeather();
 
-// ===== TRADINGVIEW MARKETS WIDGET INIT =====
-function initTradingView() {
-  const container = document.getElementById("tradingview-widget-container");
-  if (container) {
-    container.innerHTML = `
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {
-        "symbol": "SP:SPX",
-        "width": "100%",
-        "height": "100%",
-        "locale": "en",
-        "dateRange": "1D",
-        "colorTheme": "dark",
-        "trendLineColor": "#30d158",
-        "underLineColor": "rgba(48, 209, 88, 0.2)",
-        "underLineColorBottom": "rgba(48, 209, 88, 0.0)",
-        "isTransparent": true,
-        "autosize": true,
-        "largeChartUrl": ""
-      }
-      <\/script>
-    `;
+// ===== MODERN GOOGLE CALENDAR AUTH & FETCH (Using GIS token client) ==================
+let tokenClient;
+let gapiInited = false;
+let gsisInited = false;
+
+function gapiLoaded() {
+  gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+  await gapi.client.init({
+    apiKey: API_KEY,
+    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+  });
+  gapiInited = true;
+  maybeEnableSignIn();
+}
+
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: '', // defined later
+  });
+  gsisInited = true;
+  maybeEnableSignIn();
+}
+
+function maybeEnableSignIn() {
+  if (gapiInited && gsisInited) {
+    document.getElementById('sign-in').removeAttribute('disabled');
+    document.getElementById('auth-status').textContent = 'Signed out';
   }
 }
-initTradingView();
+
+document.getElementById('sign-in').onclick = () => {
+  tokenClient.callback = async (resp) => {
+    if (resp.error !== undefined) {
+      throw (resp);
+    }
+    document.getElementById('auth-status').textContent = 'Connected';
+    document.getElementById('sign-in').textContent = 'Refresh';
+    await listUpcomingEvents();
+  };
+
+  if (gapi.client.getToken() === null) {
+    tokenClient.requestAccessToken({prompt: 'consent'});
+  } else {
+    tokenClient.requestAccessToken({prompt: ''});
+  }
+};
+
+async function listUpcomingEvents() {
+  try {
+    const response = await gapi.client.calendar.events.list({
+      'calendarId': CALENDAR_ID,
+      'timeMin': (new Date()).toISOString(),
+      'showDeleted': false,
+      'singleEvents': true,
+      'maxResults': 10,
+      'orderBy': 'startTime',
+    });
+    const events = response.result.items;
+    const eventsEl = document.getElementById('events');
+    eventsEl.innerHTML = '';
+    
+    if (!events || events.length === 0) {
+      eventsEl.innerHTML = '<div style="padding:10px; font-size:11px; opacity:0.7;">No upcoming events found.</div>';
+      return;
+    }
+    
+    events.forEach(event => {
+      const start = event.start.dateTime || event.start.date;
+      const startDate = new Date(start);
+      const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      
+      const div = document.createElement('div');
+      div.className = 'event-item';
+      div.innerHTML = `
+        <div class="event-time-container">
+          <span class="event-time">${dayStr}</span>
+          <span class="event-end-time">${timeStr}</span>
+        </div>
+        <div class="event-title">${event.summary}</div>
+      `;
+      eventsEl.appendChild(div);
+    });
+  } catch (err) {
+    console.error("Error loading calendar events", err);
+    document.getElementById('auth-status').textContent = 'Error loading calendar';
+  }
+}
 </script>
+<!-- Load Google API scripts -->
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
