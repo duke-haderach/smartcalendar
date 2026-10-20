@@ -738,7 +738,6 @@ async function listUpcomingEvents() {
     const response = await gapi.client.calendar.events.list({
       'calendarId': CALENDAR_ID,
       'timeMin': now.toISOString(),
-      'timeMax': sevenDaysLater.toISOString(),
       'showDeleted': false,
       'singleEvents': true,
       'maxResults': 250, // Increased to pull all events in the 7-day view
