@@ -4,9 +4,10 @@
 <meta charset="UTF-8" />
 <title>SPaDe Dashboard</title>
 <meta name="viewport" content="width=601, height=775, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <!-- COOP Header Fix for Google OAuth Popups -->
+<!-- COOP Header Fix for Google OAuth Popups -->
 <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
 <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none" />
+
 <!-- Google Identity Services & API Client Library -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
@@ -25,7 +26,8 @@ html, body {
 }
 
 body {
-  background-image: url("background.jpg");
+  /* Fallback gradient ensures gorgeous background even if background.jpg returns 404 */
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364), url("background.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -548,7 +550,7 @@ async function fetchAndDisplayTodayThought() {
       throw new Error("No match");
     }
   } catch (error) {
-    console.warn("Using fallback quote due to CORS/Network restriction:", error);
+    console.warn("Using fallback quote:", error);
     const textElem = document.getElementById("thought-text");
     if (textElem) textElem.textContent = fallbackQuote;
   }
@@ -698,18 +700,22 @@ function gisLoaded() {
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: async (resp) => {
-        if (resp.error !== undefined) {
-          console.error("Auth error:", resp);
+        try {
+          if (resp.error !== undefined) {
+            console.error("Auth error:", resp);
+            const statusEl = document.getElementById('auth-status');
+            if (statusEl) statusEl.textContent = 'Sign-in failed';
+            return;
+          }
           const statusEl = document.getElementById('auth-status');
-          if (statusEl) statusEl.textContent = 'Sign-in failed';
-          return;
+          const signBtn = document.getElementById('sign-in');
+          if (statusEl) statusEl.textContent = 'Connected';
+          if (signBtn) signBtn.textContent = 'Refresh';
+          await listUpcomingEvents();
+          setInterval(listUpcomingEvents, 15 * 60 * 1000);
+        } catch (callbackErr) {
+          console.error("Error in auth callback:", callbackErr);
         }
-        const statusEl = document.getElementById('auth-status');
-        const signBtn = document.getElementById('sign-in');
-        if (statusEl) statusEl.textContent = 'Connected';
-        if (signBtn) signBtn.textContent = 'Refresh';
-        await listUpcomingEvents();
-        setInterval(listUpcomingEvents, 15 * 60 * 1000);
       },
     });
     gsisInited = true;
@@ -729,12 +735,12 @@ function maybeEnableSignIn() {
 const signInBtn = document.getElementById('sign-in');
 if (signInBtn) {
   signInBtn.onclick = () => {
-    if (!tokenClient) {
-      const statusEl = document.getElementById('auth-status');
-      if (statusEl) statusEl.textContent = 'Auth loading...';
-      return;
-    }
     try {
+      if (!tokenClient) {
+        const statusEl = document.getElementById('auth-status');
+        if (statusEl) statusEl.textContent = 'Auth loading...';
+        return;
+      }
       if (!gapi.client.getToken()) {
         tokenClient.requestAccessToken({prompt: 'consent'});
       } else {
@@ -742,6 +748,8 @@ if (signInBtn) {
       }
     } catch (err) {
       console.error("Token request error:", err);
+      const statusEl = document.getElementById('auth-status');
+      if (statusEl) statusEl.textContent = 'Auth error';
     }
   };
 }
