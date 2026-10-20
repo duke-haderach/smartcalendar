@@ -213,7 +213,7 @@ body {
 }
 
 
-/* ===== RIGHT COLUMN: Large Quotes & Clickable Calendars ===== */
+/* ===== RIGHT COLUMN: Large Quotes & Scrollable Calendar Cards ===== */
 .column-right {
   display: flex;
   flex-direction: column;
@@ -222,7 +222,7 @@ body {
   min-width: 0;
 }
 
-/* Expanded Thought for the Day Panel (Large Font Filling Tile) */
+/* Expanded Thought for the Day Panel */
 .thought-panel {
   flex: 1.3;
   min-height: 0;
@@ -244,7 +244,7 @@ body {
 }
 
 .thought-label {
-  font-size: 11px;
+  font-size: 18px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -253,17 +253,19 @@ body {
 }
 
 #thought-text {
-  font-size: 32px; /* Increased to fill tile cleanly */
+  font-size: 38px;
   line-height: 1.5;
   color: #ffffff;
   font-style: italic;
   font-weight: 400;
 }
 
-/* Calendar & Reminders Panel (7-Day View & Clickable Details) */
+/* Calendar & Reminders Panel (Scrollable Card Container) */
 .events-panel {
   flex: 1.7;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .auth-bar {
@@ -301,20 +303,16 @@ body {
   padding-right: 2px;
 }
 
+/* Event Card Style (Roughly 5 visible at once) */
 .event-item {
-  margin-bottom: 6px;
-  padding: 9px 11px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.event-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  gap: 3px;
 }
 
 .event-header-row {
@@ -352,17 +350,7 @@ body {
   display: block;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.75);
-  margin-top: 3px;
-}
-
-#event-detail-drawer {
-  margin-top: 6px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
-  font-size: 11px;
-  border-left: 3px solid #30d158;
-  display: none;
+  margin-top: 2px;
 }
 
 /* Scrollbar */
@@ -418,7 +406,7 @@ body {
     </div>
   </div>
   
-  <!-- COLUMN RIGHT: Large Quotes & Clickable 7-Day Calendar -->
+  <!-- COLUMN RIGHT: Large Quotes & Scrollable Calendar Cards -->
   <div class="column-right">
     <!-- Expanded Thought for the Day Panel -->
     <div class="macos-panel thought-panel">
@@ -433,7 +421,7 @@ body {
       </div>
     </div>
 
-    <!-- Calendar Events & Reminders Panel (7-Day View) -->
+    <!-- Calendar Events & Reminders Panel (Scrollable Cards) -->
     <div class="macos-panel events-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
@@ -452,7 +440,6 @@ body {
           <div style="padding: 10px; opacity: 0.7; font-size: 11px;">Click 'Sign In' above to load your Google Calendar events.</div>
         </div>
       </div>
-      <div id="event-detail-drawer">Select an event above to view full details.</div>
     </div>
   </div>
 </div>
@@ -576,11 +563,9 @@ function formatTempDual(tempC) {
   return `${c}°C / ${f}°F`;
 }
 
-// ===== WEATHER LOGIC: Today starts at current hour, future days are full 24-hr =====
+// ===== WEATHER LOGIC =====
 const mockForecastData = [
-  // Today starts from the current hour onwards
   { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generateTodayHourly(21) },
-  // Future days show full 24-hour cycle (12 AM to 11 PM)
   { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
   { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: generateFull24HourHourly(19) },
   { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: generateFull24HourHourly(18) },
@@ -592,7 +577,6 @@ const mockForecastData = [
 function generateTodayHourly(baseTemp) {
   const hours = [];
   const currentHour = new Date().getHours();
-  // Generate remaining hours for today starting from current hour up to midnight
   for (let hr = currentHour; hr < 24; hr++) {
     const ampm = hr >= 12 ? 'PM' : 'AM';
     const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
@@ -646,7 +630,7 @@ function showHourlyDetail(dayIndex) {
 
 initWeather();
 
-// ===== GOOGLE CALENDAR AUTH & FETCH (7-Day View & Clickable Details) ==================
+// ===== GOOGLE CALENDAR AUTH & FETCH (7-Day View & Card Scroll) ==================
 let tokenClient;
 let gapiInited = false;
 let gsisInited = false;
@@ -710,7 +694,7 @@ async function listUpcomingEvents() {
       'timeMax': sevenDaysLater.toISOString(),
       'showDeleted': false,
       'singleEvents': true,
-      'maxResults': 25,
+      'maxResults': 50,
       'orderBy': 'startTime',
     });
     const events = response.result.items;
@@ -741,19 +725,6 @@ async function listUpcomingEvents() {
         </div>
         <div class="event-location">📍 ${location}</div>
       `;
-      
-      // Clickable cell to open details drawer below
-      div.onclick = () => {
-        const drawer = document.getElementById('event-detail-drawer');
-        drawer.style.display = 'block';
-        drawer.innerHTML = `
-          <strong style="color:#30d158; font-size:12px;">${event.summary}</strong><br>
-          <strong>Time:</strong> ${startDate.toLocaleString()}<br>
-          <strong>Location:</strong> ${location}<br>
-          <strong>Description:</strong> ${event.description || 'None provided'}
-        `;
-      };
-
       eventsEl.appendChild(div);
     });
   } catch (err) {
