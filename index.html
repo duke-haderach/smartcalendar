@@ -545,7 +545,7 @@ async function fetchAndDisplayTodayThought() {
       throw new Error("No match");
     }
   } catch (error) {
-    console.warn("Using fallback quote:", error);
+    console.warn("Using fallback quote due to CORS/Network restriction:", error);
     const textElem = document.getElementById("thought-text");
     if (textElem) textElem.textContent = fallbackQuote;
   }
@@ -695,22 +695,18 @@ function gisLoaded() {
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: async (resp) => {
-        try {
-          if (resp.error !== undefined) {
-            console.error("Auth error:", resp);
-            const statusEl = document.getElementById('auth-status');
-            if (statusEl) statusEl.textContent = 'Sign-in failed';
-            return;
-          }
+        if (resp.error !== undefined) {
+          console.error("Auth error:", resp);
           const statusEl = document.getElementById('auth-status');
-          const signBtn = document.getElementById('sign-in');
-          if (statusEl) statusEl.textContent = 'Connected';
-          if (signBtn) signBtn.textContent = 'Refresh';
-          await listUpcomingEvents();
-          setInterval(listUpcomingEvents, 15 * 60 * 1000);
-        } catch (callbackErr) {
-          console.error("Error in auth callback:", callbackErr);
+          if (statusEl) statusEl.textContent = 'Sign-in failed';
+          return;
         }
+        const statusEl = document.getElementById('auth-status');
+        const signBtn = document.getElementById('sign-in');
+        if (statusEl) statusEl.textContent = 'Connected';
+        if (signBtn) signBtn.textContent = 'Refresh';
+        await listUpcomingEvents();
+        setInterval(listUpcomingEvents, 15 * 60 * 1000);
       },
     });
     gsisInited = true;
@@ -730,12 +726,12 @@ function maybeEnableSignIn() {
 const signInBtn = document.getElementById('sign-in');
 if (signInBtn) {
   signInBtn.onclick = () => {
+    if (!tokenClient) {
+      const statusEl = document.getElementById('auth-status');
+      if (statusEl) statusEl.textContent = 'Auth loading...';
+      return;
+    }
     try {
-      if (!tokenClient) {
-        const statusEl = document.getElementById('auth-status');
-        if (statusEl) statusEl.textContent = 'Auth loading...';
-        return;
-      }
       if (!gapi.client.getToken()) {
         tokenClient.requestAccessToken({prompt: 'consent'});
       } else {
@@ -743,8 +739,6 @@ if (signInBtn) {
       }
     } catch (err) {
       console.error("Token request error:", err);
-      const statusEl = document.getElementById('auth-status');
-      if (statusEl) statusEl.textContent = 'Auth error';
     }
   };
 }
@@ -783,4 +777,69 @@ setInterval(() => {
     const startTime = new Date(startStr);
     const diffMinutes = (startTime - now) / (1000 * 60);
     
-    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id
+    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
+      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
+      spokenEvents.add(event.id);
+    }
+  });
+}, 30000);
+
+async function listUpcomingEvents() {
+  try {
+    const now = new Date();
+    const response = await gapi.client.calendar.events.list({
+      'calendarId': CALENDAR_ID,
+      'timeMin': now.toISOString(),
+      'showDeleted': false,
+      'singleEvents': true,
+      'maxResults': 250,
+      'orderBy': 'startTime',
+    });
+    
+    cachedEvents = response.result.items || [];
+    const eventsEl = document.getElementById('events');
+    if (!eventsEl) return;
+    eventsEl.innerHTML = '';
+    
+    if (cachedEvents.length === 0) {
+      eventsEl.innerHTML = '<div style="padding:4px; font-size:8px; opacity:0.7;">No upcoming events found.</div>';
+      return;
+    }
+    
+    cachedEvents.forEach(event => {
+      const start = event.start.dateTime || event.start.date;
+      const startDate = new Date(start);
+      const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      const location = event.location ? event.location : 'No location specified';
+      
+      const div = document.createElement('div');
+      div.className = 'event-item';
+      div.innerHTML = `
+        <div class="event-header-row">
+          <div class="event-time-container">
+            <span class="event-time">${dayStr}</span>
+            <span class="event-end-time">${timeStr}</span>
+          </div>
+          <div class="event-title">${event.summary || 'Untitled Event'}</div>
+        </div>
+        <div class="event-location">📍 ${location}</div>
+      `;
+      eventsEl.appendChild(div);
+    });
+  } catch (err) {
+    console.error("Error loading calendar events", err);
+    const eventsEl = document.getElementById('events');
+    if (eventsEl) {
+      eventsEl.innerHTML = '<div style="padding:4px; font-size:8px; color:#ff5f56;">Error loading calendar items. Check API/Calendar ID.</div>';
+    }
+    const statusEl = document.getElementById('auth-status');
+    if (statusEl) statusEl.textContent = 'Error loading calendar';
+  }
+}
+</script>
+<!-- Load Google API scripts safely -->
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
