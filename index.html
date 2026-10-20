@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>SPaDe Dashboard(Fire HD 8)</title>
+<title>macOS Wall Dashboard - Portrait (Fire HD 8)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <!-- Google Identity Services & API Client Library -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -36,19 +36,21 @@ body {
   backdrop-filter: brightness(0.85);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   box-sizing: border-box;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* macOS Frosted Glass Window Panel */
 .macos-panel {
-  background: rgba(30, 30, 30, 0.72);
+  background: rgba(30, 30, 30, 0.75);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 14px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -61,19 +63,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .window-dots {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 .dot-red { background: #ff5f56; }
@@ -81,32 +83,31 @@ body {
 .dot-green { background: #27c93f; }
 
 .panel-title {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ===== LEFT COLUMN: Clock, Weather, Markets ===== */
+/* ===== LEFT COLUMN: Clock(20%), Weather(50%), Stock(30%) ===== */
 .column-left {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   height: 100%;
   min-width: 0;
 }
 
-/* Clock Panel */
 .clock-panel {
-  flex: 0 0 auto;
+  flex: 20%;
   align-items: center;
   text-align: center;
-  padding: 12px;
+  justify-content: center;
 }
 
 #clock {
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -1px;
   line-height: 1.1;
@@ -114,24 +115,23 @@ body {
 }
 
 #date {
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.75);
-  margin-top: 4px;
+  margin-top: 2px;
   font-weight: 500;
   text-transform: uppercase;
 }
 
-/* Weather Panel */
 .weather-panel {
-  flex: 1.2;
+  flex: 50%;
   min-height: 0;
   overflow-y: auto;
 }
 
 #weather-current {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -140,17 +140,17 @@ body {
 #weather-forecast {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .weather-day {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
+  padding: 4px 6px;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: 5px;
+  font-size: 10px;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -161,7 +161,7 @@ body {
 
 .weather-name {
   font-weight: 600;
-  width: 60px;
+  width: 55px;
 }
 
 .weather-temp {
@@ -175,38 +175,35 @@ body {
   text-align: right;
   font-size: 10px;
   flex: 1;
-  padding-left: 8px;
+  padding-left: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 #weather-hourly {
-  margin-top: 8px;
-  font-size: 11px;
+  margin-top: 6px;
+  font-size: 10px;
   background: rgba(0, 0, 0, 0.35);
-  border-radius: 8px;
-  padding: 10px;
-  flex: 1; /* Expands to fill available space in the weather panel */
-  min-height: 180px;
+  border-radius: 6px;
+  padding: 6px;
+  max-height: 120px;
   overflow-y: auto;
   display: none;
-  box-sizing: border-box;
 }
 
 .hourly-row {
   display: flex;
   justify-content: space-between;
-  padding: 5px 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 .hourly-row:last-child { border-bottom: none; }
 
-/* Markets / Stock Panel (SPY Real-Time) */
 .stock-panel {
-  flex: 1;
+  flex: 30%;
   min-height: 0;
-  padding: 10px;
+  padding: 8px;
 }
 
 #tradingview-widget-container {
@@ -215,29 +212,28 @@ body {
 }
 
 
-/* ===== RIGHT COLUMN: Large Quotes & Scrollable Calendar Cards ===== */
+/* ===== RIGHT COLUMN: Quote(40%), Events(60%) ===== */
 .column-right {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   height: 100%;
   min-width: 0;
 }
 
-/* Expanded Thought for the Day Panel */
 .thought-panel {
-  flex: 1.3;
+  flex: 40%;
   min-height: 0;
   overflow-y: auto;
 }
 
 #thought-container {
   width: 100%;
-  height: calc(100% - 24px);
+  height: calc(100% - 20px);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 16px;
+  padding: 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -246,25 +242,24 @@ body {
 }
 
 .thought-label {
-  font-size: 18px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #30d158;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 #thought-text {
-  font-size: 38px;
-  line-height: 1.5;
+  font-size: 22px; /* Perfectly scaled to fill quote card */
+  line-height: 1.35;
   color: #ffffff;
   font-style: italic;
   font-weight: 400;
 }
 
-/* Calendar & Reminders Panel (Scrollable Card Container) */
 .events-panel {
-  flex: 1.7;
+  flex: 60%;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -274,19 +269,19 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 #auth-status {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .macos-btn {
-  padding: 4px 10px;
-  font-size: 10px;
+  padding: 3px 8px;
+  font-size: 9px;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
@@ -300,16 +295,14 @@ body {
 
 #events-container {
   flex: 1;
-  max-height: 380px;
   overflow-y: auto;
   min-height: 0;
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
-/* Compact Event Card Style */
 .event-item {
-  margin-bottom: 6px;
-  padding: 8px 10px;
+  margin-bottom: 5px;
+  padding: 6px 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
@@ -322,18 +315,18 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
 }
 
 .event-time-container {
   display: flex;
   flex-direction: column;
-  min-width: 65px;
+  min-width: 60px;
 }
 
 .event-time {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
   color: #30d158;
 }
 
@@ -344,41 +337,41 @@ body {
 
 .event-title {
   flex: 1;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .event-location {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.75);
   margin-top: 1px;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 </style>
 </head>
 <body>
 <div class="overlay">
-  <!-- COLUMN LEFT: Clock, Weather, Markets -->
+  <!-- COLUMN LEFT: Clock(20%), Weather(50%), Markets(30%) -->
   <div class="column-left">
     <!-- Clock Panel -->
     <div class="macos-panel clock-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Clock</div>
-        <div style="width: 30px;"></div>
+        <div style="width: 26px;"></div>
       </div>
       <div id="clock">--:-- --</div>
       <div id="date">Loading date…</div>
@@ -389,7 +382,7 @@ body {
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Weather (°C / °F)</div>
-        <div style="width: 30px;"></div>
+        <div style="width: 26px;"></div>
       </div>
       <div id="weather-current">Loading weather…</div>
       <div id="weather-forecast"></div>
@@ -400,8 +393,8 @@ body {
     <div class="macos-panel stock-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Markets (SPY Real-Time)</div>
-        <div style="width: 30px;"></div>
+        <div class="panel-title">Markets (SPY)</div>
+        <div style="width: 26px;"></div>
       </div>
       <div id="tradingview-widget-container">
         <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22AMEX%3ASPY%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
@@ -409,14 +402,14 @@ body {
     </div>
   </div>
   
-  <!-- COLUMN RIGHT: Large Quotes & Scrollable Calendar Cards -->
+  <!-- COLUMN RIGHT: Quote(40%), Events(60%) -->
   <div class="column-right">
-    <!-- Expanded Thought for the Day Panel -->
+    <!-- Thought for the Day Panel -->
     <div class="macos-panel thought-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Thought for the Day</div>
-        <div style="width: 30px;"></div>
+        <div style="width: 26px;"></div>
       </div>
       <div id="thought-container">
         <div class="thought-label" id="thought-title">Napoleon Hill</div>
@@ -424,23 +417,23 @@ body {
       </div>
     </div>
 
-    <!-- Calendar Events & Reminders Panel (Scrollable Cards) -->
+    <!-- Calendar Events & Reminders Panel -->
     <div class="macos-panel events-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Calendar & Reminders (All Upcoming)</div>
-        <div style="width: 30px;"></div>
+        <div class="panel-title">Calendar & Reminders</div>
+        <div style="width: 26px;"></div>
       </div>
       <div class="auth-bar">
-        <span id="auth-status">Ready to connect</span>
+        <span id="auth-status">Ready</span>
         <div>
           <button id="sign-in" class="macos-btn">Sign In</button>
-          <button id="enable-voice" class="macos-btn">Voice Alerts</button>
+          <button id="enable-voice" class="macos-btn">Voice</button>
         </div>
       </div>
       <div id="events-container">
         <div id="events">
-          <div style="padding: 10px; opacity: 0.7; font-size: 11px;">Click 'Sign In' above to load your Google Calendar events.</div>
+          <div style="padding: 8px; opacity: 0.7; font-size: 10px;">Click 'Sign In' to load events.</div>
         </div>
       </div>
     </div>
@@ -456,10 +449,10 @@ const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
 
 const QUOTES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREcumm4p5A9G-506IZdhpDsBHZtbeHLiVMVbZJHLGFs6kkl3QPamiaOGmx1U8MADueTO-45bipj-wv/pub?output=csv";
 
-// Global variables for voice reminders
 let voiceEnabled = false;
 let spokenEvents = new Set();
 let cachedEvents = [];
+let activeHourlyIndex = null; // Track currently open hourly view
 
 // CSV Parser
 function parseCSV(text) {
@@ -571,7 +564,7 @@ function formatTempDual(tempC) {
   return `${c}°C / ${f}°F`;
 }
 
-// ===== WEATHER LOGIC =====
+// ===== WEATHER LOGIC WITH TOGGLE / COLLAPSE =====
 const mockForecastData = [
   { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generateTodayHourly(21) },
   { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
@@ -618,16 +611,25 @@ function initWeather() {
       <span class="weather-temp">${formatTempDual(day.tempC)}</span>
       <span class="weather-desc">${day.desc}</span>
     `;
-    dayDiv.onclick = () => showHourlyDetail(index);
+    dayDiv.onclick = () => toggleHourlyDetail(index);
     forecastContainer.appendChild(dayDiv);
   });
 }
 
-function showHourlyDetail(dayIndex) {
-  const dayData = mockForecastData[dayIndex];
+function toggleHourlyDetail(dayIndex) {
   const hourlyContainer = document.getElementById("weather-hourly");
   
-  let html = `<div style="font-weight:600; margin-bottom:6px; color:#30d158;">Hourly Forecast for ${dayData.name}:</div>`;
+  // If clicking the same day that is already open, collapse it
+  if (activeHourlyIndex === dayIndex) {
+    hourlyContainer.style.display = "none";
+    activeHourlyIndex = null;
+    return;
+  }
+  
+  activeHourlyIndex = dayIndex;
+  const dayData = mockForecastData[dayIndex];
+  
+  let html = `<div style="font-weight:600; margin-bottom:4px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
   dayData.hourly.forEach(h => {
     html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
   });
@@ -698,7 +700,7 @@ document.getElementById('enable-voice').onclick = () => {
   if (voiceEnabled) {
     btn.style.background = '#30d158';
     btn.style.color = '#000';
-    speak("Voice alerts enabled. I will notify you 30 minutes before your events.");
+    speak("Voice alerts enabled.");
   } else {
     btn.style.background = 'rgba(255, 255, 255, 0.1)';
     btn.style.color = '#fff';
@@ -732,7 +734,6 @@ setInterval(() => {
 async function listUpcomingEvents() {
   try {
     const now = new Date();
-
     const response = await gapi.client.calendar.events.list({
       'calendarId': CALENDAR_ID,
       'timeMin': now.toISOString(),
@@ -747,7 +748,7 @@ async function listUpcomingEvents() {
     eventsEl.innerHTML = '';
     
     if (!cachedEvents || cachedEvents.length === 0) {
-      eventsEl.innerHTML = '<div style="padding:10px; font-size:11px; opacity:0.7;">No upcoming events found.</div>';
+      eventsEl.innerHTML = '<div style="padding:8px; font-size:10px; opacity:0.7;">No upcoming events found.</div>';
       return;
     }
     
