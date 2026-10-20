@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>SPaDe Dashboard(Fire HD 8)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SPaDe Dashboard</title>
+<meta name="viewport" content="width=601, height=775, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <!-- Google Identity Services & API Client Library -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <style>
-/* ===== MACOS PORTRAIT UI SYSTEM FOR FIRE HD 8 (800x1280) ===== */
+/* ===== EXACT VIEWPORT LOCK: 601px * 775px ===== */
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
+  width: 601px;
+  height: 775px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   color: #f5f5f7;
   background-color: #1e1e1e;
@@ -26,36 +26,39 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  position: relative;
 }
 
-/* Portrait Layout Grid: 2 Vertical Columns */
+/* Locked Container Grid */
 .overlay {
   position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  top: 0;
+  left: 0;
+  width: 601px;
+  height: 775px;
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: brightness(0.85);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 8px;
   box-sizing: border-box;
-  height: 100vh;
   overflow: hidden;
 }
 
 /* macOS Frosted Glass Window Panel */
 .macos-panel {
-  background: rgba(30, 30, 30, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(30, 30, 30, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 8px 10px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* macOS Window Header dots */
@@ -63,19 +66,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
+  margin-bottom: 4px;
+  padding-bottom: 3px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .window-dots {
   display: flex;
-  gap: 4px;
+  gap: 3px;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
 }
 .dot-red { background: #ff5f56; }
@@ -83,7 +86,7 @@ body {
 .dot-green { background: #27c93f; }
 
 .panel-title {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -94,7 +97,7 @@ body {
 .column-left {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   height: 100%;
   min-width: 0;
 }
@@ -107,15 +110,15 @@ body {
 }
 
 #clock {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
   line-height: 1.1;
   color: #ffffff;
 }
 
 #date {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
   margin-top: 2px;
   font-weight: 500;
@@ -129,9 +132,9 @@ body {
 }
 
 #weather-current {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -140,17 +143,17 @@ body {
 #weather-forecast {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .weather-day {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 6px;
+  padding: 3px 5px;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 5px;
-  font-size: 10px;
+  border-radius: 4px;
+  font-size: 9px;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -161,7 +164,7 @@ body {
 
 .weather-name {
   font-weight: 600;
-  width: 55px;
+  width: 50px;
 }
 
 .weather-temp {
@@ -173,21 +176,21 @@ body {
 .weather-desc {
   color: rgba(255, 255, 255, 0.7);
   text-align: right;
-  font-size: 10px;
+  font-size: 9px;
   flex: 1;
-  padding-left: 6px;
+  padding-left: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 #weather-hourly {
-  margin-top: 6px;
-  font-size: 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 6px;
-  padding: 6px;
-  max-height: 120px;
+  margin-top: 4px;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 5px;
+  padding: 5px;
+  max-height: 100px;
   overflow-y: auto;
   display: none;
 }
@@ -195,7 +198,7 @@ body {
 .hourly-row {
   display: flex;
   justify-content: space-between;
-  padding: 3px 4px;
+  padding: 2px 3px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 .hourly-row:last-child { border-bottom: none; }
@@ -203,7 +206,7 @@ body {
 .stock-panel {
   flex: 30%;
   min-height: 0;
-  padding: 8px;
+  padding: 6px;
 }
 
 #tradingview-widget-container {
@@ -216,7 +219,7 @@ body {
 .column-right {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   height: 100%;
   min-width: 0;
 }
@@ -229,11 +232,11 @@ body {
 
 #thought-container {
   width: 100%;
-  height: calc(100% - 20px);
+  height: calc(100% - 16px);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 8px;
+  padding: 10px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -242,17 +245,17 @@ body {
 }
 
 .thought-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   color: #30d158;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 #thought-text {
-  font-size: 22px; /* Perfectly scaled to fill quote card */
-  line-height: 1.35;
+  font-size: 15px; /* Neatly scaled to fit 40% height container */
+  line-height: 1.3;
   color: #ffffff;
   font-style: italic;
   font-weight: 400;
@@ -269,19 +272,19 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 #auth-status {
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .macos-btn {
-  padding: 3px 8px;
-  font-size: 9px;
+  padding: 2px 6px;
+  font-size: 8px;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
@@ -301,14 +304,14 @@ body {
 }
 
 .event-item {
-  margin-bottom: 5px;
-  padding: 6px 8px;
+  margin-bottom: 4px;
+  padding: 5px 7px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 5px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .event-header-row {
@@ -321,30 +324,30 @@ body {
 .event-time-container {
   display: flex;
   flex-direction: column;
-  min-width: 60px;
+  min-width: 55px;
 }
 
 .event-time {
   font-weight: 600;
-  font-size: 10px;
+  font-size: 9px;
   color: #30d158;
 }
 
 .event-end-time {
-  font-size: 9px;
+  font-size: 8px;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .event-title {
   flex: 1;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .event-location {
   display: block;
-  font-size: 9px;
+  font-size: 8px;
   color: rgba(255, 255, 255, 0.75);
   margin-top: 1px;
 }
@@ -371,7 +374,7 @@ body {
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Clock</div>
-        <div style="width: 26px;"></div>
+        <div style="width: 22px;"></div>
       </div>
       <div id="clock">--:-- --</div>
       <div id="date">Loading date…</div>
@@ -382,7 +385,7 @@ body {
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Weather (°C / °F)</div>
-        <div style="width: 26px;"></div>
+        <div style="width: 22px;"></div>
       </div>
       <div id="weather-current">Loading weather…</div>
       <div id="weather-forecast"></div>
@@ -394,7 +397,7 @@ body {
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Markets (SPY)</div>
-        <div style="width: 26px;"></div>
+        <div style="width: 22px;"></div>
       </div>
       <div id="tradingview-widget-container">
         <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22AMEX%3ASPY%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
@@ -409,7 +412,7 @@ body {
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Thought for the Day</div>
-        <div style="width: 26px;"></div>
+        <div style="width: 22px;"></div>
       </div>
       <div id="thought-container">
         <div class="thought-label" id="thought-title">Napoleon Hill</div>
@@ -422,7 +425,7 @@ body {
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Calendar & Reminders</div>
-        <div style="width: 26px;"></div>
+        <div style="width: 22px;"></div>
       </div>
       <div class="auth-bar">
         <span id="auth-status">Ready</span>
@@ -433,7 +436,7 @@ body {
       </div>
       <div id="events-container">
         <div id="events">
-          <div style="padding: 8px; opacity: 0.7; font-size: 10px;">Click 'Sign In' to load events.</div>
+          <div style="padding: 6px; opacity: 0.7; font-size: 9px;">Click 'Sign In' to load events.</div>
         </div>
       </div>
     </div>
@@ -452,7 +455,7 @@ const QUOTES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREcumm4
 let voiceEnabled = false;
 let spokenEvents = new Set();
 let cachedEvents = [];
-let activeHourlyIndex = null; // Track currently open hourly view
+let activeHourlyIndex = null;
 
 // CSV Parser
 function parseCSV(text) {
@@ -619,7 +622,6 @@ function initWeather() {
 function toggleHourlyDetail(dayIndex) {
   const hourlyContainer = document.getElementById("weather-hourly");
   
-  // If clicking the same day that is already open, collapse it
   if (activeHourlyIndex === dayIndex) {
     hourlyContainer.style.display = "none";
     activeHourlyIndex = null;
@@ -629,7 +631,7 @@ function toggleHourlyDetail(dayIndex) {
   activeHourlyIndex = dayIndex;
   const dayData = mockForecastData[dayIndex];
   
-  let html = `<div style="font-weight:600; margin-bottom:4px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
+  let html = `<div style="font-weight:600; margin-bottom:3px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
   dayData.hourly.forEach(h => {
     html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
   });
@@ -748,7 +750,7 @@ async function listUpcomingEvents() {
     eventsEl.innerHTML = '';
     
     if (!cachedEvents || cachedEvents.length === 0) {
-      eventsEl.innerHTML = '<div style="padding:8px; font-size:10px; opacity:0.7;">No upcoming events found.</div>';
+      eventsEl.innerHTML = '<div style="padding:6px; font-size:9px; opacity:0.7;">No upcoming events found.</div>';
       return;
     }
     
@@ -784,3 +786,6 @@ async function listUpcomingEvents() {
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
+// ===== CONFIGURATION =====
+
+
