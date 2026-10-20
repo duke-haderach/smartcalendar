@@ -12,8 +12,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 621px;
-  height: 795px;
+  width: 601px;
+  height: 775px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   color: #f5f5f7;
   background-color: #1e1e1e;
@@ -191,7 +191,7 @@ body {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 4px;
   padding: 4px;
-  max-height: 200px; /* Tweak this height to make the hourly weather card larger */
+  max-height: 200px;
   overflow-y: auto;
   display: none;
 }
@@ -368,7 +368,7 @@ body {
 </head>
 <body>
 <div class="overlay">
-  <!-- COLUMN LEFT: Clock(20%), Weather(50%), Markets(30%) -->
+  <!-- COLUMN LEFT: Clock(20%), Weather(50%), Stock(30%) -->
   <div class="column-left">
     <!-- Clock Panel -->
     <div class="macos-panel clock-panel">
@@ -458,32 +458,42 @@ let spokenEvents = new Set();
 let cachedEvents = [];
 let activeHourlyIndex = null;
 
+// Global Error Guard to prevent screen blackouts
+window.onerror = function(msg, url, line) {
+  console.error("Global catch:", msg, "at", url, ":", line);
+  return true;
+};
+
 // CSV Parser
 function parseCSV(text) {
-  const lines = text.split(/\r?\n/);
-  return lines.map(line => {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
+  try {
+    const lines = text.split(/\r?\n/);
+    return lines.map(line => {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
         } else {
-          inQuotes = !inQuotes;
+          current += char;
         }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
       }
-    }
-    result.push(current.trim());
-    return result;
-  });
+      result.push(current.trim());
+      return result;
+    });
+  } catch(e) {
+    return [];
+  }
 }
 
 function getDayOfYear(date) {
@@ -493,21 +503,22 @@ function getDayOfYear(date) {
   return Math.floor(diff / oneDay);
 }
 
-// Fetch today's thought from published Google Sheet CSV
+// Fetch today's thought with fallback
 async function fetchAndDisplayTodayThought() {
-  const now = new Date();
-  const monthName = now.toLocaleString('en-US', { month: 'long' });
-  const dayNum = now.getDate();
-  const todayFormatted = `${monthName} ${dayNum}`;
-  
+  const fallbackQuote = `"Whatever the mind can conceive and believe, it can achieve." — Napoleon Hill`;
   try {
     const response = await fetch(QUOTES_CSV_URL);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) throw new Error("Network response failed");
     
     const csvText = await response.text();
     const rows = parseCSV(csvText);
     
-    if (rows.length < 2) throw new Error("CSV has no data rows");
+    if (rows.length < 2) throw new Error("Empty CSV");
+    
+    const now = new Date();
+    const monthName = now.toLocaleString('en-US', { month: 'long' });
+    const dayNum = now.getDate();
+    const todayFormatted = `${monthName} ${dayNum}`;
     
     const dataRows = rows.slice(1).filter(r => r.length >= 2 && r[0]);
     let matchedRow = dataRows.find(r => r[0].toLowerCase() === todayFormatted.toLowerCase());
@@ -527,20 +538,16 @@ async function fetchAndDisplayTodayThought() {
       const textElem = document.getElementById("thought-text");
       
       if (titleElem && textElem) {
-        if (principleCol && principleCol !== quoteCol) {
-          titleElem.textContent = `${dateCol}: ${principleCol}`;
-        } else {
-          titleElem.textContent = `Napoleon Hill — ${dateCol}`;
-        }
+        titleElem.textContent = (principleCol && principleCol !== quoteCol) ? `${dateCol}: ${principleCol}` : `Napoleon Hill — ${dateCol}`;
         textElem.textContent = `"${quoteCol}"`;
       }
+    } else {
+      throw new Error("No match");
     }
   } catch (error) {
-    console.error("Error fetching quotes CSV:", error);
+    console.warn("Using fallback quote:", error);
     const textElem = document.getElementById("thought-text");
-    if (textElem) {
-      textElem.textContent = `"Whatever the mind can conceive and believe, it can achieve." — Napoleon Hill`;
-    }
+    if (textElem) textElem.textContent = fallbackQuote;
   }
 }
 
@@ -578,7 +585,7 @@ function formatTempDual(tempC) {
   return `${c}°C / ${f}°F`;
 }
 
-// ===== WEATHER LOGIC WITH TOGGLE / COLLAPSE =====
+// ===== WEATHER LOGIC =====
 const mockForecastData = [
   { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generateTodayHourly(21) },
   { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
@@ -658,7 +665,7 @@ function toggleHourlyDetail(dayIndex) {
 
 initWeather();
 
-// ===== GOOGLE CALENDAR AUTH, FETCH & VOICE REMINDERS =====
+// ===== GOOGLE CALENDAR AUTH & EVENTS =====
 let tokenClient;
 let gapiInited = false;
 let gsisInited = false;
@@ -687,19 +694,23 @@ function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      callback: (resp) => {
-        if (resp.error !== undefined) {
-          console.error("Auth error:", resp);
+      callback: async (resp) => {
+        try {
+          if (resp.error !== undefined) {
+            console.error("Auth error:", resp);
+            const statusEl = document.getElementById('auth-status');
+            if (statusEl) statusEl.textContent = 'Sign-in failed';
+            return;
+          }
           const statusEl = document.getElementById('auth-status');
-          if (statusEl) statusEl.textContent = 'Sign-in failed';
-          return;
+          const signBtn = document.getElementById('sign-in');
+          if (statusEl) statusEl.textContent = 'Connected';
+          if (signBtn) signBtn.textContent = 'Refresh';
+          await listUpcomingEvents();
+          setInterval(listUpcomingEvents, 15 * 60 * 1000);
+        } catch (callbackErr) {
+          console.error("Error in auth callback:", callbackErr);
         }
-        const statusEl = document.getElementById('auth-status');
-        const signBtn = document.getElementById('sign-in');
-        if (statusEl) statusEl.textContent = 'Connected';
-        if (signBtn) signBtn.textContent = 'Refresh';
-        listUpcomingEvents();
-        setInterval(listUpcomingEvents, 15 * 60 * 1000);
       },
     });
     gsisInited = true;
@@ -719,19 +730,21 @@ function maybeEnableSignIn() {
 const signInBtn = document.getElementById('sign-in');
 if (signInBtn) {
   signInBtn.onclick = () => {
-    if (!tokenClient) {
-      const statusEl = document.getElementById('auth-status');
-      if (statusEl) statusEl.textContent = 'Auth loading...';
-      return;
-    }
     try {
-      if (gapi.client.getToken() === null) {
+      if (!tokenClient) {
+        const statusEl = document.getElementById('auth-status');
+        if (statusEl) statusEl.textContent = 'Auth loading...';
+        return;
+      }
+      if (!gapi.client.getToken()) {
         tokenClient.requestAccessToken({prompt: 'consent'});
       } else {
         tokenClient.requestAccessToken({prompt: ''});
       }
     } catch (err) {
       console.error("Token request error:", err);
+      const statusEl = document.getElementById('auth-status');
+      if (statusEl) statusEl.textContent = 'Auth error';
     }
   };
 }
@@ -770,65 +783,4 @@ setInterval(() => {
     const startTime = new Date(startStr);
     const diffMinutes = (startTime - now) / (1000 * 60);
     
-    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
-      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
-      spokenEvents.add(event.id);
-    }
-  });
-}, 30000);
-
-async function listUpcomingEvents() {
-  try {
-    const now = new Date();
-    const response = await gapi.client.calendar.events.list({
-      'calendarId': CALENDAR_ID,
-      'timeMin': now.toISOString(),
-      'showDeleted': false,
-      'singleEvents': true,
-      'maxResults': 250,
-      'orderBy': 'startTime',
-    });
-    
-    cachedEvents = response.result.items || [];
-    const eventsEl = document.getElementById('events');
-    if (!eventsEl) return;
-    eventsEl.innerHTML = '';
-    
-    if (cachedEvents.length === 0) {
-      eventsEl.innerHTML = '<div style="padding:4px; font-size:8px; opacity:0.7;">No upcoming events found.</div>';
-      return;
-    }
-    
-    cachedEvents.forEach(event => {
-      const start = event.start.dateTime || event.start.date;
-      const startDate = new Date(start);
-      const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-      const location = event.location ? event.location : 'No location specified';
-      
-      const div = document.createElement('div');
-      div.className = 'event-item';
-      div.innerHTML = `
-        <div class="event-header-row">
-          <div class="event-time-container">
-            <span class="event-time">${dayStr}</span>
-            <span class="event-end-time">${timeStr}</span>
-          </div>
-          <div class="event-title">${event.summary || 'Untitled Event'}</div>
-        </div>
-        <div class="event-location">📍 ${location}</div>
-      `;
-      eventsEl.appendChild(div);
-    });
-  } catch (err) {
-    console.error("Error loading calendar events", err);
-    const statusEl = document.getElementById('auth-status');
-    if (statusEl) statusEl.textContent = 'Error loading calendar';
-  }
-}
-</script>
-<!-- Load Google API scripts safely -->
-<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-</body>
-</html>
+    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id
