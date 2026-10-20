@@ -300,10 +300,10 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding-right: 2px;
+  padding-right: 4px;
 }
 
-/* Event Card Style (Roughly 5 visible at once) */
+/* Event Card Style */
 .event-item {
   margin-bottom: 8px;
   padding: 10px 12px;
@@ -432,7 +432,7 @@ body {
         <span id="auth-status">Ready to connect</span>
         <div>
           <button id="sign-in" class="macos-btn">Sign In</button>
-          <button id="enable-voice" class="macos-btn">Voice</button>
+          <button id="enable-voice" class="macos-btn">Voice Alerts</button>
         </div>
       </div>
       <div id="events-container">
@@ -452,6 +452,11 @@ const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
 
 const QUOTES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREcumm4p5A9G-506IZdhpDsBHZtbeHLiVMVbZJHLGFs6kkl3QPamiaOGmx1U8MADueTO-45bipj-wv/pub?output=csv";
+
+// Global variables for voice reminders
+let voiceEnabled = false;
+let spokenEvents = new Set();
+let cachedEvents = [];
 
 // CSV Parser
 function parseCSV(text) {
@@ -630,7 +635,7 @@ function showHourlyDetail(dayIndex) {
 
 initWeather();
 
-// ===== GOOGLE CALENDAR AUTH & FETCH (7-Day View & Card Scroll) ==================
+// ===== GOOGLE CALENDAR AUTH, FETCH (7-Day View & Scrollable) & VOICE REMINDERS ==================
 let tokenClient;
 let gapiInited = false;
 let gsisInited = false;
@@ -673,6 +678,8 @@ document.getElementById('sign-in').onclick = () => {
     document.getElementById('auth-status').textContent = 'Connected';
     document.getElementById('sign-in').textContent = 'Refresh';
     await listUpcomingEvents();
+    // Refresh calendar every 15 minutes
+    setInterval(listUpcomingEvents, 15 * 60 * 1000);
   };
 
   if (gapi.client.getToken() === null) {
@@ -681,6 +688,46 @@ document.getElementById('sign-in').onclick = () => {
     tokenClient.requestAccessToken({prompt: ''});
   }
 };
+
+// Voice Alerts Setup
+document.getElementById('enable-voice').onclick = () => {
+  voiceEnabled = !voiceEnabled;
+  const btn = document.getElementById('enable-voice');
+  if (voiceEnabled) {
+    btn.style.background = '#30d158';
+    btn.style.color = '#000';
+    speak("Voice alerts enabled. I will notify you 30 minutes before your events.");
+  } else {
+    btn.style.background = 'rgba(255, 255, 255, 0.1)';
+    btn.style.color = '#fff';
+    speak("Voice alerts disabled.");
+  }
+};
+
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+// Check reminders every 30 seconds
+setInterval(() => {
+  if (!voiceEnabled || cachedEvents.length === 0) return;
+  const now = new Date();
+  
+  cachedEvents.forEach(event => {
+    const startStr = event.start.dateTime || event.start.date;
+    const startTime = new Date(startStr);
+    const diffMinutes = (startTime - now) / (1000 * 60);
+    
+    // Alert if event is between 29 and 31 minutes away and not yet spoken
+    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
+      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
+      spokenEvents.add(event.id);
+    }
+  });
+}, 30000);
 
 async function listUpcomingEvents() {
   try {
@@ -694,19 +741,20 @@ async function listUpcomingEvents() {
       'timeMax': sevenDaysLater.toISOString(),
       'showDeleted': false,
       'singleEvents': true,
-      'maxResults': 50,
+      'maxResults': 250, // Increased to pull all events in the 7-day view
       'orderBy': 'startTime',
     });
-    const events = response.result.items;
+    
+    cachedEvents = response.result.items;
     const eventsEl = document.getElementById('events');
     eventsEl.innerHTML = '';
     
-    if (!events || events.length === 0) {
+    if (!cachedEvents || cachedEvents.length === 0) {
       eventsEl.innerHTML = '<div style="padding:10px; font-size:11px; opacity:0.7;">No upcoming events in the next 7 days.</div>';
       return;
     }
     
-    events.forEach(event => {
+    cachedEvents.forEach(event => {
       const start = event.start.dateTime || event.start.date;
       const startDate = new Date(start);
       const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
