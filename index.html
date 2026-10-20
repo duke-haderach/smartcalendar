@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>macOS Wall Dashboard - 601x775</title>
+<title>SPaDe Dashboard</title>
 <meta name="viewport" content="width=601, height=775, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <!-- Google Identity Services & API Client Library -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -12,8 +12,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 601px;
-  height: 775px;
+  width: 621px;
+  height: 795px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   color: #f5f5f7;
   background-color: #1e1e1e;
@@ -184,13 +184,14 @@ body {
   white-space: nowrap;
 }
 
+/* Hourly weather card size & container */
 #weather-hourly {
-  margin-top: 3px;
+  margin-top: 4px;
   font-size: 8px;
   background: rgba(0, 0, 0, 0.4);
   border-radius: 4px;
   padding: 4px;
-  max-height: 90px;
+  max-height: 200px; /* Tweak this height to make the hourly weather card larger */
   overflow-y: auto;
   display: none;
 }
@@ -525,34 +526,44 @@ async function fetchAndDisplayTodayThought() {
       const titleElem = document.getElementById("thought-title");
       const textElem = document.getElementById("thought-text");
       
-      if (principleCol && principleCol !== quoteCol) {
-        titleElem.textContent = `${dateCol}: ${principleCol}`;
-      } else {
-        titleElem.textContent = `Napoleon Hill — ${dateCol}`;
+      if (titleElem && textElem) {
+        if (principleCol && principleCol !== quoteCol) {
+          titleElem.textContent = `${dateCol}: ${principleCol}`;
+        } else {
+          titleElem.textContent = `Napoleon Hill — ${dateCol}`;
+        }
+        textElem.textContent = `"${quoteCol}"`;
       }
-      
-      textElem.textContent = `"${quoteCol}"`;
     }
   } catch (error) {
     console.error("Error fetching quotes CSV:", error);
-    document.getElementById("thought-text").textContent = `"Whatever the mind can conceive and believe, it can achieve." — Napoleon Hill`;
+    const textElem = document.getElementById("thought-text");
+    if (textElem) {
+      textElem.textContent = `"Whatever the mind can conceive and believe, it can achieve." — Napoleon Hill`;
+    }
   }
 }
 
 // ===== CLOCK & DATE =====
 function updateClock() {
   const now = new Date();
-  document.getElementById("clock").textContent = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-  document.getElementById("date").textContent = now.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric"
-  });
+  const clockEl = document.getElementById("clock");
+  const dateEl = document.getElementById("date");
+  if (clockEl) {
+    clockEl.textContent = now.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+  }
+  if (dateEl) {
+    dateEl.textContent = now.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
 }
 
 setInterval(updateClock, 1000);
@@ -602,8 +613,12 @@ function generateFull24HourHourly(baseTemp) {
 }
 
 function initWeather() {
-  document.getElementById("weather-current").innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
+  const currentEl = document.getElementById("weather-current");
+  if (currentEl) {
+    currentEl.innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
+  }
   const forecastContainer = document.getElementById("weather-forecast");
+  if (!forecastContainer) return;
   forecastContainer.innerHTML = "";
   
   mockForecastData.forEach((day, index) => {
@@ -621,6 +636,7 @@ function initWeather() {
 
 function toggleHourlyDetail(dayIndex) {
   const hourlyContainer = document.getElementById("weather-hourly");
+  if (!hourlyContainer) return;
   
   if (activeHourlyIndex === dayIndex) {
     hourlyContainer.style.display = "none";
@@ -648,71 +664,94 @@ let gapiInited = false;
 let gsisInited = false;
 
 function gapiLoaded() {
-  gapi.load('client', initializeGapiClient);
+  if (typeof gapi !== 'undefined') {
+    gapi.load('client', initializeGapiClient);
+  }
 }
 
 async function initializeGapiClient() {
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-  });
-  gapiInited = true;
-  maybeEnableSignIn();
+  try {
+    await gapi.client.init({
+      apiKey: API_KEY,
+      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+    });
+    gapiInited = true;
+    maybeEnableSignIn();
+  } catch (err) {
+    console.error("GAPI init error:", err);
+  }
 }
 
 function gisLoaded() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (resp) => {
-      if (resp.error !== undefined) {
-        console.error("Auth error:", resp);
-        document.getElementById('auth-status').textContent = 'Sign-in failed';
-        return;
-      }
-      document.getElementById('auth-status').textContent = 'Connected';
-      document.getElementById('sign-in').textContent = 'Refresh';
-      listUpcomingEvents();
-      setInterval(listUpcomingEvents, 15 * 60 * 1000);
-    },
-  });
-  gsisInited = true;
-  maybeEnableSignIn();
+  if (typeof google !== 'undefined' && google.accounts) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (resp) => {
+        if (resp.error !== undefined) {
+          console.error("Auth error:", resp);
+          const statusEl = document.getElementById('auth-status');
+          if (statusEl) statusEl.textContent = 'Sign-in failed';
+          return;
+        }
+        const statusEl = document.getElementById('auth-status');
+        const signBtn = document.getElementById('sign-in');
+        if (statusEl) statusEl.textContent = 'Connected';
+        if (signBtn) signBtn.textContent = 'Refresh';
+        listUpcomingEvents();
+        setInterval(listUpcomingEvents, 15 * 60 * 1000);
+      },
+    });
+    gsisInited = true;
+    maybeEnableSignIn();
+  }
 }
 
 function maybeEnableSignIn() {
-  if (gapiInited && gsisInited) {
-    document.getElementById('sign-in').removeAttribute('disabled');
-    document.getElementById('auth-status').textContent = 'Signed out';
+  const signInBtn = document.getElementById('sign-in');
+  const authStatus = document.getElementById('auth-status');
+  if (gapiInited && gsisInited && signInBtn) {
+    signInBtn.removeAttribute('disabled');
+    if (authStatus) authStatus.textContent = 'Signed out';
   }
 }
 
-document.getElementById('sign-in').onclick = () => {
-  if (!tokenClient) {
-    document.getElementById('auth-status').textContent = 'Auth loading...';
-    return;
-  }
-  if (gapi.client.getToken() === null) {
-    tokenClient.requestAccessToken({prompt: 'consent'});
-  } else {
-    tokenClient.requestAccessToken({prompt: ''});
-  }
-};
+const signInBtn = document.getElementById('sign-in');
+if (signInBtn) {
+  signInBtn.onclick = () => {
+    if (!tokenClient) {
+      const statusEl = document.getElementById('auth-status');
+      if (statusEl) statusEl.textContent = 'Auth loading...';
+      return;
+    }
+    try {
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      } else {
+        tokenClient.requestAccessToken({prompt: ''});
+      }
+    } catch (err) {
+      console.error("Token request error:", err);
+    }
+  };
+}
 
 // Voice Alerts Setup
-document.getElementById('enable-voice').onclick = () => {
-  voiceEnabled = !voiceEnabled;
-  const btn = document.getElementById('enable-voice');
-  if (voiceEnabled) {
-    btn.style.background = '#30d158';
-    btn.style.color = '#000';
-    speak("Voice alerts enabled.");
-  } else {
-    btn.style.background = 'rgba(255, 255, 255, 0.1)';
-    btn.style.color = '#fff';
-    speak("Voice alerts disabled.");
-  }
-};
+const voiceBtn = document.getElementById('enable-voice');
+if (voiceBtn) {
+  voiceBtn.onclick = () => {
+    voiceEnabled = !voiceEnabled;
+    if (voiceEnabled) {
+      voiceBtn.style.background = '#30d158';
+      voiceBtn.style.color = '#000';
+      speak("Voice alerts enabled.");
+    } else {
+      voiceBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      voiceBtn.style.color = '#fff';
+      speak("Voice alerts disabled.");
+    }
+  };
+}
 
 function speak(text) {
   if ('speechSynthesis' in window) {
@@ -726,6 +765,7 @@ setInterval(() => {
   const now = new Date();
   
   cachedEvents.forEach(event => {
+    if (!event.start) return;
     const startStr = event.start.dateTime || event.start.date;
     const startTime = new Date(startStr);
     const diffMinutes = (startTime - now) / (1000 * 60);
@@ -749,11 +789,12 @@ async function listUpcomingEvents() {
       'orderBy': 'startTime',
     });
     
-    cachedEvents = response.result.items;
+    cachedEvents = response.result.items || [];
     const eventsEl = document.getElementById('events');
+    if (!eventsEl) return;
     eventsEl.innerHTML = '';
     
-    if (!cachedEvents || cachedEvents.length === 0) {
+    if (cachedEvents.length === 0) {
       eventsEl.innerHTML = '<div style="padding:4px; font-size:8px; opacity:0.7;">No upcoming events found.</div>';
       return;
     }
@@ -773,7 +814,7 @@ async function listUpcomingEvents() {
             <span class="event-time">${dayStr}</span>
             <span class="event-end-time">${timeStr}</span>
           </div>
-          <div class="event-title">${event.summary}</div>
+          <div class="event-title">${event.summary || 'Untitled Event'}</div>
         </div>
         <div class="event-location">📍 ${location}</div>
       `;
@@ -781,13 +822,13 @@ async function listUpcomingEvents() {
     });
   } catch (err) {
     console.error("Error loading calendar events", err);
-    document.getElementById('auth-status').textContent = 'Error loading calendar';
+    const statusEl = document.getElementById('auth-status');
+    if (statusEl) statusEl.textContent = 'Error loading calendar';
   }
 }
 </script>
-<!-- Load Google API scripts -->
+<!-- Load Google API scripts safely -->
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
-
