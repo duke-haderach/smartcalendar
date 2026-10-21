@@ -2,557 +2,448 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Wall Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SPaDe Dashboard</title>
+<meta name="viewport" content="width=601, height=775, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<!-- COOP Header Fix for Google OAuth Popups -->
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
+<meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none" />
+
 <!-- Google APIs -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <style>
+/* ===== EXACT VIEWPORT LOCK: 601px * 775px ===== */
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
-  font-family: Arial, sans-serif;
-  color: #ffffff;
+  width: 601px;
+  height: 775px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  color: #f5f5f7;
+  background-color: #1e1e1e;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
+
 body {
-  background-image: url("background.jpg");
+  background: radial-gradient(circle at 50% 20%, #16222a, #1a2a6c), url("background.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #1e1e1e; /* Fallback if background.jpg is missing */
+  position: relative;
 }
-/* TWO COLUMNS: left (clock+events), right (weather+stock) */
+
+/* Locked Container Grid filling exact 601x775 */
 .overlay {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top, rgba(0,0,0,0.35), rgba(0,0,0,0.85));
-  display: flex;
-  flex-direction: row;
-  padding: 16px;
-  box-sizing: border-box;
-  gap: 16px;
-}
-
-/* ===== LEFT COLUMN - TWO ROW LAYOUT ===== */
-.left-panel {
-  flex: 7; /* 70% of screen width */
-  display: flex;
-  flex-direction: column;
-  gap: 12px; /* Gap between the two rows */
-  height: 100%;
-}
-
-/* Row 1: Clock + Transactions */
-.row-1 {
-  flex: 0 0 auto; /* Don't grow, don't shrink */
-  display: flex;
-  gap: 12px;
-  height: 30%; /* Approximately 30% of left panel */
-  min-height: 200px;
-}
-
-/* Clock Panel */
-.clock-panel {
-  flex: 0.5; /* Take half of row 1 */
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-/* Transactions Panel */
-.transactions-panel {
-  flex: 1.5; /* Take half of row 1 */
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
-
-/* Row 2: Events */
-.events-panel {
-  flex: 1; /* Take remaining 70% of left panel */
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 400px;
-}
-
-/* ===== CLOCK STYLING ===== */
-#clock {
-  font-size: 36px;
-  font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  text-align: center;
-}
-#date {
-  font-size: 18px;
-  opacity: 0.8;
-  line-height: 1.2;
-  text-align: center;
-}
-
-/* ===== TRANSACTIONS PANEL STYLING ===== */
-.transactions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.transactions-title-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.transactions-title-container > div:first-child {
-  font-size: 10px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-#last-updated {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-top: 4px;
-  font-style: italic;
-}
-
-/* Compact table styling */
-.cards-table-container {
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100% - 50px);
-}
-
-.cards-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.cards-table th {
-  text-align: left;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-  font-size: 11px !important;
-  position: sticky;
   top: 0;
-  z-index: 10;
-  opacity: 0.8;
+  left: 0;
+  width: 601px;
+  height: 775px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: brightness(0.9);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.cards-table td {
-  padding: 6px 10px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 12px !important;
-}
-
-.cards-table tr:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.cards-table .amount {
-  text-align: right;
-  font-family: 'Courier New', monospace !important;
-  font-size: 13px;
-  font-weight: 600 !important;
-}
-
-/* Sync button styling */
-#sync-sheets-btn {
-  padding: 8px 14px;
-  background: rgba(66, 133, 244, 0.3);
-  color: #4285F4;
-  border: 1px solid rgba(66, 133, 244, 0.7);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 600;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-#sync-sheets-btn:hover {
-  background: rgba(66, 133, 244, 0.4);
-  box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
-}
-
-#total-balance {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 6px 12px;
-  border-radius: 6px;
-  border-left: 3px solid currentColor;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-#total-balance:hover {
-  transform: translateY(-1px);
-  transition: transform 0.2s;
-}
-
-/* ===== EVENTS PANEL STYLING ===== */
-#auth-status {
-  font-size: 14px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#events-container {
-  flex: 1;
-  overflow-y: auto;
-  max-height: 100%;
-}
-
-#events {
-  flex: 1;
-  overflow-y: auto;
-  font-size: 14px;
-}
-
-.event-day {
-  margin-top: 12px;
-  margin-bottom: 6px;
-  font-weight: 600;
-  font-size: 15px;
-  opacity: 0.9;
-  color: #4CAF50;
-}
-
-.event-item {
-  margin-bottom: 8px;
-  padding: 8px 10px;
-  background: rgba(0, 255, 0, 0.05);
-  border-radius: 6px;
-  color: #f7f5f5;
-  font-size: 14px;
-  font-weight: bold;
-  display: flex;
-  border-left: 3px solid #4CAF50;
-}
-
-.event-time-container {
+/* macOS Frosted Glass Window Panel */
+.macos-panel {
+  background: rgba(30, 30, 30, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-width: 25%;
-  margin-right: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-.event-time {
+/* macOS Window Header dots */
+.macos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.window-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.panel-title {
+  font-size: 8px;
   font-weight: 600;
-  white-space: nowrap;
-  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.event-end-time {
-  font-size: 11px;
-  color: #e3dede;
-  margin-top: 2px;
-  white-space: nowrap;
-}
-
-.event-title {
-  flex: 1;
-  min-width: 60%;
-  line-height: 1.3;
-  font-size: 14px;
-}
-
-.event-location {
-  display: block;
-  font-size: 12px;
-  color: #e3dede;
-  margin-top: 4px;
-  width: 100%;
-}
-
-/* Auth buttons */
-#sign-in, #enable-voice {
-  padding: 8px 16px;
-  margin-top: 6px;
-  margin-right: 10px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ffffff;
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-  cursor: pointer;
-  display: inline-block;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-#sign-in:hover, #enable-voice:hover {
-  background: rgba(255,255,255,0.25);
-}
-
-/* ===== RIGHT COLUMN ===== */
-.right-panel {
-  flex: 3 !important;
-  min-width: 300px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 16px !important;
-  min-height: 0 !important;
-}
-
-#weather-panel {
-  flex: 4 1 0;
-  min-height: 180px;
-  max-height: 1060px;
-  overflow-y: auto;
-}
-
-#youtube-panel {
-  flex: 3 1 0 !important;
-  min-height: 200px !important;
-  max-height: 500px !important;
-  overflow: hidden !important;
-  position: relative !important;
-}
-
-#stock-panel {
-  flex: 3 1 0;
-  min-height: 140px;
-}
-
-#weather-panel, #stock-panel {
-  flex-shrink: 0 !important;
-}
-
-.panel {
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 8px;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-/* ===== WEATHER STYLING ===== */
-#weather-current {
-  font-size: 22px;
-  font-weight: 600;
-}
-
-#weather-forecast {
-  margin-top: 8px;
+/* ===== LEFT COLUMN: Clock(20%), Weather(50%), Stock(30%) ===== */
+.column-left {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 14px;
+  height: 100%;
+  min-width: 0;
+}
+
+.clock-panel {
+  flex: 0 0 20%;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+}
+
+#clock {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+#date {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 1px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.weather-panel {
+  flex: 0 0 50%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#weather-current {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#weather-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .weather-day {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
-  background: rgba(255,255,255,0.07);
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
+  font-size: 9px;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.weather-day:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .weather-name {
-  width: 80px;
   font-weight: 600;
-  font-size: 13px;
+  width: 45px;
 }
 
 .weather-temp {
-  font-weight: 600;
-  margin-right: 10px;
-  margin-left: 15px;
-  font-size: 13px;
+  font-weight: 700;
+  color: #30d158;
+  white-space: nowrap;
 }
 
 .weather-desc {
-  opacity: 0.9;
-  flex: 1;
+  color: rgba(255, 255, 255, 0.7);
   text-align: right;
-  margin-left: 15px;
-  font-size: 12px;
-}
-
-/* ===== YOUTUBE STYLING ===== */
-#youtube-widget-container {
-  width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-}
-
-#youtube-search-section {
-  display: flex;
-  gap: 0;
-  margin-bottom: 12px;
-  width: 100%;
-}
-
-#youtube-search-input {
+  font-size: 8px;
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 4px 0 0 4px;
-  border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(0,0,0,0.6);
-  color: white;
-  font-size: 14px;
-  border-right: none;
-  min-width: 150px;
-}
-
-#youtube-search-btn {
-  padding: 0 15px;
-  background: #ff0000;
-  color: white;
-  border: 1px solid #ff0000;
-  border-radius: 0 4px 4px 0;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-}
-
-#youtube-search-btn:hover {
-  background: #cc0000;
-}
-
-#youtube-player-area {
-  flex-shrink: 0 !important;
-  height: 180px !important;
-  width: 100% !important;
-  position: relative !important;
-  margin-bottom: 10px !important;
-}
-
-#youtube-player {
-  width: 100% !important;
-  height: 100% !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  background: #000 !important;
-  border-radius: 4px !important;
-  overflow: hidden !important;
-}
-
-#youtube-player iframe {
-  width: 100% !important;
-  height: 100% !important;
-  display: block !important;
-  border: none !important;
-}
-
-#youtube-video-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  white-space: nowrap;
+  padding-left: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-#youtube-video-channel {
-  font-size: 12px;
-  opacity: 0.8;
+#weather-hourly {
+  margin-top: 4px;
+  font-size: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  display: none;
+}
+
+.hourly-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.hourly-row:last-child { border-bottom: none; }
+
+.stock-panel {
+  flex: 0 0 30%;
+  min-height: 0;
+  padding: 4px 6px;
+}
+
+#tradingview-widget-container {
+  width: 100%;
+  height: 100%;
+}
+
+
+/* ===== RIGHT COLUMN: Quote(40%), Events(60%) ===== */
+.column-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  min-width: 0;
+}
+
+.thought-panel {
+  flex: 0 0 40%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#thought-container {
+  width: 100%;
+  height: calc(100% - 14px);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  overflow-y: auto;
+}
+
+.thought-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #30d158;
+  margin-bottom: 2px;
+}
+
+#thought-text {
+  font-size: 11px;
+  line-height: 1.25;
+  color: #ffffff;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.events-panel {
+  flex: 0 0 60%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+#auth-status {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.macos-btn {
+  padding: 2px 5px;
+  font-size: 8px;
+  font-weight: 600;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.macos-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#events-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
+}
+
+.event-item {
+  margin-bottom: 3px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.event-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.event-time-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 50px;
+}
+
+.event-time {
+  font-weight: 600;
+  font-size: 8px;
+  color: #30d158;
+}
+
+.event-end-time {
+  font-size: 7px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.event-title {
+  flex: 1;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.event-location {
+  display: block;
+  font-size: 7px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 1px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 2px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
 }
 </style>
 </head>
 <body>
 <div class="overlay">
-  <!-- LEFT column: row 1 (clock + transactions) + row 2 (events) -->
-  <div class="left-panel">
-    <div class="row-1">
-      <!-- Clock Panel -->
-      <div class="panel clock-panel">
-        <div id="clock">--:-- --</div>
-        <div id="date">Loading date…</div>
+  <!-- COLUMN LEFT: Clock(20%), Weather(50%), Stock(30%) -->
+  <div class="column-left">
+    <!-- Clock Panel -->
+    <div class="macos-panel clock-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Clock</div>
+        <div style="width: 20px;"></div>
       </div>
-      
-      <!-- Transactions Panel -->
-      <div class="panel transactions-panel">
-        <div class="transactions-header">
-          <div class="transactions-title-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-              <div id="total-balance" style="font-weight: bold; font-size: 16px; color: #4CAF50;">Total: $0.00</div>
-            </div>
-            <div id="last-updated">Last updated: --</div>
-          </div>
-          <button id="sync-sheets-btn">🔄Sync</button>
-        </div>
-        <div class="cards-table-container">
-          <table class="cards-table" id="cards-table">
-            <thead>
-              <tr>
-                <th>Card Issuer</th>
-                <th style="text-align: right;">Open Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Dynamic Cards -->
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div id="clock">--:-- --</div>
+      <div id="date">Loading date…</div>
     </div>
-    
-    <!-- Row 2: Events -->
-    <div class="panel events-panel">
-      <div id="auth-status">Initializing Google Calendar...</div>
-      <div>
-        <button id="sign-in" disabled>Sign In</button>
-        <button id="enable-voice">Enable voice alerts</button>
+
+    <!-- Weather Panel -->
+    <div class="macos-panel weather-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Weather (°C / °F)</div>
+        <div style="width: 20px;"></div>
       </div>
-      <div id="events-container">
-        <div id="events"></div>
+      <div id="weather-current">Loading weather…</div>
+      <div id="weather-forecast"></div>
+      <div id="weather-hourly"></div>
+    </div>
+
+    <!-- Markets / Stock Panel (SPY Real-Time) -->
+    <div class="macos-panel stock-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Markets (SPY)</div>
+        <div style="width: 20px;"></div>
+      </div>
+      <div id="tradingview-widget-container">
+        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22AMEX%3ASPY%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
       </div>
     </div>
   </div>
   
-  <!-- RIGHT column: weather + youtube + stock -->
-  <div class="right-panel">
-    <div class="panel" id="weather-panel">
-      <div id="weather-current">Loading weather…</div>
-      <div id="weather-forecast"></div>
-    </div>
-
-    <div class="panel" id="youtube-panel">
-      <div id="youtube-widget-container">
-        <div id="youtube-search-section">
-          <input type="text" id="youtube-search-input" placeholder="Search Videos">
-          <button id="youtube-search-btn" title="Search YouTube">🔍</button>
-        </div>
-        <div id="youtube-player-area">
-          <div id="youtube-player"></div>
-          <div id="youtube-video-info">
-            <div id="youtube-video-title">Select a video to play</div>
-            <div id="youtube-video-channel">Use search or quick buttons</div>
-          </div>
-        </div>
+  <!-- COLUMN RIGHT: Quote(40%), Events(60%) -->
+  <div class="column-right">
+    <!-- Thought for the Day Panel -->
+    <div class="macos-panel thought-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Thought for the Day</div>
+        <div style="width: 20px;"></div>
+      </div>
+      <div id="thought-container">
+        <div class="thought-label" id="thought-title">Napoleon Hill</div>
+        <div id="thought-text">Fetching today's wisdom...</div>
       </div>
     </div>
 
-    <div class="panel" id="stock-panel">
-      <div id="tradingview-widget" style="width:100%;height:100%;"></div>
+    <!-- Calendar Events & Reminders Panel -->
+    <div class="macos-panel events-panel">
+      <div class="macos-header">
+        <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <div class="panel-title">Calendar & Reminders</div>
+        <div style="width: 20px;"></div>
+      </div>
+      <div class="auth-bar">
+        <span id="auth-status">Ready</span>
+        <div>
+          <button id="sign-in" class="macos-btn" disabled>Sign In</button>
+          <button id="enable-voice" class="macos-btn">Voice</button>
+        </div>
+      </div>
+      <div id="events-container">
+        <div id="events">
+          <div style="padding: 4px; opacity: 0.7; font-size: 8px;">Click 'Sign In' to load events.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -564,13 +455,100 @@ const API_KEY = "AIzaSyCcx8q0nHP9DkA-M_KFyjFo-uLV-7TOrSE";
 const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
 
-const DEFAULT_CARDS_SIMPLE = [
-  { card_issuer: "Chase Sapphire", balance: 1250.45 },
-  { card_issuer: "Amex Gold", balance: 450.00 },
-  { card_issuer: "Discover It", balance: 89.20 }
-];
+const QUOTES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREcumm4p5A9G-506IZdhpDsBHZtbeHLiVMVbZJHLGFs6kkl3QPamiaOGmx1U8MADueTO-45bipj-wv/pub?output=csv";
 
-// ===== CLOCK =====
+let voiceEnabled = false;
+let spokenEvents = new Set();
+let cachedEvents = [];
+let activeHourlyIndex = null;
+
+// CSV Parser
+function parseCSV(text) {
+  try {
+    const lines = text.split(/\r?\n/);
+    return lines.map(line => {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    });
+  } catch(e) {
+    return [];
+  }
+}
+
+function getDayOfYear(date) {
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff = date - start;
+  const oneDay = 1000 * 60 * 60 * 24;
+  return Math.floor(diff / oneDay);
+}
+
+// Fetch today's thought
+async function fetchAndDisplayTodayThought() {
+  const fallbackQuote = `"Whatever the mind can conceive and believe, it can achieve." — Napoleon Hill`;
+  try {
+    const response = await fetch(QUOTES_CSV_URL);
+    if (!response.ok) throw new Error("Network response failed");
+    
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+    if (rows.length < 2) throw new Error("Empty CSV");
+    
+    const now = new Date();
+    const monthName = now.toLocaleString('en-US', { month: 'long' });
+    const dayNum = now.getDate();
+    const todayFormatted = `${monthName} ${dayNum}`;
+    
+    const dataRows = rows.slice(1).filter(r => r.length >= 2 && r[0]);
+    let matchedRow = dataRows.find(r => r[0].toLowerCase() === todayFormatted.toLowerCase());
+    
+    if (!matchedRow) {
+      const dayOfYear = getDayOfYear(now);
+      const index = (dayOfYear - 1) % dataRows.length;
+      matchedRow = dataRows[index];
+    }
+    
+    if (matchedRow) {
+      const dateCol = matchedRow[0];
+      const principleCol = matchedRow[1] || '';
+      const quoteCol = matchedRow[2] || matchedRow[1] || '';
+      
+      const titleElem = document.getElementById("thought-title");
+      const textElem = document.getElementById("thought-text");
+      
+      if (titleElem && textElem) {
+        titleElem.textContent = (principleCol && principleCol !== quoteCol) ? `${dateCol}: ${principleCol}` : `Napoleon Hill — ${dateCol}`;
+        textElem.textContent = `"${quoteCol}"`;
+      }
+    } else {
+      throw new Error("No match");
+    }
+  } catch (error) {
+    console.warn("Using fallback quote:", error);
+    const textElem = document.getElementById("thought-text");
+    if (textElem) textElem.textContent = fallbackQuote;
+  }
+}
+
+// ===== CLOCK & DATE =====
 function updateClock() {
   const now = new Date();
   const clockEl = document.getElementById("clock");
@@ -579,65 +557,105 @@ function updateClock() {
     clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
   }
   if (dateEl) {
-    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   }
 }
 setInterval(updateClock, 1000);
 updateClock();
+fetchAndDisplayTodayThought();
 
-// ===== CARDS TABLE DISPLAY =====
-function displayCardsTable(cards) {
-  const tbody = document.querySelector("#cards-table tbody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-  let total = 0;
-
-  cards.forEach(card => {
-    const tr = document.createElement("tr");
-    const bal = parseFloat(card.balance) || 0;
-    total += bal;
-    tr.innerHTML = `
-      <td>${card.card_issuer || card.issuer || 'Card'}</td>
-      <td class="amount">$${bal.toFixed(2)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  const totalEl = document.getElementById("total-balance");
-  if (totalEl) totalEl.textContent = `Total: $${total.toFixed(2)}`;
+// ===== DUAL TEMPERATURE FORMATTER (°C & °F) =====
+function formatTempDual(tempC) {
+  if (tempC === undefined || tempC === null || isNaN(tempC)) return "--°C / --°F";
+  const c = Math.round(tempC);
+  const f = Math.round((tempC * 9/5) + 32);
+  return `${c}°C / ${f}°F`;
 }
 
-function updateLastUpdatedDisplay() {
-  const updatedEl = document.getElementById("last-updated");
-  if (updatedEl) {
-    updatedEl.textContent = `Last updated: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+// ===== WEATHER LOGIC =====
+const mockForecastData = [
+  { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generateTodayHourly(21) },
+  { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
+  { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: generateFull24HourHourly(19) },
+  { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: generateFull24HourHourly(18) },
+  { name: "Friday", tempC: 20, desc: "Clear Skies", hourly: generateFull24HourHourly(20) },
+  { name: "Saturday", tempC: 22, desc: "Warm & Sunny", hourly: generateFull24HourHourly(22) },
+  { name: "Sunday", tempC: 17, desc: "Breezy", hourly: generateFull24HourHourly(17) }
+];
+
+function generateTodayHourly(baseTemp) {
+  const hours = [];
+  const currentHour = new Date().getHours();
+  for (let hr = currentHour; hr < 24; hr++) {
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
+    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
+    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
   }
+  return hours;
 }
 
-displayCardsTable(DEFAULT_CARDS_SIMPLE);
-updateLastUpdatedDisplay();
+function generateFull24HourHourly(baseTemp) {
+  const hours = [];
+  for (let hr = 0; hr < 24; hr++) {
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
+    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
+    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
+  }
+  return hours;
+}
 
-// ===== WEATHER MOCK INITIALIZATION =====
 function initWeather() {
   const currentEl = document.getElementById("weather-current");
-  const forecastEl = document.getElementById("weather-forecast");
-  if (currentEl) currentEl.textContent = "21°C • Sunny & Clear";
-  if (forecastEl) {
-    forecastEl.innerHTML = `
-      <div class="weather-day"><span class="weather-name">Tomorrow</span><span class="weather-temp">23°C</span><span class="weather-desc">Mostly Sunny</span></div>
-      <div class="weather-day"><span class="weather-name">Wednesday</span><span class="weather-temp">19°C</span><span class="weather-desc">Partly Cloudy</span></div>
-      <div class="weather-day"><span class="weather-name">Thursday</span><span class="weather-temp">18°C</span><span class="weather-desc">Light Showers</span></div>
-    `;
+  if (currentEl) {
+    currentEl.innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
   }
+  const forecastContainer = document.getElementById("weather-forecast");
+  if (!forecastContainer) return;
+  forecastContainer.innerHTML = "";
+  
+  mockForecastData.forEach((day, index) => {
+    const dayDiv = document.createElement("div");
+    dayDiv.className = "weather-day";
+    dayDiv.innerHTML = `
+      <span class="weather-name">${day.name}</span>
+      <span class="weather-temp">${formatTempDual(day.tempC)}</span>
+      <span class="weather-desc">${day.desc}</span>
+    `;
+    dayDiv.onclick = () => toggleHourlyDetail(index);
+    forecastContainer.appendChild(dayDiv);
+  });
 }
+
+function toggleHourlyDetail(dayIndex) {
+  const hourlyContainer = document.getElementById("weather-hourly");
+  if (!hourlyContainer) return;
+  
+  if (activeHourlyIndex === dayIndex) {
+    hourlyContainer.style.display = "none";
+    activeHourlyIndex = null;
+    return;
+  }
+  
+  activeHourlyIndex = dayIndex;
+  const dayData = mockForecastData[dayIndex];
+  
+  let html = `<div style="font-weight:600; margin-bottom:2px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
+  dayData.hourly.forEach(h => {
+    html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
+  });
+  
+  hourlyContainer.innerHTML = html;
+  hourlyContainer.style.display = "block";
+}
+
 initWeather();
 
-// ===== GOOGLE CALENDAR GAPI & GIS SETUP =====
+// ===== GOOGLE CALENDAR AUTH & EVENTS =====
 let tokenClient;
 let gapiInited = false;
 let gsisInited = false;
-let cachedEvents = [];
-let voiceEnabled = false;
 
 function gapiLoaded() {
   if (typeof gapi !== 'undefined') {
@@ -663,16 +681,20 @@ function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      callback: (resp) => {
-        if (resp.error !== undefined) {
-          console.error("Auth error:", resp);
-          document.getElementById('auth-status').textContent = 'Sign-in failed';
-          return;
+      callback: async (resp) => {
+        try {
+          if (resp.error !== undefined) {
+            console.error("Auth error:", resp);
+            document.getElementById('auth-status').textContent = 'Sign-in failed';
+            return;
+          }
+          document.getElementById('auth-status').textContent = 'Connected';
+          document.getElementById('sign-in').textContent = 'Refresh';
+          await listUpcomingEvents();
+          setInterval(listUpcomingEvents, 15 * 60 * 1000);
+        } catch (callbackErr) {
+          console.error("Error in auth callback:", callbackErr);
         }
-        document.getElementById('auth-status').textContent = 'Connected to Google Calendar';
-        document.getElementById('sign-in').textContent = 'Refresh Events';
-        listUpcomingEvents();
-        setInterval(listUpcomingEvents, 15 * 60 * 1000);
       },
     });
     gsisInited = true;
@@ -685,20 +707,19 @@ function maybeEnableSignIn() {
   const authStatus = document.getElementById('auth-status');
   if (gapiInited && gsisInited && signInBtn) {
     signInBtn.removeAttribute('disabled');
-    signInBtn.textContent = 'Sign In';
-    if (authStatus) authStatus.textContent = 'Signed out. Click Sign In to load calendar.';
+    if (authStatus) authStatus.textContent = 'Signed out';
   }
 }
 
 const signInBtn = document.getElementById('sign-in');
 if (signInBtn) {
   signInBtn.onclick = () => {
-    if (!tokenClient) {
-      document.getElementById('auth-status').textContent = 'Auth initializing...';
-      return;
-    }
     try {
-      if (gapi.client.getToken() === null) {
+      if (!tokenClient) {
+        document.getElementById('auth-status').textContent = 'Auth loading...';
+        return;
+      }
+      if (!gapi.client.getToken()) {
         tokenClient.requestAccessToken({prompt: 'consent'});
       } else {
         tokenClient.requestAccessToken({prompt: ''});
@@ -709,14 +730,44 @@ if (signInBtn) {
   };
 }
 
+// Voice Alerts Setup
 const voiceBtn = document.getElementById('enable-voice');
 if (voiceBtn) {
   voiceBtn.onclick = () => {
     voiceEnabled = !voiceEnabled;
-    voiceBtn.style.background = voiceEnabled ? '#4CAF50' : 'rgba(255,255,255,0.1)';
-    voiceBtn.textContent = voiceEnabled ? 'Voice alerts active' : 'Enable voice alerts';
+    if (voiceEnabled) {
+      voiceBtn.style.background = '#30d158';
+      voiceBtn.style.color = '#000';
+      speak("Voice alerts enabled.");
+    } else {
+      voiceBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      voiceBtn.style.color = '#fff';
+      speak("Voice alerts disabled.");
+    }
   };
 }
+
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+setInterval(() => {
+  if (!voiceEnabled || cachedEvents.length === 0) return;
+  const now = new Date();
+  cachedEvents.forEach(event => {
+    if (!event.start) return;
+    const startStr = event.start.dateTime || event.start.date;
+    const startTime = new Date(startStr);
+    const diffMinutes = (startTime - now) / (1000 * 60);
+    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
+      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
+      spokenEvents.add(event.id);
+    }
+  });
+}, 30000);
 
 async function listUpcomingEvents() {
   try {
@@ -726,7 +777,7 @@ async function listUpcomingEvents() {
       'timeMin': now.toISOString(),
       'showDeleted': false,
       'singleEvents': true,
-      'maxResults': 50,
+      'maxResults': 250,
       'orderBy': 'startTime',
     });
     
@@ -736,7 +787,7 @@ async function listUpcomingEvents() {
     eventsEl.innerHTML = '';
     
     if (cachedEvents.length === 0) {
-      eventsEl.innerHTML = '<div style="padding: 10px; opacity: 0.7;">No upcoming events found.</div>';
+      eventsEl.innerHTML = '<div style="padding: 4px; font-size: 8px; opacity: 0.7;">No upcoming events found.</div>';
       return;
     }
     
@@ -750,20 +801,21 @@ async function listUpcomingEvents() {
       const div = document.createElement('div');
       div.className = 'event-item';
       div.innerHTML = `
-        <div class="event-time-container">
-          <span class="event-time">${dayStr}</span>
-          <span class="event-end-time">${timeStr}</span>
-        </div>
-        <div class="event-right">
+        <div class="event-header-row">
+          <div class="event-time-container">
+            <span class="event-time">${dayStr}</span>
+            <span class="event-end-time">${timeStr}</span>
+          </div>
           <div class="event-title">${event.summary || 'Untitled Event'}</div>
-          <div class="event-location">📍 ${location}</div>
         </div>
+        <div class="event-location">📍 ${location}</div>
       `;
       eventsEl.appendChild(div);
     });
   } catch (err) {
     console.error("Error loading calendar events", err);
-    document.getElementById('auth-status').textContent = 'Error loading calendar events';
+    document.getElementById('events').innerHTML = '<div style="padding:4px; font-size:8px; color:#ff5f56;">Error loading calendar items.</div>';
+    document.getElementById('auth-status').textContent = 'Error loading calendar';
   }
 }
 </script>
