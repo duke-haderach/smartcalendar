@@ -90,7 +90,7 @@ body {
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ===== LEFT COLUMN (Clock 20%, Weather 50%, Markets 30%) ===== */
+/* ===== LEFT COLUMN (Clock 18%, Weather 52%, Markets 30%) ===== */
 .column-left {
   flex: 1;
   display: flex;
@@ -101,7 +101,7 @@ body {
 }
 
 .clock-panel {
-  flex: 0 0 20%;
+  flex: 0 0 18%;
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -123,7 +123,7 @@ body {
 }
 
 .weather-panel {
-  flex: 0 0 50%;
+  flex: 0 0 52%;
   min-height: 0;
   overflow-y: auto;
 }
@@ -161,7 +161,7 @@ body {
 
 .weather-name {
   font-weight: 600;
-  width: 70px;
+  width: 75px;
 }
 
 .weather-temp {
@@ -451,8 +451,9 @@ let gsisInited = false;
 let cachedEvents = [];
 let voiceEnabled = false;
 let activeHourlyIndex = null;
+let dynamicForecastData = [];
 
-// ===== 1. CLOCK & DATE (Guaranteed to run instantly) =====
+// ===== 1. CLOCK & DATE =====
 function updateClock() {
   try {
     const now = new Date();
@@ -557,23 +558,13 @@ async function fetchAndDisplayTodayThought() {
 }
 fetchAndDisplayTodayThought();
 
-// ===== 3. WEATHER LOGIC =====
+// ===== 3. WEATHER LOGIC (Dynamic 7-Day Weekday Generation) =====
 function formatTempDual(tempC) {
   if (tempC === undefined || tempC === null || isNaN(tempC)) return "--°C / --°F";
   const c = Math.round(tempC);
   const f = Math.round((tempC * 9/5) + 32);
   return `${c}°C / ${f}°F`;
 }
-
-const mockForecastData = [
-  { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generateTodayHourly(21) },
-  { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
-  { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: generateFull24HourHourly(19) },
-  { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: generateFull24HourHourly(18) },
-  { name: "Friday", tempC: 20, desc: "Clear Skies", hourly: generateFull24HourHourly(20) },
-  { name: "Saturday", tempC: 22, desc: "Warm & Sunny", hourly: generateFull24HourHourly(22) },
-  { name: "Sunday", tempC: 17, desc: "Breezy", hourly: generateFull24HourHourly(17) }
-];
 
 function generateTodayHourly(baseTemp) {
   const hours = [];
@@ -593,226 +584,3 @@ function generateFull24HourHourly(baseTemp) {
     const ampm = hr >= 12 ? 'PM' : 'AM';
     const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
     const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
-    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
-  }
-  return hours;
-}
-
-function initWeather() {
-  try {
-    const currentEl = document.getElementById("weather-current");
-    if (currentEl) {
-      currentEl.innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
-    }
-    const forecastContainer = document.getElementById("weather-forecast");
-    if (!forecastContainer) return;
-    forecastContainer.innerHTML = "";
-    
-    mockForecastData.forEach((day, index) => {
-      const dayDiv = document.createElement("div");
-      dayDiv.className = "weather-day";
-      dayDiv.innerHTML = `
-        <span class="weather-name">${day.name}</span>
-        <span class="weather-temp">${formatTempDual(day.tempC)}</span>
-        <span class="weather-desc">${day.desc}</span>
-      `;
-      dayDiv.onclick = () => toggleHourlyDetail(index);
-      forecastContainer.appendChild(dayDiv);
-    });
-  } catch (e) {
-    console.error("Weather init error:", e);
-  }
-}
-
-function toggleHourlyDetail(dayIndex) {
-  const hourlyContainer = document.getElementById("weather-hourly");
-  if (!hourlyContainer) return;
-  
-  if (activeHourlyIndex === dayIndex) {
-    hourlyContainer.style.display = "none";
-    activeHourlyIndex = null;
-    return;
-  }
-  
-  activeHourlyIndex = dayIndex;
-  const dayData = mockForecastData[dayIndex];
-  
-  let html = `<div style="font-weight:600; margin-bottom:4px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
-  dayData.hourly.forEach(h => {
-    html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
-  });
-  
-  hourlyContainer.innerHTML = html;
-  hourlyContainer.style.display = "block";
-}
-
-initWeather();
-
-// ===== 4. GOOGLE CALENDAR GAPI & GIS SETUP =====
-function gapiLoaded() {
-  try {
-    if (typeof gapi !== 'undefined') {
-      gapi.load('client', initializeGapiClient);
-    }
-  } catch (e) {
-    console.error("gapiLoaded error:", e);
-  }
-}
-
-async function initializeGapiClient() {
-  try {
-    await gapi.client.init({
-      apiKey: API_KEY,
-      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-    });
-    gapiInited = true;
-    maybeEnableSignIn();
-  } catch (err) {
-    console.error("GAPI init error:", err);
-  }
-}
-
-function gisLoaded() {
-  try {
-    if (typeof google !== 'undefined' && google.accounts) {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (resp) => {
-          if (resp.error !== undefined) {
-            console.error("Auth error:", resp);
-            document.getElementById('auth-status').textContent = 'Sign-in failed';
-            return;
-          }
-          document.getElementById('auth-status').textContent = 'Connected';
-          document.getElementById('sign-in').textContent = 'Refresh';
-          listUpcomingEvents();
-          setInterval(listUpcomingEvents, 15 * 60 * 1000);
-        },
-      });
-      gsisInited = true;
-      maybeEnableSignIn();
-    }
-  } catch (e) {
-    console.error("gisLoaded error:", e);
-  }
-}
-
-function maybeEnableSignIn() {
-  const signInBtn = document.getElementById('sign-in');
-  const authStatus = document.getElementById('auth-status');
-  if (gapiInited && gsisInited && signInBtn) {
-    signInBtn.removeAttribute('disabled');
-    signInBtn.textContent = 'Sign In';
-    if (authStatus) authStatus.textContent = 'Signed out';
-  }
-}
-
-const signInBtn = document.getElementById('sign-in');
-if (signInBtn) {
-  signInBtn.onclick = () => {
-    try {
-      if (!tokenClient) {
-        document.getElementById('auth-status').textContent = 'Auth initializing...';
-        return;
-      }
-      if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-      } else {
-        tokenClient.requestAccessToken({prompt: ''});
-      }
-    } catch (err) {
-      console.error("Token request error:", err);
-    }
-  };
-}
-
-const voiceBtn = document.getElementById('enable-voice');
-if (voiceBtn) {
-  voiceBtn.onclick = () => {
-    voiceEnabled = !voiceEnabled;
-    voiceBtn.style.background = voiceEnabled ? '#30d158' : 'rgba(255,255,255,0.1)';
-    voiceBtn.style.color = voiceEnabled ? '#000' : '#fff';
-    speak(voiceEnabled ? "Voice alerts enabled." : "Voice alerts disabled.");
-  };
-}
-
-function speak(text) {
-  try {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
-    }
-  } catch (e) {}
-}
-
-setInterval(() => {
-  if (!voiceEnabled || cachedEvents.length === 0) return;
-  const now = new Date();
-  cachedEvents.forEach(event => {
-    if (!event.start) return;
-    const startStr = event.start.dateTime || event.start.date;
-    const startTime = new Date(startStr);
-    const diffMinutes = (startTime - now) / (1000 * 60);
-    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
-      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
-      spokenEvents.add(event.id);
-    }
-  });
-}, 30000);
-
-async function listUpcomingEvents() {
-  try {
-    const now = new Date();
-    const response = await gapi.client.calendar.events.list({
-      'calendarId': CALENDAR_ID,
-      'timeMin': now.toISOString(),
-      'showDeleted': false,
-      'singleEvents': true,
-      'maxResults': 250,
-      'orderBy': 'startTime',
-    });
-    
-    cachedEvents = response.result.items || [];
-    const eventsEl = document.getElementById('events');
-    if (!eventsEl) return;
-    eventsEl.innerHTML = '';
-    
-    if (cachedEvents.length === 0) {
-      eventsEl.innerHTML = '<div style="padding: 10px; opacity: 0.7; font-size: 12px;">No upcoming events found.</div>';
-      return;
-    }
-    
-    cachedEvents.forEach(event => {
-      const start = event.start.dateTime || event.start.date;
-      const startDate = new Date(start);
-      const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-      const location = event.location ? event.location : 'No location specified';
-      
-      const div = document.createElement('div');
-      div.className = 'event-item';
-      div.innerHTML = `
-        <div class="event-header-row">
-          <div class="event-time-container">
-            <span class="event-time">${dayStr}</span>
-            <span class="event-end-time">${timeStr}</span>
-          </div>
-          <div class="event-title">${event.summary || 'Untitled Event'}</div>
-        </div>
-        <div class="event-location">📍 ${location}</div>
-      `;
-      eventsEl.appendChild(div);
-    });
-  } catch (err) {
-    console.error("Error loading calendar events", err);
-    document.getElementById('events').innerHTML = '<div style="padding: 10px; font-size: 12px; color: #ff5f56;">Error loading calendar events.</div>';
-    document.getElementById('auth-status').textContent = 'Error loading calendar';
-  }
-}
-</script>
-<!-- Load Google API scripts safely -->
-<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-</body>
-</html>
