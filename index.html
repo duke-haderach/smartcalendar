@@ -2,87 +2,76 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>SPaDe Dashboard</title>
-<meta name="viewport" content="width=601, height=775, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<!-- COOP Header Fix for Google OAuth Popups -->
-<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
-<meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none" />
-
+<title>Wall Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <!-- Google APIs -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <style>
-/* ===== EXACT VIEWPORT LOCK: 601px * 775px ===== */
+/* ===== EXACT VIEWPORT & RESET ===== */
 html, body {
   margin: 0;
   padding: 0;
-  width: 601px;
-  height: 775px;
+  height: 100%;
+  width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  color: #f5f5f7;
+  color: #ffffff;
   background-color: #1e1e1e;
   overflow: hidden;
-  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background: radial-gradient(circle at 50% 20%, #16222a, #1a2a6c), url("background.jpg");
+  background-image: url("background.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  position: relative;
 }
 
-/* Locked Container Grid filling exact 601x775 */
+/* PORTRAIT TWO-COLUMN LAYOUT */
 .overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 601px;
-  height: 775px;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: brightness(0.9);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 6px;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(0,0,0,0.4), rgba(0,0,0,0.88));
+  display: flex;
+  flex-direction: row;
+  padding: 12px;
   box-sizing: border-box;
-  overflow: hidden;
+  gap: 12px;
 }
 
-/* macOS Frosted Glass Window Panel */
+/* macOS Frosted Glass Panel Base */
 .macos-panel {
-  background: rgba(30, 30, 30, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(30, 30, 30, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 6px 8px;
+  border-radius: 10px;
+  padding: 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-/* macOS Window Header dots */
+/* macOS Header Dots */
 .macos-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 3px;
-  padding-bottom: 2px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .window-dots {
   display: flex;
-  gap: 3px;
+  gap: 4px;
 }
 
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 .dot-red { background: #ff5f56; }
@@ -90,18 +79,19 @@ body {
 .dot-green { background: #27c93f; }
 
 .panel-title {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ===== LEFT COLUMN: Clock(20%), Weather(50%), Stock(30%) ===== */
+/* ===== LEFT COLUMN (Clock 20%, Weather 50%, Markets 30%) ===== */
 .column-left {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   height: 100%;
   min-width: 0;
 }
@@ -109,22 +99,21 @@ body {
 .clock-panel {
   flex: 0 0 20%;
   align-items: center;
-  text-align: center;
   justify-content: center;
+  text-align: center;
 }
 
 #clock {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.5px;
   line-height: 1.1;
-  color: #ffffff;
 }
 
 #date {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.75);
-  margin-top: 1px;
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 4px;
   font-weight: 500;
   text-transform: uppercase;
 }
@@ -136,65 +125,61 @@ body {
 }
 
 #weather-current {
-  font-size: 10px;
-  font-weight: 700;
-  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
 #weather-forecast {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .weather-day {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-  font-size: 9px;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 12px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .weather-day:hover {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .weather-name {
   font-weight: 600;
-  width: 45px;
+  width: 70px;
 }
 
 .weather-temp {
-  font-weight: 700;
+  font-weight: 600;
   color: #30d158;
-  white-space: nowrap;
 }
 
 .weather-desc {
-  color: rgba(255, 255, 255, 0.7);
+  opacity: 0.8;
   text-align: right;
-  font-size: 8px;
   flex: 1;
-  padding-left: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding-left: 8px;
+  font-size: 11px;
 }
 
 #weather-hourly {
-  margin-top: 4px;
-  font-size: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 4px;
-  padding: 4px;
-  max-height: 150px;
+  margin-top: 6px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 6px;
+  max-height: 180px;
   overflow-y: auto;
   display: none;
 }
@@ -202,15 +187,14 @@ body {
 .hourly-row {
   display: flex;
   justify-content: space-between;
-  padding: 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 3px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .hourly-row:last-child { border-bottom: none; }
 
 .stock-panel {
   flex: 0 0 30%;
   min-height: 0;
-  padding: 4px 6px;
 }
 
 #tradingview-widget-container {
@@ -219,11 +203,12 @@ body {
 }
 
 
-/* ===== RIGHT COLUMN: Quote(40%), Events(60%) ===== */
+/* ===== RIGHT COLUMN (Quote 40%, Events 60%) ===== */
 .column-right {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   height: 100%;
   min-width: 0;
 }
@@ -236,34 +221,31 @@ body {
 
 #thought-container {
   width: 100%;
-  height: calc(100% - 14px);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 8px;
+  height: calc(100% - 20px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  text-align: left;
-  overflow-y: auto;
 }
 
 .thought-label {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: #30d158;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 #thought-text {
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: 14px;
+  line-height: 1.35;
   color: #ffffff;
   font-style: italic;
-  font-weight: 400;
 }
 
 .events-panel {
@@ -277,19 +259,19 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
 }
 
 #auth-status {
-  font-size: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .macos-btn {
-  padding: 2px 5px;
-  font-size: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
   font-weight: 600;
-  border-radius: 3px;
+  border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
@@ -298,87 +280,91 @@ body {
 }
 
 .macos-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 #events-container {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding-right: 2px;
+}
+
+#events {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .event-item {
-  margin-bottom: 3px;
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  background: rgba(0, 255, 0, 0.05);
+  border: 1px solid rgba(0, 255, 0, 0.15);
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
+  border-left: 3px solid #30d158;
 }
 
 .event-header-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 4px;
 }
 
 .event-time-container {
   display: flex;
   flex-direction: column;
-  min-width: 50px;
+  min-width: 70px;
 }
 
 .event-time {
   font-weight: 600;
-  font-size: 8px;
+  font-size: 12px;
   color: #30d158;
 }
 
 .event-end-time {
-  font-size: 7px;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  opacity: 0.7;
 }
 
 .event-title {
   flex: 1;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1.15;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1.2;
 }
 
 .event-location {
   display: block;
-  font-size: 7px;
-  color: rgba(255, 255, 255, 0.75);
-  margin-top: 1px;
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 2px;
 }
 
-/* Scrollbar */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 2px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 </style>
 </head>
 <body>
 <div class="overlay">
-  <!-- COLUMN LEFT: Clock(20%), Weather(50%), Stock(30%) -->
+  <!-- LEFT COLUMN -->
   <div class="column-left">
     <!-- Clock Panel -->
     <div class="macos-panel clock-panel">
-      <div class="macos-header">
+      <div class="macos-header" style="width:100%;">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-        <div class="panel-title">Clock</div>
+        <div class="panel-title">System Time</div>
         <div style="width: 20px;"></div>
       </div>
       <div id="clock">--:-- --</div>
@@ -397,20 +383,20 @@ body {
       <div id="weather-hourly"></div>
     </div>
 
-    <!-- Markets / Stock Panel (SPY Real-Time) -->
+    <!-- Markets Panel (SPY) -->
     <div class="macos-panel stock-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
         <div class="panel-title">Markets (SPY)</div>
         <div style="width: 20px;"></div>
       </div>
-      <div id="tradingview-widget-container">
+      <div id="tradingview-widget-container" style="width:100%;height:100%;">
         <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22AMEX%3ASPY%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%221D%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22autosize%22%3Atrue%7D" style="width:100%; height:100%; border:none;" scrolling="no"></iframe>
       </div>
     </div>
   </div>
-  
-  <!-- COLUMN RIGHT: Quote(40%), Events(60%) -->
+
+  <!-- RIGHT COLUMN -->
   <div class="column-right">
     <!-- Thought for the Day Panel -->
     <div class="macos-panel thought-panel">
@@ -425,7 +411,7 @@ body {
       </div>
     </div>
 
-    <!-- Calendar Events & Reminders Panel -->
+    <!-- Calendar & Reminders Panel -->
     <div class="macos-panel events-panel">
       <div class="macos-header">
         <div class="window-dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
@@ -433,16 +419,14 @@ body {
         <div style="width: 20px;"></div>
       </div>
       <div class="auth-bar">
-        <span id="auth-status">Ready</span>
+        <span id="auth-status">Initializing...</span>
         <div>
-          <button id="sign-in" class="macos-btn" disabled>Sign In</button>
+          <button id="sign-in" class="macos-btn" disabled>Loading...</button>
           <button id="enable-voice" class="macos-btn">Voice</button>
         </div>
       </div>
       <div id="events-container">
-        <div id="events">
-          <div style="padding: 4px; opacity: 0.7; font-size: 8px;">Click 'Sign In' to load events.</div>
-        </div>
+        <div id="events"></div>
       </div>
     </div>
   </div>
@@ -457,12 +441,29 @@ const CALENDAR_ID = "family03331431524389313579@group.calendar.google.com";
 
 const QUOTES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREcumm4p5A9G-506IZdhpDsBHZtbeHLiVMVbZJHLGFs6kkl3QPamiaOGmx1U8MADueTO-45bipj-wv/pub?output=csv";
 
-let voiceEnabled = false;
-let spokenEvents = new Set();
+let tokenClient = null;
+let gapiInited = false;
+let gsisInited = false;
 let cachedEvents = [];
+let voiceEnabled = false;
 let activeHourlyIndex = null;
 
-// CSV Parser
+// ===== CLOCK & DATE =====
+function updateClock() {
+  const now = new Date();
+  const clockEl = document.getElementById("clock");
+  const dateEl = document.getElementById("date");
+  if (clockEl) {
+    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+  }
+  if (dateEl) {
+    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== CSV PARSER & THOUGHT FOR THE DAY =====
 function parseCSV(text) {
   try {
     const lines = text.split(/\r?\n/);
@@ -501,7 +502,6 @@ function getDayOfYear(date) {
   return Math.floor(diff / oneDay);
 }
 
-// Fetch today's thought
 async function fetchAndDisplayTodayThought() {
   const fallbackQuote = `"Whatever the mind can conceive and believe, it can achieve." — Napoleon Hill`;
   try {
@@ -547,21 +547,6 @@ async function fetchAndDisplayTodayThought() {
     if (textElem) textElem.textContent = fallbackQuote;
   }
 }
-
-// ===== CLOCK & DATE =====
-function updateClock() {
-  const now = new Date();
-  const clockEl = document.getElementById("clock");
-  const dateEl = document.getElementById("date");
-  if (clockEl) {
-    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
-  }
-  if (dateEl) {
-    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-  }
-}
-setInterval(updateClock, 1000);
-updateClock();
 fetchAndDisplayTodayThought();
 
 // ===== DUAL TEMPERATURE FORMATTER (°C & °F) =====
@@ -578,249 +563,4 @@ const mockForecastData = [
   { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
   { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: generateFull24HourHourly(19) },
   { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: generateFull24HourHourly(18) },
-  { name: "Friday", tempC: 20, desc: "Clear Skies", hourly: generateFull24HourHourly(20) },
-  { name: "Saturday", tempC: 22, desc: "Warm & Sunny", hourly: generateFull24HourHourly(22) },
-  { name: "Sunday", tempC: 17, desc: "Breezy", hourly: generateFull24HourHourly(17) }
-];
-
-function generateTodayHourly(baseTemp) {
-  const hours = [];
-  const currentHour = new Date().getHours();
-  for (let hr = currentHour; hr < 24; hr++) {
-    const ampm = hr >= 12 ? 'PM' : 'AM';
-    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
-    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
-    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
-  }
-  return hours;
-}
-
-function generateFull24HourHourly(baseTemp) {
-  const hours = [];
-  for (let hr = 0; hr < 24; hr++) {
-    const ampm = hr >= 12 ? 'PM' : 'AM';
-    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
-    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
-    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
-  }
-  return hours;
-}
-
-function initWeather() {
-  const currentEl = document.getElementById("weather-current");
-  if (currentEl) {
-    currentEl.innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
-  }
-  const forecastContainer = document.getElementById("weather-forecast");
-  if (!forecastContainer) return;
-  forecastContainer.innerHTML = "";
-  
-  mockForecastData.forEach((day, index) => {
-    const dayDiv = document.createElement("div");
-    dayDiv.className = "weather-day";
-    dayDiv.innerHTML = `
-      <span class="weather-name">${day.name}</span>
-      <span class="weather-temp">${formatTempDual(day.tempC)}</span>
-      <span class="weather-desc">${day.desc}</span>
-    `;
-    dayDiv.onclick = () => toggleHourlyDetail(index);
-    forecastContainer.appendChild(dayDiv);
-  });
-}
-
-function toggleHourlyDetail(dayIndex) {
-  const hourlyContainer = document.getElementById("weather-hourly");
-  if (!hourlyContainer) return;
-  
-  if (activeHourlyIndex === dayIndex) {
-    hourlyContainer.style.display = "none";
-    activeHourlyIndex = null;
-    return;
-  }
-  
-  activeHourlyIndex = dayIndex;
-  const dayData = mockForecastData[dayIndex];
-  
-  let html = `<div style="font-weight:600; margin-bottom:2px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
-  dayData.hourly.forEach(h => {
-    html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
-  });
-  
-  hourlyContainer.innerHTML = html;
-  hourlyContainer.style.display = "block";
-}
-
-initWeather();
-
-// ===== GOOGLE CALENDAR AUTH & EVENTS =====
-let tokenClient;
-let gapiInited = false;
-let gsisInited = false;
-
-function gapiLoaded() {
-  if (typeof gapi !== 'undefined') {
-    gapi.load('client', initializeGapiClient);
-  }
-}
-
-async function initializeGapiClient() {
-  try {
-    await gapi.client.init({
-      apiKey: API_KEY,
-      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-    });
-    gapiInited = true;
-    maybeEnableSignIn();
-  } catch (err) {
-    console.error("GAPI init error:", err);
-  }
-}
-
-function gisLoaded() {
-  if (typeof google !== 'undefined' && google.accounts) {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: async (resp) => {
-        try {
-          if (resp.error !== undefined) {
-            console.error("Auth error:", resp);
-            document.getElementById('auth-status').textContent = 'Sign-in failed';
-            return;
-          }
-          document.getElementById('auth-status').textContent = 'Connected';
-          document.getElementById('sign-in').textContent = 'Refresh';
-          await listUpcomingEvents();
-          setInterval(listUpcomingEvents, 15 * 60 * 1000);
-        } catch (callbackErr) {
-          console.error("Error in auth callback:", callbackErr);
-        }
-      },
-    });
-    gsisInited = true;
-    maybeEnableSignIn();
-  }
-}
-
-function maybeEnableSignIn() {
-  const signInBtn = document.getElementById('sign-in');
-  const authStatus = document.getElementById('auth-status');
-  if (gapiInited && gsisInited && signInBtn) {
-    signInBtn.removeAttribute('disabled');
-    if (authStatus) authStatus.textContent = 'Signed out';
-  }
-}
-
-const signInBtn = document.getElementById('sign-in');
-if (signInBtn) {
-  signInBtn.onclick = () => {
-    try {
-      if (!tokenClient) {
-        document.getElementById('auth-status').textContent = 'Auth loading...';
-        return;
-      }
-      if (!gapi.client.getToken()) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-      } else {
-        tokenClient.requestAccessToken({prompt: ''});
-      }
-    } catch (err) {
-      console.error("Token request error:", err);
-    }
-  };
-}
-
-// Voice Alerts Setup
-const voiceBtn = document.getElementById('enable-voice');
-if (voiceBtn) {
-  voiceBtn.onclick = () => {
-    voiceEnabled = !voiceEnabled;
-    if (voiceEnabled) {
-      voiceBtn.style.background = '#30d158';
-      voiceBtn.style.color = '#000';
-      speak("Voice alerts enabled.");
-    } else {
-      voiceBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-      voiceBtn.style.color = '#fff';
-      speak("Voice alerts disabled.");
-    }
-  };
-}
-
-function speak(text) {
-  if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-  }
-}
-
-setInterval(() => {
-  if (!voiceEnabled || cachedEvents.length === 0) return;
-  const now = new Date();
-  cachedEvents.forEach(event => {
-    if (!event.start) return;
-    const startStr = event.start.dateTime || event.start.date;
-    const startTime = new Date(startStr);
-    const diffMinutes = (startTime - now) / (1000 * 60);
-    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
-      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
-      spokenEvents.add(event.id);
-    }
-  });
-}, 30000);
-
-async function listUpcomingEvents() {
-  try {
-    const now = new Date();
-    const response = await gapi.client.calendar.events.list({
-      'calendarId': CALENDAR_ID,
-      'timeMin': now.toISOString(),
-      'showDeleted': false,
-      'singleEvents': true,
-      'maxResults': 250,
-      'orderBy': 'startTime',
-    });
-    
-    cachedEvents = response.result.items || [];
-    const eventsEl = document.getElementById('events');
-    if (!eventsEl) return;
-    eventsEl.innerHTML = '';
-    
-    if (cachedEvents.length === 0) {
-      eventsEl.innerHTML = '<div style="padding: 4px; font-size: 8px; opacity: 0.7;">No upcoming events found.</div>';
-      return;
-    }
-    
-    cachedEvents.forEach(event => {
-      const start = event.start.dateTime || event.start.date;
-      const startDate = new Date(start);
-      const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-      const location = event.location ? event.location : 'No location specified';
-      
-      const div = document.createElement('div');
-      div.className = 'event-item';
-      div.innerHTML = `
-        <div class="event-header-row">
-          <div class="event-time-container">
-            <span class="event-time">${dayStr}</span>
-            <span class="event-end-time">${timeStr}</span>
-          </div>
-          <div class="event-title">${event.summary || 'Untitled Event'}</div>
-        </div>
-        <div class="event-location">📍 ${location}</div>
-      `;
-      eventsEl.appendChild(div);
-    });
-  } catch (err) {
-    console.error("Error loading calendar events", err);
-    document.getElementById('events').innerHTML = '<div style="padding:4px; font-size:8px; color:#ff5f56;">Error loading calendar items.</div>';
-    document.getElementById('auth-status').textContent = 'Error loading calendar';
-  }
-}
-</script>
-<!-- Load Google API scripts safely -->
-<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-</body>
-</html>
+  { name: "Friday", temp
