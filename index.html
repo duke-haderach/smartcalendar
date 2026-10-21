@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <title>Wall Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- COOP Header Fix for Google OAuth Popups -->
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
+<meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none" />
+
 <!-- Google APIs -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
@@ -104,14 +108,14 @@ body {
 }
 
 #clock {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.5px;
   line-height: 1.1;
 }
 
 #date {
-  font-size: 12px;
+  font-size: 13px;
   opacity: 0.8;
   margin-top: 4px;
   font-weight: 500;
@@ -143,7 +147,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 8px;
+  padding: 6px 8px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   font-size: 12px;
@@ -448,22 +452,26 @@ let cachedEvents = [];
 let voiceEnabled = false;
 let activeHourlyIndex = null;
 
-// ===== CLOCK & DATE =====
+// ===== 1. CLOCK & DATE (Guaranteed to run instantly) =====
 function updateClock() {
-  const now = new Date();
-  const clockEl = document.getElementById("clock");
-  const dateEl = document.getElementById("date");
-  if (clockEl) {
-    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
-  }
-  if (dateEl) {
-    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  try {
+    const now = new Date();
+    const clockEl = document.getElementById("clock");
+    const dateEl = document.getElementById("date");
+    if (clockEl) {
+      clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+    }
+    if (dateEl) {
+      dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+    }
+  } catch (e) {
+    console.error("Clock error:", e);
   }
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ===== CSV PARSER & THOUGHT FOR THE DAY =====
+// ===== 2. THOUGHT FOR THE DAY =====
 function parseCSV(text) {
   try {
     const lines = text.split(/\r?\n/);
@@ -549,7 +557,7 @@ async function fetchAndDisplayTodayThought() {
 }
 fetchAndDisplayTodayThought();
 
-// ===== DUAL TEMPERATURE FORMATTER (°C & °F) =====
+// ===== 3. WEATHER LOGIC =====
 function formatTempDual(tempC) {
   if (tempC === undefined || tempC === null || isNaN(tempC)) return "--°C / --°F";
   const c = Math.round(tempC);
@@ -557,10 +565,254 @@ function formatTempDual(tempC) {
   return `${c}°C / ${f}°F`;
 }
 
-// ===== WEATHER LOGIC =====
 const mockForecastData = [
   { name: "Today", tempC: 21, desc: "Sunny & Clear", hourly: generateTodayHourly(21) },
   { name: "Tomorrow", tempC: 23, desc: "Mostly Sunny", hourly: generateFull24HourHourly(23) },
   { name: "Wednesday", tempC: 19, desc: "Partly Cloudy", hourly: generateFull24HourHourly(19) },
   { name: "Thursday", tempC: 18, desc: "Light Showers", hourly: generateFull24HourHourly(18) },
-  { name: "Friday", temp
+  { name: "Friday", tempC: 20, desc: "Clear Skies", hourly: generateFull24HourHourly(20) },
+  { name: "Saturday", tempC: 22, desc: "Warm & Sunny", hourly: generateFull24HourHourly(22) },
+  { name: "Sunday", tempC: 17, desc: "Breezy", hourly: generateFull24HourHourly(17) }
+];
+
+function generateTodayHourly(baseTemp) {
+  const hours = [];
+  const currentHour = new Date().getHours();
+  for (let hr = currentHour; hr < 24; hr++) {
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
+    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
+    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
+  }
+  return hours;
+}
+
+function generateFull24HourHourly(baseTemp) {
+  const hours = [];
+  for (let hr = 0; hr < 24; hr++) {
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    const formattedHr = hr % 12 === 0 ? 12 : hr % 12;
+    const tempVar = baseTemp + Math.round(Math.sin((hr / 24) * 2 * Math.PI) * 4);
+    hours.push({ time: `${formattedHr} ${ampm}`, temp: tempVar });
+  }
+  return hours;
+}
+
+function initWeather() {
+  try {
+    const currentEl = document.getElementById("weather-current");
+    if (currentEl) {
+      currentEl.innerHTML = `<span>Current</span> <span>${formatTempDual(21)} ☀️</span>`;
+    }
+    const forecastContainer = document.getElementById("weather-forecast");
+    if (!forecastContainer) return;
+    forecastContainer.innerHTML = "";
+    
+    mockForecastData.forEach((day, index) => {
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "weather-day";
+      dayDiv.innerHTML = `
+        <span class="weather-name">${day.name}</span>
+        <span class="weather-temp">${formatTempDual(day.tempC)}</span>
+        <span class="weather-desc">${day.desc}</span>
+      `;
+      dayDiv.onclick = () => toggleHourlyDetail(index);
+      forecastContainer.appendChild(dayDiv);
+    });
+  } catch (e) {
+    console.error("Weather init error:", e);
+  }
+}
+
+function toggleHourlyDetail(dayIndex) {
+  const hourlyContainer = document.getElementById("weather-hourly");
+  if (!hourlyContainer) return;
+  
+  if (activeHourlyIndex === dayIndex) {
+    hourlyContainer.style.display = "none";
+    activeHourlyIndex = null;
+    return;
+  }
+  
+  activeHourlyIndex = dayIndex;
+  const dayData = mockForecastData[dayIndex];
+  
+  let html = `<div style="font-weight:600; margin-bottom:4px; color:#30d158;">Hourly for ${dayData.name}:</div>`;
+  dayData.hourly.forEach(h => {
+    html += `<div class="hourly-row"><span>${h.time}</span><span>${formatTempDual(h.temp)}</span></div>`;
+  });
+  
+  hourlyContainer.innerHTML = html;
+  hourlyContainer.style.display = "block";
+}
+
+initWeather();
+
+// ===== 4. GOOGLE CALENDAR GAPI & GIS SETUP =====
+function gapiLoaded() {
+  try {
+    if (typeof gapi !== 'undefined') {
+      gapi.load('client', initializeGapiClient);
+    }
+  } catch (e) {
+    console.error("gapiLoaded error:", e);
+  }
+}
+
+async function initializeGapiClient() {
+  try {
+    await gapi.client.init({
+      apiKey: API_KEY,
+      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+    });
+    gapiInited = true;
+    maybeEnableSignIn();
+  } catch (err) {
+    console.error("GAPI init error:", err);
+  }
+}
+
+function gisLoaded() {
+  try {
+    if (typeof google !== 'undefined' && google.accounts) {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (resp) => {
+          if (resp.error !== undefined) {
+            console.error("Auth error:", resp);
+            document.getElementById('auth-status').textContent = 'Sign-in failed';
+            return;
+          }
+          document.getElementById('auth-status').textContent = 'Connected';
+          document.getElementById('sign-in').textContent = 'Refresh';
+          listUpcomingEvents();
+          setInterval(listUpcomingEvents, 15 * 60 * 1000);
+        },
+      });
+      gsisInited = true;
+      maybeEnableSignIn();
+    }
+  } catch (e) {
+    console.error("gisLoaded error:", e);
+  }
+}
+
+function maybeEnableSignIn() {
+  const signInBtn = document.getElementById('sign-in');
+  const authStatus = document.getElementById('auth-status');
+  if (gapiInited && gsisInited && signInBtn) {
+    signInBtn.removeAttribute('disabled');
+    signInBtn.textContent = 'Sign In';
+    if (authStatus) authStatus.textContent = 'Signed out';
+  }
+}
+
+const signInBtn = document.getElementById('sign-in');
+if (signInBtn) {
+  signInBtn.onclick = () => {
+    try {
+      if (!tokenClient) {
+        document.getElementById('auth-status').textContent = 'Auth initializing...';
+        return;
+      }
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      } else {
+        tokenClient.requestAccessToken({prompt: ''});
+      }
+    } catch (err) {
+      console.error("Token request error:", err);
+    }
+  };
+}
+
+const voiceBtn = document.getElementById('enable-voice');
+if (voiceBtn) {
+  voiceBtn.onclick = () => {
+    voiceEnabled = !voiceEnabled;
+    voiceBtn.style.background = voiceEnabled ? '#30d158' : 'rgba(255,255,255,0.1)';
+    voiceBtn.style.color = voiceEnabled ? '#000' : '#fff';
+    speak(voiceEnabled ? "Voice alerts enabled." : "Voice alerts disabled.");
+  };
+}
+
+function speak(text) {
+  try {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch (e) {}
+}
+
+setInterval(() => {
+  if (!voiceEnabled || cachedEvents.length === 0) return;
+  const now = new Date();
+  cachedEvents.forEach(event => {
+    if (!event.start) return;
+    const startStr = event.start.dateTime || event.start.date;
+    const startTime = new Date(startStr);
+    const diffMinutes = (startTime - now) / (1000 * 60);
+    if (diffMinutes >= 29 && diffMinutes <= 31 && !spokenEvents.has(event.id)) {
+      speak(`Reminder: ${event.summary} starts in 30 minutes.`);
+      spokenEvents.add(event.id);
+    }
+  });
+}, 30000);
+
+async function listUpcomingEvents() {
+  try {
+    const now = new Date();
+    const response = await gapi.client.calendar.events.list({
+      'calendarId': CALENDAR_ID,
+      'timeMin': now.toISOString(),
+      'showDeleted': false,
+      'singleEvents': true,
+      'maxResults': 250,
+      'orderBy': 'startTime',
+    });
+    
+    cachedEvents = response.result.items || [];
+    const eventsEl = document.getElementById('events');
+    if (!eventsEl) return;
+    eventsEl.innerHTML = '';
+    
+    if (cachedEvents.length === 0) {
+      eventsEl.innerHTML = '<div style="padding: 10px; opacity: 0.7; font-size: 12px;">No upcoming events found.</div>';
+      return;
+    }
+    
+    cachedEvents.forEach(event => {
+      const start = event.start.dateTime || event.start.date;
+      const startDate = new Date(start);
+      const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dayStr = startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      const location = event.location ? event.location : 'No location specified';
+      
+      const div = document.createElement('div');
+      div.className = 'event-item';
+      div.innerHTML = `
+        <div class="event-header-row">
+          <div class="event-time-container">
+            <span class="event-time">${dayStr}</span>
+            <span class="event-end-time">${timeStr}</span>
+          </div>
+          <div class="event-title">${event.summary || 'Untitled Event'}</div>
+        </div>
+        <div class="event-location">📍 ${location}</div>
+      `;
+      eventsEl.appendChild(div);
+    });
+  } catch (err) {
+    console.error("Error loading calendar events", err);
+    document.getElementById('events').innerHTML = '<div style="padding: 10px; font-size: 12px; color: #ff5f56;">Error loading calendar events.</div>';
+    document.getElementById('auth-status').textContent = 'Error loading calendar';
+  }
+}
+</script>
+<!-- Load Google API scripts safely -->
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
